@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#E8402F"/>
+  <g fill="#C22A1C">
+    <path d="M256 560 L-40 0 L40 0 Z"/><path d="M256 560 L120 0 L200 0 Z"/><path d="M256 560 L280 0 L360 0 Z"/><path d="M256 560 L440 0 L520 0 Z"/>
+  </g>
+  <rect x="96" y="120" width="320" height="300" rx="28" fill="#FFC93C" stroke="#1D1B4A" stroke-width="18"/>
+  <text x="256" y="325" text-anchor="middle" font-family="Arial Black, Impact, sans-serif" font-weight="900" font-size="150" fill="#1D1B4A">BB</text>
+</svg>

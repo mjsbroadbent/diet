@@ -42,6 +42,7 @@ body {
   padding-right: max(16px, env(safe-area-inset-right, 0px));
   padding-block: 28px 56px;
 }
+.box-front h1 span { color: var(--accent); }
 .wrap { max-width: 1120px; margin: 0 auto; display: grid; gap: 32px; }
 header h1 { font-family: var(--display); font-weight: 900; font-size: clamp(28px, 4.5vw, 40px); letter-spacing: -0.02em; margin: 0; text-wrap: balance; }
 header p { margin: 6px 0 0; color: var(--muted); max-width: 62ch; }
@@ -161,7 +162,57 @@ button.btn:hover { filter: brightness(1.08); }
 .gsec small { display: block; color: var(--muted); font-size: 12.5px; font-variant-numeric: tabular-nums; }
 .gsec label:has(input:checked) span { text-decoration: line-through; color: var(--muted); }
 
+/* Plain skins ("boring UI"): calm tokens, no box-front art */
+:root[data-skin="light"], :root[data-skin="dark"] { --shadow: none; --display: "Libre Franklin", system-ui, -apple-system, "Segoe UI", sans-serif; }
+:root[data-skin="light"] {
+  --bg: #F5F5F2; --bg-dot: #F5F5F2; --surface: #FFFFFF; --ink: #1F2328; --muted: #5C626B; --line: #DCDDE0;
+  --accent: #2C6BC4; --accent-soft: #E8F0FB; --on-accent: #FFFFFF; --red: #2C6BC4; --red-deep: #1F56A3; --blue: #2C6BC4;
+}
+:root[data-skin="dark"] {
+  --bg: #141619; --bg-dot: #141619; --surface: #1D2024; --ink: #E7E9EC; --muted: #A1A7AF; --line: #34383E;
+  --accent: #7AAEF5; --accent-soft: #1E2A3B; --on-accent: #0D1420; --red: #7AAEF5; --red-deep: #5F95E0; --blue: #7AAEF5;
+  --protein: #F0776B; --carbs: #E9B341; --fat: #7AAEF5;
+  --ok: #6FCF97; --ok-soft: #173325; --warn: #E9B341; --warn-soft: #33290F; --bad: #F0776B; --bad-soft: #3A1C19;
+  color-scheme: dark;
+}
+.box-front .kicker, .box-front .netwt, .burst { display: none; }
+.topbar { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; justify-content: space-between; }
+.topbar .seg span { padding: 6px 12px; font-size: 13px; }
+.ghost { font: inherit; font-size: 13.5px; font-weight: 600; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 7px 12px; cursor: pointer; }
+.ghost:hover { border-color: var(--accent); }
+.ghost.small { font-size: 12px; padding: 2px 8px; border-radius: 6px; color: var(--muted); }
+.note { font-size: 13px; color: var(--muted); margin: 0; }
+.note a { color: var(--accent); }
+.check { display: flex; gap: 8px; align-items: flex-start; font-size: 14px; cursor: pointer; }
+.check input { accent-color: var(--accent); margin-top: 3px; }
+.check small { display: block; color: var(--muted); font-size: 12.5px; }
+.cost { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+.cost div { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+.cost b { display: block; font-family: var(--display); font-weight: 400; font-size: 26px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.cost span { font-size: 12.5px; color: var(--muted); }
+.gsec .row2 { display: flex; justify-content: space-between; gap: 6px; align-items: start; }
+.gsec .price { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.gsec .pantry { color: var(--ok); font-weight: 700; }
+.left { display: grid; gap: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 6px 14px; }
+.left .li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+.left .li:last-child { border-bottom: 0; }
+.left .li small { grid-column: 1 / -1; color: var(--muted); font-size: 12.5px; }
+.left .li em { font-style: normal; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.keep { font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 999px; margin-left: 6px; white-space: nowrap; }
+.keep.p { background: var(--ok-soft); color: var(--ok); }
+.keep.z { background: var(--accent-soft); color: var(--accent); }
+.keep.r { background: var(--warn-soft); color: var(--warn); }
+.keep.x { background: var(--bad-soft); color: var(--bad); }
+.btns { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+</style>
+<style id="skin-cereal">
 /* ---------- Cereal box theme ---------- */
+.box-front .kicker, .box-front .netwt { display: block; }
+.burst { display: grid; }
+.cost div, .left { border: 3px solid var(--ink); border-radius: 16px; box-shadow: var(--shadow); }
+.cost b { color: var(--red); }
+.ghost { border: 2px solid var(--ink); font-weight: 800; border-radius: 10px; }
+.topbar .seg { background: var(--surface); }
 body { background-color: var(--bg); background-image: radial-gradient(var(--bg-dot) 1.6px, transparent 1.8px); background-size: 18px 18px; font-size: 15.5px; }
 .box-front {
   position: relative; overflow: hidden; border: 4px solid var(--ink); border-radius: 22px; box-shadow: 8px 8px 0 var(--ink);
@@ -225,10 +276,29 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
 #likesTags .tag { background: #E3ECFF; color: var(--blue); border-color: var(--blue); }
 #avoidTags .tag { border-color: var(--bad); }
 </style>
+<script>
+  (function () { var k; try { k = JSON.parse(localStorage.getItem("ad-skin")); } catch (e) {} k = k === "light" || k === "dark" ? k : "cereal";
+    document.documentElement.dataset.skin = k; document.getElementById("skin-cereal").media = k === "cereal" ? "all" : "not all"; })();
+</script>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Big Box">
+<script>window.BBD_PWA = true; if ("serviceWorker" in navigator) addEventListener("load", () => navigator.serviceWorker.register("sw.js"));</script>
 <style>body { margin: 0; } img { max-width: 100%; }</style>
 </head>
 <body>
 <div class="wrap">
+  <div class="topbar">
+    <div class="seg" role="radiogroup" aria-label="Look">
+      <label><input type="radio" name="skin" value="cereal" checked><span>Cereal box</span></label>
+      <label><input type="radio" name="skin" value="light"><span>Plain light</span></label>
+      <label><input type="radio" name="skin" value="dark"><span>Plain dark</span></label>
+    </div>
+    <button type="button" class="ghost" id="install">Install as app</button>
+  </div>
+  <p class="note" id="installHint" hidden></p>
   <header class="box-front">
     <div class="burst" aria-hidden="true"><span>NEW!<br>7-day menu inside</span></div>
     <p class="kicker">Fortified with real math</p>
@@ -308,14 +378,40 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
               <label><input type="radio" name="snacks" id="snacks-2" value="2"><span>2</span></label>
             </div>
           </div>
+          <div class="f">Daily treat
+            <div class="seg" role="radiogroup" aria-label="Daily treat">
+              <label><input type="radio" name="treat" id="treat-none" value="none" checked><span>None</span></label>
+              <label><input type="radio" name="treat" id="treat-h" value="h"><span>Healthy</span></label>
+              <label><input type="radio" name="treat" id="treat-i" value="i"><span>Indulgent</span></label>
+            </div>
+          </div>
         </div>
         <p class="hint" id="slotHint"></p>
+        <div class="f">Eating out (replaces dinner)
+          <div class="chips" id="outDays"></div>
+          <div class="seg" role="radiogroup" aria-label="Eating out style" id="outStyleSeg">
+            <label><input type="radio" name="outStyle" id="out-h" value="h" checked><span>Healthy</span></label>
+            <label><input type="radio" name="outStyle" id="out-i" value="i"><span>Indulgent</span></label>
+          </div>
+          <p class="hint" id="outHint"></p>
+        </div>
         <div class="courses" id="courses"></div>
         <label class="f">Foods you'd like to see more of (optional)
           <input type="text" id="likes" placeholder="Type a food and press Enter, e.g. salmon">
           <div class="tags" id="likesTags"></div>
           <p class="hint">Meals containing these get picked more often.</p>
         </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Shopping</legend>
+        <div class="seg" role="radiogroup" aria-label="Where you shop">
+          <label><input type="radio" name="store" id="store-costco" value="costco" checked><span>Costco</span></label>
+          <label><input type="radio" name="store" id="store-any" value="any"><span>Any store</span></label>
+        </div>
+        <label class="check" id="packsRow"><input type="checkbox" id="packs" checked>
+          <span>Plan around big packs<small>Favours recipes that reuse what you already bought, so less of each Costco pack goes to waste.</small></span></label>
+        <p class="hint" id="storeHint"></p>
       </fieldset>
     </form>
 
@@ -354,10 +450,27 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
     <div class="menu-head">
       <div>
         <h2 class="sec" id="groceryTitle">Grocery list</h2>
-        <p>Everything for the week above. Tick items off as you shop.</p>
+        <p id="groceryNote">Everything for the week above. Tick items off as you shop.</p>
       </div>
     </div>
+    <div class="cost" id="cost" hidden></div>
+    <p class="note" id="hiddenItems" hidden></p>
     <div class="grocery" id="grocery"></div>
+  </section>
+
+  <section class="menu" aria-labelledby="leftTitle" id="leftSec" hidden>
+    <div class="menu-head">
+      <div>
+        <h2 class="sec" id="leftTitle">Leftovers</h2>
+        <p>What's still in the packs after this week. Carry it over and next week's list only buys what's missing.</p>
+      </div>
+      <div class="btns">
+        <button type="button" class="btn" id="carry">Start next week with these</button>
+        <button type="button" class="ghost" id="clearPantry" hidden>Clear pantry</button>
+      </div>
+    </div>
+    <p class="note" id="pantryNote" hidden></p>
+    <div class="left" id="leftovers"></div>
   </section>
 </div>
 
@@ -464,7 +577,111 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
     tamari:      ["Tamari (gluten-free soy sauce)", 60, 10, 5.6, 0.1, 0.8, S.N, "soy", { tbsp: 18 }],
     pesto:       ["Basil pesto", 387, 5, 6, 38, 1, S.N, "dairy treenut", { tbsp: 16 }],
     marinara:    ["Marinara sauce", 50, 1.5, 8, 1.5, 1.8, S.N, ""],
+    // Treats
+    darkchoc:    ["Dark chocolate (70%+)", 598, 7.8, 46, 43, 11, S.N, "", { each: 10, unit: ["square", "squares"] }],
+    strawberries:["Strawberries (frozen)", 32, 0.7, 7.7, 0.3, 2, S.F, ""],
+    icecream:    ["Vanilla ice cream", 207, 3.5, 24, 11, 0.7, S.F, "dairy"],
+    icebar:      ["Chocolate almond ice cream bars", 357, 5, 30, 25, 1.5, S.F, "dairy treenut", { each: 70, unit: ["bar", "bars"] }],
+    cookie:      ["Chocolate chunk cookies", 470, 5, 63, 23, 2, S.G, "gluten dairy egg", { each: 45, unit: ["cookie", "cookies"] }],
+    chips:       ["Kettle potato chips", 520, 6.5, 55, 30, 4.5, S.N, ""],
+    // Costco stand-ins
+    darkbites:   ["Dark chocolate fruit bites", 475, 5, 65, 22.5, 5, S.N, "dairy"],
+    spaghetti:   ["Spaghetti (dry)", 371, 13, 75, 1.5, 3.2, S.G, "gluten"],
+    soysauce:    ["Soy sauce", 53, 8.1, 4.9, 0.6, 0.8, S.N, "soy gluten", { tbsp: 16 }],
+    cocofull:    ["Coconut milk, full fat (top up with equal water)", 197, 2, 2.8, 21, 0, S.N, "", { ml: 1 }],
   };
+
+  // ---------- Costco ----------
+  // Checked on Costco Same-Day (Instacart), Nov 21 2026. Same-Day prices run ~7.5% over the warehouse.
+  // key: [product, pack size in purchase units (g, or ml for ml items; dry weight for rice/quinoa), Same-Day price, keeps]
+  // keeps: p = pantry or freezer, z = freeze it, r = fridge or cool cupboard for weeks, x = use within the week
+  const INSTORE = 1.075;
+  const COSTCO = {
+    chicken: ["Kirkland Signature boneless skinless chicken breasts, ~2.33 kg", 2330, 40.15, "z"],
+    thigh: ["Kirkland Signature boneless skinless chicken thighs, ~2.24 kg", 2240, 33.0, "z"],
+    rchicken: ["Rotisserie chicken, ~1.2 kg (about 700 g of meat)", 700, 8.79, "z"],
+    turkey: ["Kirkland Signature extra lean ground turkey, 3 kg", 3000, 38.49, "z"],
+    turkeyslice: ["Maple Leaf Natural Selections turkey breast, 3 × 300 g", 900, 20.89, "z"],
+    beef: ["Organic lean ground beef, 3 × 600 g", 1800, 39.59, "z"],
+    steak: ["Top sirloin steak, ~1.6 kg", 1600, 52.78, "z"],
+    pork: ["Pork tenderloin, ~2.68 kg", 2680, 25.04, "z"],
+    bacon: ["Kirkland Signature sliced bacon, 4 × 500 g", 2000, 23.09, "z"],
+    salmon: ["Kirkland Signature Atlantic salmon fillet, ~1.12 kg", 1120, 45.57, "z"],
+    cod: ["Wild Pacific cod fillets, ~1.12 kg", 1120, 44.42, "z"],
+    tuna: ["Kirkland Signature solid light tuna, 8 × 184 g (about 1 kg drained)", 1040, 18.69, "p"],
+    shrimp: ["Kirkland Signature frozen tail-off shrimp, 907 g", 907, 18.69, "p"],
+    egg: ["Kirkland Signature free run large eggs, 24", 1200, 11.76, "r"],
+    eggwhite: ["Kirkland Signature liquid egg whites, 4 × 500 g", 2000, 18.69, "r"],
+    tofu: ["Kirkland Signature organic extra firm tofu, 4 × 454 g", 1816, 8.79, "r"],
+    edamame: ["Nature's Classic organic edamame, 2 kg frozen", 2000, 14.29, "p"],
+    yogurt: ["Kirkland Signature plain Greek yogurt, 3 × 650 g", 1950, 13.19, "r"],
+    cottage: ["Kirkland Signature 2% cottage cheese, 3 × 750 g", 2250, 17.59, "r"],
+    cheddar: ["Kirkland Signature medium cheddar, 1.15 kg", 1150, 17.59, "r"],
+    feta: ["Kirkland Signature feta, 1.2 kg", 1200, 17.59, "r"],
+    parm: ["Kirkland Signature shredded Parmigiano, 454 g", 454, 24.19, "r"],
+    mozz: ["Kirkland Signature mozzarella, 1.15 kg", 1150, 17.59, "r"],
+    milk: ["Kirkland Signature organic 2% milk, 4 L", 4000, 10.66, "r"],
+    whey: ["Leanfit whey protein, 2 kg", 2000, 87.99, "p"],
+    pea: ["Vega Protein & Greens, 2 kg", 2000, 60.49, "p"],
+    soymilk: ["Kirkland Signature organic soy beverage, 6 × 946 ml", 5676, 12.09, "p"],
+    cocofull: ["Organic coconut milk, 6 × 400 ml", 2400, 13.19, "p"],
+    hummus: ["Fontaine Santé hummus, 2 × 565 g", 1130, 6.59, "r"],
+    chickpeas: ["Dunya Harvest organic chickpeas, 8 × 540 ml (about 2.4 kg drained)", 2400, 13.19, "p"],
+    oats: ["Kirkland Signature whole grain rolled oats, 4.54 kg", 4540, 10.99, "p"],
+    brice: ["Sunbrown Calrose brown rice, 5 kg", 5000, 13.74, "p"],
+    wrice: ["Kirkland Signature jasmine rice, 8 kg", 8000, 26.39, "p"],
+    quinoa: ["Kirkland Signature organic quinoa, 2.04 kg", 2040, 16.49, "p"],
+    spaghetti: ["Antonio Amato spaghetti, 9 × 500 g", 4500, 14.29, "p"],
+    bread: ["Dempster's 100% whole wheat bread, 3 × 675 g", 2025, 8.24, "z"],
+    tortilla: ["Dempster's whole wheat tortillas (about 20 large)", 1200, 10.99, "z"],
+    sweetpot: ["Sweet potatoes, 2.26 kg bag", 2260, 13.19, "r"],
+    potato: ["Yellow potatoes, 10 lb bag", 4540, 9.89, "r"],
+    banana: ["Bananas, 1 bunch (about 1.3 kg)", 1300, 2.19, "x"],
+    apple: ["Gala apples, 6 lb bag", 2720, 12.09, "r"],
+    berries: ["Kirkland Signature frozen three berry blend, 2 kg", 2000, 20.89, "p"],
+    broccoli: ["Nature's Touch frozen broccoli florets, 2 kg", 2000, 15.39, "p"],
+    spinach: ["Baby spinach, 312 g", 312, 5.49, "x"],
+    greens: ["Spring mix, 312 g", 312, 5.49, "x"],
+    pepper: ["Mixed bell peppers, 6", 900, 10.99, "x"],
+    onion: ["Yellow onions, 4.5 kg bag", 4500, 10.99, "r"],
+    tomato: ["Roma tomatoes, 907 g", 907, 6.59, "x"],
+    cherry: ["Grape tomatoes, 2 lb", 907, 9.89, "x"],
+    cantom: ["Aylmer diced tomatoes, 8 × 796 ml", 6368, 16.49, "p"],
+    cucumber: ["English cucumbers, 3", 900, 4.39, "x"],
+    carrot: ["Carrots, 4.5 kg bag", 4500, 8.79, "r"],
+    zucchini: ["Organic zucchini, 2 lb", 907, 8.79, "x"],
+    cauli: ["Dujardin frozen cauliflower rice, 5 × 500 g", 2500, 5.49, "p"],
+    greenbeans: ["Organic French beans, 680 g", 680, 8.79, "x"],
+    mushroom: ["Cremini mushrooms, 680 g", 680, 6.59, "x"],
+    stirfry: ["Kirkland Signature frozen stir-fry vegetables, 2.5 kg", 2500, 16.49, "p"],
+    avocado: ["Avocados, 6", 900, 8.79, "x"],
+    asparagus: ["Asparagus, 1 bunch (about 1 kg)", 1000, 17.59, "x"],
+    corn: ["Kirkland Signature organic frozen corn, 2.5 kg", 2500, 16.49, "p"],
+    oil: ["Kirkland Signature organic extra virgin olive oil, 2 L", 1840, 19.79, "p"],
+    pb: ["Kirkland Signature natural peanut butter, 2 × 1 kg", 2000, 13.19, "p"],
+    ab: ["Kirkland Signature almond butter, 765 g", 765, 12.64, "p"],
+    almonds: ["Kirkland Signature whole almonds, 1.36 kg", 1360, 24.19, "p"],
+    walnuts: ["Kirkland Signature walnuts, 1.36 kg", 1360, 15.39, "p"],
+    chia: ["Kirkland Signature organic chia seeds, 1.36 kg", 1360, 12.64, "p"],
+    pepitas: ["Bassé organic pumpkin seeds, 1.2 kg", 1200, 14.29, "p"],
+    honey: ["Kirkland Signature liquid honey, 3 × 750 g", 2250, 21.99, "p"],
+    maple: ["Kirkland Signature organic maple syrup, 1 L", 1320, 18.69, "p"],
+    salsa: ["Pace medium salsa, 2 × 1 L", 2100, 10.99, "p"],
+    soysauce: ["Kikkoman soy sauce, 1.89 L", 2160, 9.89, "p"],
+    pesto: ["Kirkland Signature basil pesto, 630 ml", 600, 16.49, "r"],
+    marinara: ["Classico tomato and basil pasta sauce, 2.4 L", 2500, 12.09, "r"],
+    darkbites: ["Brookside dark chocolate açaí and blueberry, 850 g", 850, 15.39, "p"],
+    strawberries: ["Kirkland Signature frozen whole strawberries, 2.5 kg", 2500, 18.69, "p"],
+    icecream: ["Chapman's vanilla ice cream, 2 L", 1100, 8.24, "p"],
+    icebar: ["Kirkland Signature chocolate almond ice cream bars, 18", 1260, 18.69, "p"],
+    cookie: ["Costco bakery chocolate chunk cookies (about 24)", 1080, 13.19, "z"],
+    chips: ["Kettle Brand krinkle cut Himalayan salt chips, 907 g", 907, 10.44, "p"],
+  };
+  // Library items Costco doesn't carry, and what replaces them (grams × factor)
+  const SUB = { blackbeans: ["chickpeas", 1], lentils: ["chickpeas", 1], tempeh: ["tofu", 1.3], corntort: ["tortilla", 0.75], ricenoodle: ["wrice", 3], ricecake: ["bread", 1.5], pasta: ["spaghetti", 1], tamari: ["soysauce", 1], coco: ["cocofull", 0.36], darkchoc: ["darkbites", 1.25] };
+  const KEEP = { p: ["Keeps", "Pantry or freezer. Carries over."], z: ["Freeze", "Freeze what you won't use in a few days."], r: ["Keeps a few weeks", "Fridge or a cool cupboard."], x: ["Use this week", "Won't keep. Not carried over."] };
+  const buyUnits = (k, g) => g * ((ING[k][8] || {}).dry || 1);
+  const money = (v) => "$" + (v >= 100 ? Math.round(v).toLocaleString() : v.toFixed(2));
 
   // Recipes at a base portion. Portions are scaled per day to hit your targets.
   const MEALS = [
@@ -539,7 +756,20 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
     ["s", "Cheddar and walnuts", [["cheddar",30],["walnuts",15]], "Cube the cheese and pair with walnuts.", 2],
     ["s", "Tuna rice cakes", [["tuna",80],["ricecake",18],["yogurt",20]], "Mix tuna with yogurt and pepper, and pile onto rice cakes.", 5],
     ["s", "Banana", [["banana",120]], "Grab and go.", 1],
-  ].map(([type, name, items, how, min], i) => {
+    // Treats: h = healthy, i = indulgent. Fixed portions; the rest of the day flexes around them.
+    ["h", "Dark chocolate", [["darkchoc",20]], "Two squares. Let them melt slowly.", 1],
+    ["h", "Strawberries and dark chocolate", [["strawberries",150],["darkchoc",10]], "Thaw the strawberries for 20 minutes and eat with the chocolate.", 2],
+    ["h", "Warm berries with honey", [["berries",150],["honey",7]], "Microwave frozen berries for about a minute and drizzle with honey.", 2],
+    ["h", "Frozen banana with peanut butter", [["banana",120],["pb",8]], "Slice a banana, freeze the coins, and serve with a little peanut butter.", 2],
+    ["h", "Strawberry yogurt bowl", [["strawberries",150],["yogurt",75],["honey",5]], "Thaw the strawberries, spoon over yogurt and drizzle with honey.", 2],
+    ["i", "Bowl of ice cream", [["icecream",130]], "About a cup. Enjoy it.", 1],
+    ["i", "Ice cream with strawberries", [["icecream",100],["strawberries",75]], "Top a scoop of ice cream with thawed strawberries.", 2],
+    ["i", "Ice cream bar", [["icebar",70]], "Straight from the freezer.", 1],
+    ["i", "Chocolate chunk cookies", [["cookie",90]], "Two cookies, warmed for 10 seconds if you like.", 1],
+    ["i", "Kettle chips", [["chips",45]], "Pour one bowl, then put the bag away.", 1],
+    ["i", "Cookie and ice cream", [["cookie",45],["icecream",70]], "Crumble a cookie over a small scoop of ice cream.", 1],
+  ].map(([type, name, items, how, min], i) => mkMeal("m" + i, type, name, items, how, min));
+  function mkMeal(id, type, name, items, how, min) {
     const n = [0, 0, 0, 0, 0];
     const tags = new Set();
     items.forEach(([k, g]) => {
@@ -549,9 +779,28 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
       d[7].split(" ").filter(Boolean).forEach((t) => tags.add(t));
     });
     const text = (name + " " + items.map(([k]) => ING[k][0]).join(" ")).toLowerCase();
-    return { id: "m" + i, type, name, items, how, min, n, tags, text };
+    return { id, type, name, items, how, min, n, tags, text };
+  }
+  // Costco versions: swap in what the warehouse stocks and rename to match
+  const RENAME = [[/Black bean/g, "Chickpea"], [/Lentil/g, "Chickpea"], [/Tempeh/g, "Tofu"], [/Peanut tofu noodles/, "Peanut tofu rice"], [/Rice cakes with almond butter/, "Almond butter toast"], [/Tuna rice cakes/, "Tuna on toast"]];
+  const REWORD = [[/black beans|\bbeans\b/g, "chickpeas"], [/\blentils\b/g, "chickpeas"], [/canned chickpeas/g, "the chickpeas"], [/tempeh/g, "tofu"], [/Cook the noodles/g, "Heat the rice"], [/the rice cakes/g, "the toast"], [/onto rice cakes/g, "onto toast"], [/tamari/g, "soy sauce"]];
+  const COSTCO_MEALS = MEALS.map((m) => {
+    if (!m.items.some(([k]) => SUB[k])) return m;
+    const items = m.items.map(([k, g]) => (SUB[k] ? [SUB[k][0], Math.round(g * SUB[k][1])] : [k, g]));
+    let name = m.name, how = m.how;
+    RENAME.forEach(([a, b]) => (name = name.replace(a, b)));
+    if (m.items.some(([k]) => k === "blackbeans" || k === "lentils")) REWORD.forEach(([a, b]) => (how = how.replace(a, b)));
+    else REWORD.slice(3).forEach(([a, b]) => (how = how.replace(a, b)));
+    return mkMeal("c" + m.id.slice(1), m.type, name, items, how, m.min);
   });
-  const MEAL = Object.fromEntries(MEALS.map((m) => [m.id, m]));
+  // Eating out replaces dinner with a loose estimate
+  const OUT = {
+    h: { id: "oh", type: "o", out: true, name: "Eating out: salad with protein", items: [], min: 0, n: [650, 45, 35, 38, 8], tags: new Set(), text: "",
+      how: "Loose estimate for a big salad with grilled chicken, fish or tofu and the dressing on the side. Ask for extra protein if it's light." },
+    i: { id: "oi", type: "o", out: true, name: "Eating out: burger and fries", items: [], min: 0, n: [1350, 45, 130, 70, 8], tags: new Set(), text: "",
+      how: "Loose estimate for a burger with regular fries and no shake. The rest of the day is lighter to make room." },
+  };
+  const MEAL = Object.fromEntries([...MEALS, ...COSTCO_MEALS, OUT.h, OUT.i].map((m) => [m.id, m]));
 
   // Day layout for each number of meals and snacks
   const LAYOUT = {
@@ -567,9 +816,10 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
   ];
   const EFFORT = [["10", "Quick (10 min or less)"], ["25", "Some cooking (25 min or less)"], ["999", "Any, including 30 to 45 min"]];
   const VARIETY = [["1", "Same every day"], ["3", "Rotate 2 or 3 recipes"], ["7", "Different every day"]];
-  const SLOT_TYPE = { Breakfast: "b", Lunch: "l", Dinner: "d", Snack: "s" };
+  const SLOT_TYPE = { Breakfast: "b", Lunch: "l", Dinner: "d", Snack: "s", Treat: "h" };
+  const TREAT_COURSE = { effort: 999, variety: 7 };
   const DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-  const STEPS = { b: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.25, 2.5], l: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.25, 2.5], d: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.25, 2.5], s: [0.5, 0.75, 1, 1.25, 1.5, 2] };
+  const STEPS = { b: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.25, 2.5], l: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.25, 2.5], d: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.25, 2.5], s: [0.5, 0.75, 1, 1.25, 1.5, 2], h: [1], i: [1], o: [1] };
 
   // Allergy words that map to whole food groups, on top of plain text matching
   const GROUP_WORDS = {
@@ -604,14 +854,27 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
   $("diets").innerHTML = DIETS.map((d) => `
     <label class="chip"><input type="checkbox" name="diet" id="diet-${d.toLowerCase()}" value="${d}"><span>${d}</span></label>`).join("");
 
+  $("outDays").innerHTML = DAY_NAMES.map((d, i) => `
+    <label class="chip"><input type="checkbox" name="out" id="out-${i}" value="${i}"><span>${d.slice(0, 3)}</span></label>`).join("");
+  function showOut() {
+    const any = document.querySelector('input[name="out"]:checked');
+    $("outStyleSeg").hidden = !any;
+    $("outHint").textContent = !any ? "Pick the days you'll eat dinner out." : radio("outStyle") === "h"
+      ? "Counted as a big salad with grilled protein: about 650 kcal and 45 g protein. The rest of the day adjusts."
+      : "Counted as a burger and fries: about 1,350 kcal and 45 g protein. The rest of that day gets lighter.";
+  }
   $("courses").innerHTML = `<div class="course head"><span>Course</span><span>Effort</span><span>Variety</span></div>` +
     COURSES.map((c) => `<div class="course" id="row-${c.t}"><b>${c.name}</b>
       <select id="effort-${c.t}" aria-label="${c.name} effort">${EFFORT.map(([v, l]) => `<option value="${v}" ${v === c.effort ? "selected" : ""}>${l}</option>`).join("")}</select>
       <select id="variety-${c.t}" aria-label="${c.name} variety">${VARIETY.map(([v, l]) => `<option value="${v}" ${v === c.variety ? "selected" : ""}>${l}</option>`).join("")}</select></div>`).join("");
+  const slotsFor = (meals, snacks, treat) => [...LAYOUT[meals + "-" + snacks], ...(treat && treat !== "none" ? ["Treat"] : [])];
   function showCourses() {
-    const slots = LAYOUT[radio("meals") + "-" + radio("snacks")];
+    const slots = slotsFor(radio("meals"), radio("snacks"), radio("treat"));
+    const t = radio("treat");
+    if (t !== "none") SLOT_TYPE.Treat = t;
     COURSES.forEach((c) => ($("row-" + c.t).hidden = !slots.some((sl) => SLOT_TYPE[sl] === c.t)));
-    $("slotHint").textContent = "Each day: " + slots.join(", ").toLowerCase().replace(/^./, (x) => x.toUpperCase()) + ".";
+    $("slotHint").textContent = "Each day: " + slots.join(", ").toLowerCase().replace(/^./, (x) => x.toUpperCase()) + "." +
+      (t === "h" ? " Healthy treats are dark chocolate or fruit." : t === "i" ? " Indulgent treats are ice cream, cookies or chips." : "") + (t !== "none" ? " The treat is a fixed portion, and the rest of the day shrinks to fit it." : "");
   }
 
   let isExample = true;
@@ -663,8 +926,10 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
       units, sex: radio("sex"), age: parseFloat($("age").value), heightCm, weightKg,
       activity: parseFloat(radio("activity")), goal: radio("goal"),
       diets: [...document.querySelectorAll('input[name="diet"]:checked')].map((x) => x.value),
-      avoid: tags.avoid.join(","), likes: tags.likes.join(","), meals: radio("meals"), snacks: radio("snacks"),
+      avoid: tags.avoid.join(","), likes: tags.likes.join(","), meals: radio("meals"), snacks: radio("snacks"), treat: radio("treat"),
+      out: { days: [...document.querySelectorAll('input[name="out"]:checked')].map((x) => +x.value), style: radio("outStyle") },
       course: Object.fromEntries(COURSES.map((c) => [c.t, { effort: +$("effort-" + c.t).value, variety: +$("variety-" + c.t).value }])),
+      store: radio("store"), packs: $("packs").checked,
     };
   }
   const valid = (s) => s.age >= 15 && s.age <= 90 && s.heightCm >= 120 && s.heightCm <= 230 && s.weightKg >= 30 && s.weightKg <= 300;
@@ -811,17 +1076,24 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
 
   function context(s, r) {
     const diets = s.diets, avoid = terms(s.avoid), likes = terms(s.likes);
-    const slots = LAYOUT[s.meals + "-" + s.snacks];
+    let slots = slotsFor(s.meals, s.snacks, s.treat);
+    const treat = s.treat !== "none" ? s.treat : null;
+    if (treat) SLOT_TYPE.Treat = treat;
+    const course = { ...s.course, h: TREAT_COURSE, i: TREAT_COURSE, o: { effort: 999, variety: 1 } };
     const pools = {}, relaxed = [];
-    for (const type of ["b", "l", "d", "s"]) {
-      const fit = MEALS.filter((m) => m.type === type && allowed(m, diets, avoid));
-      const quick = fit.filter((m) => m.min <= s.course[type].effort);
+    const costco = s.store === "costco";
+    const library = costco ? COSTCO_MEALS.filter((m) => m.items.every(([k]) => COSTCO[k] && !nostock.has(k))) : MEALS;
+    for (const type of ["b", "l", "d", "s", ...(treat ? [treat] : [])]) {
+      const fit = library.filter((m) => m.type === type && allowed(m, diets, avoid));
+      const quick = fit.filter((m) => m.min <= course[type].effort);
       if (quick.length || !fit.length) pools[type] = quick;
       else { pools[type] = [...fit].sort((a, b) => a.min - b.min).slice(0, 3); relaxed.push(type); }
     }
     const liked = (m) => likes.some((t) => m.text.includes(t));
     const T = { k: r.target, p: r.protein, c: r.carbs, f: r.fat, keto: r.keto };
-    return { slots, pools, liked, T, score: makeScorer(T), likes, relaxed, course: s.course };
+    let treatNote = "";
+    if (treat && !pools[treat].length) { slots = slots.filter((x) => x !== "Treat"); treatNote = `No ${treat === "h" ? "healthy" : "indulgent"} treats fit your diet and avoid list, so the week has none.`; }
+    return { slots, pools, liked, T, score: makeScorer(T), likes, relaxed, course, treatNote, out: s.out, costco, packs: costco && s.packs, library };
   }
 
   function buildWeek(ctx, seed) {
@@ -835,12 +1107,22 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
     const perDay = {};
     slots.forEach((sl) => (perDay[SLOT_TYPE[sl]] = (perDay[SLOT_TYPE[sl]] || 0) + 1));
     const cap = Object.fromEntries(Object.keys(perDay).map((t) => [t, ctx.course[t].variety * perDay[t]]));
-    const chosen = { b: new Set(), l: new Set(), d: new Set(), s: new Set() };
+    const chosen = { b: new Set(), l: new Set(), d: new Set(), s: new Set(), h: new Set(), i: new Set(), o: new Set() };
+    // Big-pack planning: what's already open (or in the pantry) is free to use; opening a new pack costs its price
+    const have = { ...(ctx.packs ? pantry : {}) };
+    const packCost = (picked, ms) => {
+      const need = {};
+      picked.forEach((m, i) => m.items.forEach(([k, g]) => (need[k] = (need[k] || 0) + buyUnits(k, g * ms[i]))));
+      let cost = 0;
+      for (const k in need) { const short = need[k] - (have[k] || 0); if (short > 0) cost += Math.ceil(short / COSTCO[k][1]) * COSTCO[k][2]; }
+      return cost;
+    };
     for (let d = 0; d < 7; d++) {
       let best = null;
       for (let t = 0; t < 220; t++) {
         const picked = [];
         for (const sl of slots) {
+          if (sl === "Dinner" && ctx.out.days.includes(d)) { picked.push(OUT[ctx.out.style]); continue; }
           const type = SLOT_TYPE[sl];
           let pool = pools[type];
           if (chosen[type].size >= cap[type]) pool = pool.filter((m) => chosen[type].has(m.id));
@@ -852,10 +1134,16 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
           picked.push(avail[i]);
         }
         const o = optimize(picked, T, score);
-        const s = o.s + picked.reduce((a, m) => a + (ctx.course[m.type].variety >= 7 ? 0.05 * (uses[m.id] || 0) : 0) - (liked(m) ? 0.01 : 0), 0);
+        let s = o.s + picked.reduce((a, m) => a + (ctx.course[m.type].variety >= 7 ? 0.05 * (uses[m.id] || 0) : 0) - (liked(m) ? 0.01 : 0), 0);
+        if (ctx.packs) s += 0.0004 * packCost(picked, o.ms);
         if (!best || s < best.s) best = { ids: picked.map((m) => m.id), ms: o.ms, s };
       }
       best.ids.forEach((id) => { uses[id] = (uses[id] || 0) + 1; chosen[MEAL[id].type].add(id); });
+      if (ctx.packs) best.ids.forEach((id, i) => MEAL[id].items.forEach(([k, g]) => {
+        const u = buyUnits(k, g * best.ms[i]), short = u - (have[k] || 0);
+        if (short > 0) have[k] = (have[k] || 0) + Math.ceil(short / COSTCO[k][1]) * COSTCO[k][1];
+        have[k] -= u;
+      }));
       days.push({ ids: best.ids, ms: best.ms });
     }
     return { days };
@@ -890,9 +1178,12 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
 
   // ---------- Menu state and rendering ----------
   let ctx = null, week = null, seed = ls.get("ad-seed") || 1 + Math.floor(Math.random() * 1e9);
+  let pantry = ls.get("ad-pantry") || {};
+  const nostock = new Set(ls.get("ad-nostock") || []);
+  let leftovers = null;
   const skipped = {};
 
-  function inputsKey(s, r) { return JSON.stringify([r.target, r.protein, r.carbs, r.fat, r.keto, s.diets, s.avoid, s.likes, s.meals, s.snacks, s.course]); }
+  function inputsKey(s, r) { return JSON.stringify([r.target, r.protein, r.carbs, r.fat, r.keto, s.diets, s.avoid, s.likes, s.meals, s.snacks, s.treat, s.out, s.course, s.store, s.packs, [...nostock], pantry]); }
 
   function refreshMenu(s, r, force) {
     ctx = context(s, r);
@@ -911,6 +1202,7 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
   function dayData(day) {
     const meals = day.ids.map((id, i) => {
       const m = MEAL[id];
+      if (m.out) return { m, items: [], n: m.n.slice(), mult: 1 };
       const items = portion(m, day.ms[i]);
       return { m, items, n: nutr(items), mult: day.ms[i] };
     });
@@ -922,8 +1214,9 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
   function renderMenu() {
     const days = $("days"), warn = $("menuWarn");
     if (!week || week.error) {
-      days.innerHTML = ""; $("grocery").innerHTML = "";
+      days.innerHTML = ""; $("grocery").innerHTML = ""; $("cost").hidden = true; $("leftSec").hidden = true;
       warn.hidden = false; warn.textContent = week?.error || "";
+      renderHidden();
       $("menuSummary").textContent = "";
       return;
     }
@@ -935,13 +1228,14 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
     $("menuSummary").textContent = `Daily average ${fmt(avg[0])} kcal · ${fmt(avg[1])} g protein · ${fmt(carbOf(avg))} g ${T.keto ? "net carbs" : "carbs"} · ${fmt(avg[3])} g fat. Target ${fmt(T.k)} kcal.`;
 
     const offDays = all.filter((d) => Math.abs(d.tot[0] - T.k) / T.k > 0.1).length;
-    const thin = Object.entries(ctx.pools).filter(([t, p]) => ctx.slots.some((sl) => SLOT_TYPE[sl] === t) && p.length < 4 && ctx.course[t].variety >= 7).map(([t]) => ({ b: "breakfast", l: "lunch", d: "dinner", s: "snack" })[t]);
+    const thin = Object.entries(ctx.pools).filter(([t, p]) => ctx.slots.some((sl) => SLOT_TYPE[sl] === t) && p.length < 4 && ctx.course[t].variety >= 7).map(([t]) => ({ b: "breakfast", l: "lunch", d: "dinner", s: "snack", h: "treat", i: "treat" })[t]);
     const notes = [];
     if (thin.length) notes.push(`Only a few ${thin.join(", ")} recipes fit your filters, so some meals repeat.`);
-    const CN = { b: "breakfast", l: "lunch", d: "dinner", s: "snack" };
+    const CN = { b: "breakfast", l: "lunch", d: "dinner", s: "snack", h: "treat", i: "treat" };
+    if (ctx.treatNote) notes.push(ctx.treatNote);
     if (ctx.relaxed.length) notes.push(`No ${ctx.relaxed.map((t) => CN[t]).join(" or ")} recipes fit your effort setting and diet together, so the quickest ones that fit your diet are used.`);
     if (offDays) notes.push(`${offDays} day${offDays > 1 ? "s are" : " is"} more than 10% off your calorie target. Try Shuffle or a different number of meals.`);
-    const unmatched = ctx.likes.filter((t) => !MEALS.some((m) => m.text.includes(t)));
+    const unmatched = ctx.likes.filter((t) => !ctx.library.some((m) => m.text.includes(t)));
     if (unmatched.length) notes.push(`No built-in recipes use ${unmatched.join(", ")} yet.`);
     warn.hidden = !notes.length; warn.textContent = notes.join(" ");
 
@@ -966,12 +1260,12 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
         mm.innerHTML = `
           <div class="slot">${ctx.slots[i]}</div>
           <div class="nm">${x.m.name}${ctx.liked(x.m) ? ' <span class="liked" title="Matches a food you asked for">★</span>' : ""}</div>
-          <button type="button" class="swap" aria-label="Swap ${ctx.slots[i]} on ${DAY_NAMES[di]}">Swap</button>
-          <div class="mt">${fmt(x.n[0])} kcal · P ${fmt(x.n[1])} · C ${fmt(T.keto ? x.n[2] - x.n[4] : x.n[2])} · F ${fmt(x.n[3])} · ${x.m.min} min${portionNote}</div>
-          <details><summary>Ingredients and method</summary>
+          ${x.m.out ? "" : `<button type="button" class="swap" aria-label="Swap ${ctx.slots[i]} on ${DAY_NAMES[di]}">Swap</button>`}
+          <div class="mt">${x.m.out ? "about " : ""}${fmt(x.n[0])} kcal · P ${fmt(x.n[1])} · C ${fmt(T.keto ? x.n[2] - x.n[4] : x.n[2])} · F ${fmt(x.n[3])}${x.m.out ? " · loose estimate" : ` · ${x.m.min} min${portionNote}`}</div>
+          ${x.m.out ? `<p class="hint">${x.m.how}</p>` : `<details><summary>Ingredients and method</summary>
             <ul>${x.items.map(({ k, g }) => `<li>${amountText(k, g)}</li>`).join("")}</ul>
-            <p>${x.m.how}</p></details>`;
-        mm.querySelector(".swap").addEventListener("click", () => swap(di, i));
+            <p>${x.m.how}</p></details>`}`;
+        if (!x.m.out) mm.querySelector(".swap").addEventListener("click", () => swap(di, i));
         el.append(mm);
       });
       days.append(el);
@@ -1015,6 +1309,10 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
   function renderGrocery(all) {
     const sum = {};
     all.forEach((d) => d.meals.forEach((x) => x.items.forEach(({ k, g }) => (sum[k] = (sum[k] || 0) + g))));
+    renderHidden();
+    if (ctx.costco) return renderCostco(sum);
+    $("cost").hidden = true; $("leftSec").hidden = true;
+    $("groceryNote").textContent = "Everything for the week above. Tick items off as you shop.";
     const checked = new Set(ls.get("ad-checked") || []);
     const bySec = {};
     Object.entries(sum).forEach(([k, g]) => (bySec[ING[k][6]] ||= []).push([k, g]));
@@ -1038,6 +1336,87 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
       box.append(div);
     });
   }
+  // Costco list: whole packs, what they cost in the warehouse, and what's left after the week
+  function renderCostco(sum) {
+    const checked = new Set(ls.get("ad-checked") || []);
+    const rows = Object.entries(sum).map(([k, g]) => {
+      const [prod, size, price, keep] = COSTCO[k];
+      const used = buyUnits(k, g), inPantry = Math.min(used, pantry[k] || 0);
+      const packs = Math.ceil((used - inPantry) / size - 1e-9);
+      return { k, prod, size, price, keep, used, inPantry, packs, cost: packs * price, eaten: (used / size) * price };
+    });
+    // Pantry items this week's menu doesn't touch still carry forward
+    Object.entries(pantry).forEach(([k, q]) => { if (!sum[k] && COSTCO[k] && q > 0) rows.push({ k, prod: COSTCO[k][0], size: COSTCO[k][1], price: COSTCO[k][2], keep: COSTCO[k][3], used: 0, inPantry: 0, packs: 0, cost: 0, eaten: 0, idle: q }); });
+    const shop = rows.reduce((a, r) => a + r.cost, 0), eaten = rows.reduce((a, r) => a + r.eaten, 0);
+    const unit = (k) => ((ING[k][8] || {}).ml ? "ml" : "g");
+    const mass = (v, u) => (v >= 1000 ? `${(v / 1000).toFixed(1)} ${u === "ml" ? "L" : "kg"}` : `${fmt(v)} ${u}`);
+    const dry = (k) => ((ING[k][8] || {}).dry ? " dry" : "");
+    leftovers = rows.map((r) => ({ ...r, left: r.idle ?? (r.inPantry ? (pantry[r.k] || 0) - r.inPantry : 0) + r.packs * r.size - (r.used - r.inPantry) }))
+      .filter((r) => r.left > Math.max(20, r.size * 0.02));
+    const leftVal = leftovers.reduce((a, r) => a + (r.left / r.size) * r.price, 0);
+    const carryVal = leftovers.filter((r) => r.keep !== "x").reduce((a, r) => a + (r.left / r.size) * r.price, 0);
+
+    $("cost").hidden = false;
+    $("cost").innerHTML = `
+      <div><span>This week's shop, in-store</span><b>${money(shop / INSTORE)}</b><span>${money(shop)} on Costco Same-Day</span></div>
+      <div><span>Food you'll eat this week</span><b>${money(eaten / INSTORE)}</b><span>about ${money(eaten / INSTORE / 7)} a day</span></div>
+      <div><span>Left over for next week</span><b>${money(carryVal / INSTORE)}</b><span>${leftVal - carryVal > 0.5 ? money((leftVal - carryVal) / INSTORE) + " of fresh food won't keep" : "Mostly pantry and freezer"}</span></div>`;
+    $("groceryNote").textContent = "Costco packs for the week above, at warehouse prices (Same-Day runs about 7.5% higher). Tick items off as you shop.";
+
+    const bySec = {};
+    rows.filter((r) => !r.idle).forEach((r) => (bySec[ING[r.k][6]] ||= []).push(r));
+    const box = $("grocery");
+    box.innerHTML = "";
+    Object.values(S).filter((sec) => bySec[sec]).forEach((sec) => {
+      const div = document.createElement("div");
+      div.className = "gsec";
+      div.innerHTML = `<h3>${sec}</h3>` + bySec[sec].sort((a, b) => b.cost - a.cost || a.prod.localeCompare(b.prod)).map((r) => {
+        const u = unit(r.k);
+        const need = `uses ${mass(r.used, u)}${dry(r.k)}`;
+        const buy = r.packs ? `${r.packs > 1 ? r.packs + " packs · " : ""}${need}${r.inPantry ? `, ${mass(r.inPantry, u)} from your pantry` : ""}` : `<span class="pantry">In your pantry</span> · ${need}`;
+        return `<label><input type="checkbox" data-k="${r.k}" ${checked.has(r.k) || !r.packs ? "checked" : ""}><span><span class="row2"><span>${r.prod}</span><span class="price">${r.packs ? money(r.cost / INSTORE) : ""}</span></span>
+          <small>${buy}<span class="keep ${r.keep}" title="${KEEP[r.keep][1]}">${KEEP[r.keep][0]}</span></small>
+          <button type="button" class="ghost small" data-nostock="${r.k}">Not at my Costco</button></span></label>`;
+      }).join("");
+      box.append(div);
+    });
+    box.querySelectorAll("[data-nostock]").forEach((b) => b.addEventListener("click", (e) => {
+      e.preventDefault();
+      nostock.add(b.dataset.nostock); ls.set("ad-nostock", [...nostock]); update(true);
+    }));
+
+    // Leftovers
+    $("leftSec").hidden = false;
+    const pk = Object.keys(pantry).filter((k) => pantry[k] > 0);
+    $("clearPantry").hidden = !pk.length;
+    $("pantryNote").hidden = !pk.length;
+    $("pantryNote").textContent = pk.length ? `Your pantry from last week is counted in the list above (${pk.length} item${pk.length > 1 ? "s" : ""}).` : "";
+    $("leftovers").innerHTML = leftovers.length ? leftovers.sort((a, b) => "pzrx".indexOf(a.keep) - "pzrx".indexOf(b.keep) || b.left / b.size * b.price - a.left / a.size * a.price).map((r) => {
+      const u = unit(r.k);
+      return `<div class="li"><span>${ING[r.k][0].replace(/ \(.*\)/, "")}<span class="keep ${r.keep}">${KEEP[r.keep][0]}</span></span><em>${mass(r.left, u)}${dry(r.k)}</em>
+        <small>${Math.round((r.left / r.size) * 100)}% of a pack · worth about ${money((r.left / r.size) * r.price / INSTORE)} · ${KEEP[r.keep][1]}${r.idle ? " Not used this week." : ""}</small></div>`;
+    }).join("") : `<div class="li"><span>Nothing left over.</span></div>`;
+    $("carry").hidden = !leftovers.some((r) => r.keep !== "x");
+  }
+
+  function renderHidden() {
+    const el = $("hiddenItems");
+    el.hidden = !nostock.size || !ctx?.costco;
+    if (el.hidden) return;
+    el.innerHTML = "Not at your Costco, so left out: " + [...nostock].map((k) => `${ING[k][0]} <button type="button" class="ghost small" data-restock="${k}">Bring back</button>`).join(" ");
+    el.querySelectorAll("[data-restock]").forEach((b) => b.addEventListener("click", () => { nostock.delete(b.dataset.restock); ls.set("ad-nostock", [...nostock]); update(true); }));
+  }
+
+  $("carry").addEventListener("click", () => {
+    const next = {};
+    (leftovers || []).filter((r) => r.keep !== "x").forEach((r) => (next[r.k] = Math.round(r.left)));
+    pantry = next; ls.set("ad-pantry", pantry);
+    seed = 1 + Math.floor(Math.random() * 1e9); ls.set("ad-seed", seed); ls.set("ad-checked", []);
+    update(true);
+    $("menuTitle").scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+  $("clearPantry").addEventListener("click", () => { pantry = {}; ls.set("ad-pantry", pantry); update(true); });
+
   $("grocery").addEventListener("change", (e) => {
     const k = e.target.dataset.k;
     if (!k) return;
@@ -1066,7 +1445,9 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
 
   function saveInputs() {
     const v = { radios: {}, diets: read().diets, fields: {} };
-    ["sex", "units", "activity", "goal", "meals", "snacks"].forEach((n) => (v.radios[n] = radio(n)));
+    ["sex", "units", "activity", "goal", "meals", "snacks", "treat", "outStyle", "store"].forEach((n) => (v.radios[n] = radio(n)));
+    v.packs = $("packs").checked;
+    v.out = read().out.days;
     ["age", "heightCm", "heightFt", "heightIn", "weight", ...COURSES.flatMap((c) => ["effort-" + c.t, "variety-" + c.t])].forEach((id) => (v.fields[id] = $(id).value));
     v.tags = tags;
     ls.set("ad-inputs", v);
@@ -1083,6 +1464,15 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
     Object.entries(v.fields || {}).forEach(([id, val]) => { if ($(id) && val != null) $(id).value = val; });
     Object.entries(v.radios || {}).forEach(([n, val]) => { const el = document.querySelector(`input[name="${n}"][value="${val}"]`); if (el) el.checked = true; });
     (v.diets || []).forEach((d) => { const el = document.querySelector(`input[name="diet"][value="${d}"]`); if (el) el.checked = true; });
+    if (v.packs != null) $("packs").checked = v.packs;
+    (v.out || []).forEach((d) => { const el = $("out-" + d); if (el) el.checked = true; });
+  }
+  function showStore() {
+    const costco = radio("store") === "costco";
+    $("packsRow").hidden = !costco;
+    $("storeHint").textContent = costco
+      ? "Menus use only what Costco carries, in Costco pack sizes. Prices are from Costco Same-Day (Nov 2026) minus about 7.5% for warehouse prices."
+      : "Uses the full recipe library with everyday grocery amounts. No prices.";
   }
 
   let timer = null;
@@ -1104,8 +1494,8 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
   $("form").addEventListener("input", (e) => {
     if (e.target.id === "avoid" || e.target.id === "likes") return;
     if (e.target.name === "units") setUnits(e.target.value, true);
-    isExample = false;
-    showCourses();
+    if (e.target.name !== "store" && e.target.id !== "packs") isExample = false;
+    showCourses(); showStore(); showOut();
     update(false);
     saveInputs();
   });
@@ -1117,8 +1507,38 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
     if (valid(s)) refreshMenu(s, compute(s), true);
   });
 
+  // ---------- Look and install ----------
+  function setSkin(k) {
+    document.documentElement.dataset.skin = k;
+    $("skin-cereal").media = k === "cereal" ? "all" : "not all";
+    let m = document.querySelector('meta[name="theme-color"]');
+    if (!m) { m = document.createElement("meta"); m.name = "theme-color"; document.head.append(m); }
+    m.content = getComputedStyle(document.documentElement).getPropertyValue(k === "cereal" ? "--red" : "--bg").trim();
+  }
+  const skin0 = document.documentElement.dataset.skin || "cereal";
+  document.querySelector(`input[name="skin"][value="${skin0}"]`).checked = true;
+  setSkin(skin0);
+  document.querySelectorAll('input[name="skin"]').forEach((el) => el.addEventListener("change", () => { setSkin(el.value); ls.set("ad-skin", el.value); }));
+
+  let installEvt = null;
+  const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone;
+  $("install").hidden = standalone;
+  addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); installEvt = e; });
+  addEventListener("appinstalled", () => { $("install").hidden = true; $("installHint").hidden = true; });
+  $("install").addEventListener("click", async () => {
+    const hint = $("installHint");
+    if (installEvt) { installEvt.prompt(); await installEvt.userChoice; installEvt = null; return; }
+    const ios = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    const home = "https://mjsbroadbent.github.io/diet/";
+    if (!window.BBD_PWA) hint.innerHTML = `This preview can't be installed. Open <a href="${home}" target="_blank" rel="noopener">${home.replace("https://", "")}</a> and press Install there${ios ? " (in Safari: Share, then Add to Home Screen)" : ""}.`;
+    else if (ios) hint.textContent = "In Safari, tap the Share button, then Add to Home Screen.";
+    else hint.textContent = "Use your browser's menu: Install app, or Add to Home screen. In Firefox on desktop, installing isn't supported.";
+    hint.hidden = false;
+  });
+
   ls.set("ad-seed", seed);
   restoreInputs();
+  showStore(); showOut();
   setUnits(radio("units"), false);
   showCourses();
   update(true);
