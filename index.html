@@ -461,6 +461,7 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
     </div>
     <div class="cost" id="cost" hidden></div>
     <p class="note" id="hiddenItems" hidden></p>
+    <p class="note" id="haveItems" hidden></p>
     <div class="grocery" id="grocery"></div>
   </section>
 
@@ -1195,10 +1196,11 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
   let ctx = null, week = null, seed = ls.get("ad-seed") || 1 + Math.floor(Math.random() * 1e9);
   let pantry = ls.get("ad-pantry") || {};
   const nostock = new Set(ls.get("ad-nostock") || []);
+  const have = new Set(ls.get("ad-have") || []); // any-store mode: items already at home
   let leftovers = null;
   const skipped = {};
 
-  function inputsKey(s, r) { return JSON.stringify([r.target, r.protein, r.carbs, r.fat, r.keto, s.diets, s.avoid, s.likes, s.meals, s.snacks, s.treat, s.out, s.course, s.store, s.packs, [...nostock], pantry]); }
+  function inputsKey(s, r) { return JSON.stringify([r.target, r.protein, r.carbs, r.fat, r.keto, s.diets, s.avoid, s.likes, s.meals, s.snacks, s.treat, s.out, s.course, s.store, s.packs, [...nostock]]); }
 
   function refreshMenu(s, r, force) {
     ctx = context(s, r);
@@ -1406,12 +1408,15 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
     const sum = {};
     all.forEach((d) => d.meals.forEach((x) => x.items.forEach(({ k, g }) => (sum[k] = (sum[k] || 0) + g))));
     renderHidden();
-    if (ctx.costco) return renderCostco(sum);
+    if (ctx.costco) { $("haveItems").hidden = true; return renderCostco(sum); }
     $("cost").hidden = true; $("leftSec").hidden = true;
-    $("groceryNote").textContent = "Everything for the week above. Tick items off as you shop.";
+    $("groceryNote").textContent = "Everything for the week above. Tick items off as you shop, or remove what you already have.";
     const checked = new Set(ls.get("ad-checked") || []);
     const bySec = {};
-    Object.entries(sum).forEach(([k, g]) => (bySec[ING[k][6]] ||= []).push([k, g]));
+    Object.entries(sum).filter(([k]) => !have.has(k)).forEach(([k, g]) => (bySec[ING[k][6]] ||= []).push([k, g]));
+    const hv = Object.keys(sum).filter((k) => have.has(k)), hel = $("haveItems");
+    hel.hidden = !hv.length;
+    hel.innerHTML = hv.length ? "Already have, so not on the list: " + hv.map((k) => `${ING[k][0]} <button type="button" class="ghost small" data-unhave="${k}">Add back</button>`).join(" ") : "";
     const order = Object.values(S);
     const box = $("grocery");
     box.innerHTML = "";
@@ -1427,11 +1432,25 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
         else if (x.dry) amt = `${mass(g * x.dry)} dry (${mass(g)} cooked)`;
         else if (x.each) amt = `${Math.max(1, Math.ceil(g / x.each - 0.15))} (about ${mass(g)})`;
         else amt = mass(g, x.ml ? "ml" : "g");
-        return `<label><input type="checkbox" id="g-${k}" data-k="${k}" ${checked.has(k) ? "checked" : ""}><span>${name}<small>${amt}</small></span></label>`;
+        return `<label><input type="checkbox" id="g-${k}" data-k="${k}" ${checked.has(k) ? "checked" : ""}><span>${name}<small>${amt}</small>
+          <button type="button" class="ghost small" data-have="${k}">Already have it</button></span></label>`;
       }).join("");
       box.append(div);
     });
   }
+  // "Already have it": any-store mode hides the item; Costco mode counts it as in the pantry
+  document.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-have], [data-unhave]");
+    if (!b) return;
+    e.preventDefault();
+    const k = b.dataset.have || b.dataset.unhave, on = !!b.dataset.have;
+    if (ctx.costco) {
+      if (on) { const g = week.days.map(dayData).reduce((a, d) => a + d.meals.reduce((x, m) => x + m.items.filter((it) => it.k === k).reduce((y, it) => y + it.g, 0), 0), 0); pantry[k] = Math.max(pantry[k] || 0, Math.ceil(buyUnits(k, g))); }
+      else delete pantry[k];
+      ls.set("ad-pantry", pantry);
+    } else { on ? have.add(k) : have.delete(k); ls.set("ad-have", [...have]); }
+    renderMenu();
+  });
   // Costco list: whole packs, what they cost in the warehouse, and what's left after the week
   function renderCostco(sum) {
     const checked = new Set(ls.get("ad-checked") || []);
@@ -1472,6 +1491,7 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
         const buy = r.packs ? `${r.packs > 1 ? r.packs + " packs · " : ""}${need}${r.inPantry ? `, ${mass(r.inPantry, u)} from your pantry` : ""}` : `<span class="pantry">In your pantry</span> · ${need}`;
         return `<label><input type="checkbox" data-k="${r.k}" ${checked.has(r.k) || !r.packs ? "checked" : ""}><span><span class="row2"><span>${r.prod}</span><span class="price">${r.packs ? money(r.cost / INSTORE) : ""}</span></span>
           <small>${buy}<span class="keep ${r.keep}" title="${KEEP[r.keep][1]}">${KEEP[r.keep][0]}</span></small>
+          ${r.packs ? `<button type="button" class="ghost small" data-have="${r.k}">Already have it</button>` : `<button type="button" class="ghost small" data-unhave="${r.k}">Don't have it</button>`}
           <button type="button" class="ghost small" data-nostock="${r.k}">Not at my Costco</button></span></label>`;
       }).join("");
       box.append(div);
@@ -1486,7 +1506,7 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
     const pk = Object.keys(pantry).filter((k) => pantry[k] > 0);
     $("clearPantry").hidden = !pk.length;
     $("pantryNote").hidden = !pk.length;
-    $("pantryNote").textContent = pk.length ? `Your pantry from last week is counted in the list above (${pk.length} item${pk.length > 1 ? "s" : ""}).` : "";
+    $("pantryNote").textContent = pk.length ? `${pk.length} item${pk.length > 1 ? "s" : ""} in your pantry (carried over or marked "Already have it") ${pk.length > 1 ? "are" : "is"} counted in the list above.` : "";
     $("leftovers").innerHTML = leftovers.length ? leftovers.sort((a, b) => "pzrx".indexOf(a.keep) - "pzrx".indexOf(b.keep) || b.left / b.size * b.price - a.left / a.size * a.price).map((r) => {
       const u = unit(r.k);
       return `<div class="li"><span>${ING[r.k][0].replace(/ \(.*\)/, "")}<span class="keep ${r.keep}">${KEEP[r.keep][0]}</span></span><em>${mass(r.left, u)}${dry(r.k)}</em>
@@ -1511,7 +1531,7 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
     update(true);
     $("menuTitle").scrollIntoView({ behavior: "smooth", block: "start" });
   });
-  $("clearPantry").addEventListener("click", () => { pantry = {}; ls.set("ad-pantry", pantry); update(true); });
+  $("clearPantry").addEventListener("click", () => { pantry = {}; ls.set("ad-pantry", pantry); renderMenu(); });
 
   $("grocery").addEventListener("change", (e) => {
     const k = e.target.dataset.k;
