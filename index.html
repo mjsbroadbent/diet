@@ -639,11 +639,11 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
     saladkit:    ["Chopped salad kit with dressing", 150, 3, 11, 11, 3, S.P, "premade dairy egg", { each: 340, full: true, unit: ["bag salad kit", "bags salad kit"] }],
     frittata:    ["Spinach egg white frittatas (frozen)", 88, 8, 5, 4, 1, S.F, "premade egg dairy", { each: 57, full: true, unit: ["egg white frittata", "egg white frittatas"] }],
     eggbites:    ["Sous vide egg bites", 160, 12, 3, 11, 0, S.D, "premade egg dairy", { each: 65, full: true, unit: ["egg bite", "egg bites"] }],
-    bwrap:       ["Breakfast wraps (frozen)", 234, 9.4, 26, 10, 1.5, S.F, "premade egg dairy pork gluten", { each: 128, full: true, unit: ["breakfast wrap", "breakfast wraps"] }],
+    bwrap:       ["Breakfast wraps (frozen)", 234, 9.4, 26, 10, 1.5, S.F, "premade egg dairy pork gluten", { each: 128, full: true, whole: true, unit: ["breakfast wrap", "breakfast wraps"] }],
     lasagna:     ["Sausage and beef lasagna (frozen)", 160, 9, 13, 8, 1, S.F, "premade meat pork dairy gluten egg"],
     pizza:       ["Thin crust pepperoni pizza (frozen)", 270, 12, 27, 13, 1.5, S.F, "premade pork dairy gluten"],
-    yakisoba:    ["Vegetable yakisoba bowls (frozen)", 130, 3.1, 21.6, 3.1, 1.6, S.F, "premade soy gluten", { each: 255, full: true, unit: ["yakisoba bowl", "yakisoba bowls"] }],
-    yakitori:    ["Yakitori chicken fried rice bowls (frozen)", 153, 6, 24, 3.5, 1, S.F, "premade poultry soy gluten egg", { each: 255, full: true, unit: ["yakitori rice bowl", "yakitori rice bowls"] }],
+    yakisoba:    ["Vegetable yakisoba bowls (frozen)", 130, 3.1, 21.6, 3.1, 1.6, S.F, "premade soy gluten", { each: 255, full: true, whole: true, unit: ["yakisoba bowl", "yakisoba bowls"] }],
+    yakitori:    ["Yakitori chicken fried rice bowls (frozen)", 153, 6, 24, 3.5, 1, S.F, "premade poultry soy gluten egg", { each: 255, full: true, whole: true, unit: ["yakitori rice bowl", "yakitori rice bowls"] }],
     gyoza:       ["Chicken gyoza (frozen)", 200, 9, 25, 7, 1.5, S.F, "premade poultry gluten soy sesame", { each: 20, full: true, unit: ["gyoza", "gyoza"] }],
     ctsoup:      ["Chicken tortilla soup", 60, 4, 6, 2, 1, S.D, "premade poultry dairy", { ml: 1 }],
     lentsoup:    ["Lentil vegetable soup (canned)", 55, 3, 9, 0.8, 3, S.N, "premade", { ml: 1 }],
@@ -660,8 +660,8 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
     mango:       ["Mango chunks (frozen)", 60, 0.8, 15, 0.4, 1.6, S.F, ""],
     cheesestr:   ["Cheese strings", 333, 24, 2, 24, 0, S.D, "dairy", { each: 21, full: true, unit: ["cheese string", "cheese strings"] }],
     beefstick:   ["Grass-fed beef sticks", 312, 28, 3, 22, 0, S.N, "meat", { each: 32, full: true, unit: ["beef stick", "beef sticks"] }],
-    protbar:     ["Protein bars", 400, 40, 34, 12, 4, S.N, "dairy soy peanut", { each: 50, full: true, unit: ["protein bar", "protein bars"] }],
-    shake:       ["Ready-to-drink protein shakes", 44, 8.8, 1.2, 0.7, 0, S.N, "dairy", { ml: 1, each: 340, full: true, unit: ["bottle protein shake", "bottles protein shake"] }],
+    protbar:     ["Protein bars", 400, 40, 34, 12, 4, S.N, "dairy soy peanut", { each: 50, full: true, whole: true, unit: ["protein bar", "protein bars"] }],
+    shake:       ["Ready-to-drink protein shakes", 44, 8.8, 1.2, 0.7, 0, S.N, "dairy", { ml: 1, each: 340, full: true, whole: true, unit: ["bottle protein shake", "bottles protein shake"] }],
   };
 
   // ---------- Costco ----------
@@ -940,13 +940,13 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
     ["b", "Egg white frittatas with an English muffin", [["frittata",171],["emuffin",57],["berries",100]], "Microwave three frozen frittatas for about 90 seconds. Toast the English muffin and have the berries on the side.", 3],
     ["b", "Egg bites and fruit", [["eggbites",130],["apple",180],["almonds",10]], "Warm the egg bites 60 to 90 seconds in the microwave. Slice an apple and add a few almonds.", 2],
     ["b", "Egg bite breakfast sandwich", [["eggbites",65],["emuffin",57],["cheddar",15],["spinach",20]], "Toast the English muffin, warm an egg bite and press it flat, then stack with cheddar and spinach.", 4],
-    ["b", "Breakfast wrap and yogurt", [["bwrap",128],["yogurt",150]], "Microwave the frozen wrap about 2 minutes, turning halfway, or air-fry 10 minutes. Have plain Greek yogurt on the side.", 3],
+    ["b", "Breakfast wrap and yogurt", [["bwrap",128],["yogurt",150]], "Microwave the frozen wrap about 2 minutes, turning halfway, or air-fry 10 minutes. Have plain Greek yogurt on the side.", 3, 1.5],
     ["b", "Smoked salmon English muffin", [["emuffin",57],["smsalmon",60],["cottage",60],["cucumber",40]], "Toast the English muffin, spread with cottage cheese, and top with smoked salmon, sliced cucumber and black pepper.", 5],
     ["b", "Mango granola parfait", [["yogurt",200],["granola",40],["mango",80]], "Thaw the mango for a few minutes, then layer yogurt, mango and granola.", 3],
     ["b", "Mango protein smoothie", [["mango",120],["banana",60],["whey",30],["milk",250],["chia",10]], "Blend everything until smooth.", 5],
     ["b", "Smoked salmon scramble", [["egg",150],["smsalmon",50],["spinach",30],["bread",40],["oil",5]], "Wilt the spinach in oil, add beaten eggs and scramble softly, then fold in torn smoked salmon off the heat. Serve with toast.", 10],
     ["b", "Cottage cheese granola bowl", [["cottage",200],["granola",30],["strawberries",100]], "Thaw the strawberries, then top cottage cheese with them and the granola.", 3],
-    ["b", "Protein shake and a banana", [["shake",340],["banana",120]], "Grab a shake from the fridge and a banana on the way out.", 1],
+    ["b", "Protein shake and a banana", [["shake",340],["banana",120]], "Grab a shake from the fridge and a banana on the way out.", 1, 1.5],
     ["b", "Turkey egg English muffin", [["egg",100],["emuffin",57],["turkeyslice",40],["cheddar",15]], "Fry or scramble the eggs, toast the muffin, and stack with turkey and cheddar.", 10],
     ["l", "Salad kit with chicken", [["saladkit",340],["chstrips",120]], "Empty a bag into a bowl with its dressing and toppings, toss, and top with the chicken strips, warmed or cold.", 5],
     ["l", "Salad kit with a salmon burger", [["saladkit",340],["salmonburger",91]], "Cook the salmon burger from frozen, about 4 minutes a side in a pan or 12 minutes in the air fryer. Serve on the tossed salad kit.", 12],
@@ -977,17 +977,18 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
     ["d", "Mango shrimp rice bowl", [["shrimp",160],["wrice",150],["mango",80],["cucumber",60],["avocado",40],["soysauce",10]], "Sear the shrimp 2 minutes a side. Serve over rice with thawed mango, cucumber, avocado and soy sauce.", 15],
     ["d", "Veggie yakisoba with tofu", [["yakisoba",255],["tofu",150],["oil",5]], "Crisp cubed tofu in oil while the yakisoba heats, then toss together.", 10],
     ["s", "Cheese strings and an apple", [["cheesestr",42],["apple",180]], "Two cheese strings and an apple.", 1],
-    ["s", "Beef sticks", [["beefstick",64]], "Two sticks from the pantry.", 1],
-    ["s", "Protein bar", [["protbar",50]], "Keep one in your bag.", 1],
-    ["s", "Protein shake, ready to drink", [["shake",340]], "Straight from the fridge.", 1],
+    ["s", "Beef sticks", [["beefstick",64]], "Two sticks from the pantry.", 1, 1.5],
+    ["s", "Protein bar", [["protbar",50]], "Keep one in your bag.", 1, 1],
+    ["s", "Protein shake, ready to drink", [["shake",340]], "Straight from the fridge.", 1, 1],
     ["s", "Cottage cheese with mango", [["cottage",150],["mango",80]], "Top cottage cheese with thawed mango.", 2],
     ["s", "Smoked salmon cucumber bites", [["smsalmon",50],["cucumber",120],["cottage",40]], "Slice cucumber into rounds and top with a little cottage cheese and smoked salmon.", 5],
     ["s", "Yogurt with granola", [["yogurt",150],["granola",25]], "Sprinkle granola over the yogurt.", 2],
     ["h", "Mango soft serve", [["mango",150],["yogurt",50]], "Blend frozen mango with the yogurt until it looks like soft serve. Eat right away.", 3],
     ["h", "Mango and dark chocolate", [["mango",120],["darkchoc",10]], "Let the mango thaw 10 minutes and have it with a square of chocolate.", 1],
     ["i", "Slice of pizza", [["pizza",140]], "A quarter of a frozen pizza, baked crisp.", 15],
-  ].map(([type, name, items, how, min], i) => mkMeal("m" + i, type, name, items, how, min));
-  function mkMeal(id, type, name, items, how, min) {
+  ].map(([type, name, items, how, min, max], i) => mkMeal("m" + i, type, name, items, how, min, max));
+  // max: the biggest portion multiplier that still makes sense (no one drinks three shakes for breakfast)
+  function mkMeal(id, type, name, items, how, min, max) {
     const n = [0, 0, 0, 0, 0];
     const tags = new Set();
     items.forEach(([k, g]) => {
@@ -997,7 +998,7 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
       d[7].split(" ").filter(Boolean).forEach((t) => tags.add(t));
     });
     const text = (name + " " + items.map(([k]) => ING[k][0]).join(" ")).toLowerCase();
-    return { id, type, name, items, how, min, n, tags, text };
+    return { id, type, name, items, how, min, n, tags, text, max };
   }
   // Costco versions: swap in what the warehouse stocks and rename to match
   const RENAME = [[/Black bean/g, "Chickpea"], [/Lentil/g, "Chickpea"], [/Tempeh/g, "Tofu"], [/Peanut tofu noodles/, "Peanut tofu rice"], [/Rice cakes with almond butter/, "Almond butter toast"], [/Tuna rice cakes/, "Tuna on toast"]];
@@ -1009,7 +1010,7 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
     RENAME.forEach(([a, b]) => (name = name.replace(a, b)));
     if (m.items.some(([k]) => k === "blackbeans" || k === "lentils")) REWORD.forEach(([a, b]) => (how = how.replace(a, b)));
     else REWORD.slice(3).forEach(([a, b]) => (how = how.replace(a, b)));
-    return mkMeal("c" + m.id.slice(1), m.type, name, items, how, m.min);
+    return mkMeal("c" + m.id.slice(1), m.type, name, items, how, m.min, m.max);
   });
   // Eating out replaces dinner with a loose estimate
   const OUT = {
@@ -1273,13 +1274,14 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
     };
   }
 
+  const stepsOf = (m) => (m.max ? STEPS[m.type].filter((x) => x <= m.max) : STEPS[m.type]);
   // Pick portion multipliers for a day's meals to land closest to the targets
   function optimize(meals, T, score, start) {
     const tot = [0, 0, 0, 0, 0];
     const sumK = meals.reduce((a, m) => a + m.n[0], 0);
     const ms = meals.map((m, i) => {
       if (start) return start[i];
-      const steps = STEPS[m.type];
+      const steps = stepsOf(m);
       const g = T.k / sumK;
       return steps.reduce((b, x) => (Math.abs(x - g) < Math.abs(b - g) ? x : b), 1);
     });
@@ -1289,7 +1291,7 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
     for (let pass = 0; pass < 3; pass++) {
       let improved = false;
       meals.forEach((m, i) => {
-        for (const x of STEPS[m.type]) {
+        for (const x of stepsOf(m)) {
           if (x === ms[i]) continue;
           const d = x - ms[i];
           for (let j = 0; j < 5; j++) tot[j] += m.n[j] * d;
@@ -1400,7 +1402,7 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
     return m.items.map(([k, g]) => {
       const d = ING[k], x = d[8] || {};
       const raw = g * mult;
-      const step = x.unit ? x.each / 2 : raw < 40 ? 5 : 10;
+      const step = x.unit ? (x.whole ? x.each : x.each / 2) : raw < 40 ? 5 : 10;
       return { k, g: Math.max(step, Math.round(raw / step) * step) };
     });
   }
@@ -1411,7 +1413,7 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
   }
   function amountText(k, g) {
     const d = ING[k], x = d[8] || {};
-    if (x.unit) { const c = g / x.each; return `${half(c)} ${c > 1 ? x.unit[1] : x.unit[0]} ${k === "egg" || x.full ? "" : d[0].toLowerCase().replace(/ \(.*\)/, "")}`.replace(/\s+$/, ""); }
+    if (x.unit) { const c = g / x.each, cr = Math.round(c * 2) / 2; return `${half(c)} ${cr > 1 ? x.unit[1] : x.unit[0]} ${k === "egg" || x.full ? "" : d[0].toLowerCase().replace(/ \(.*\)/, "")}`.replace(/\s+$/, ""); }
     let s = `${d[0].replace(/ \(cooked\)/, ", cooked")}: ${fmt(g)} ${x.ml ? "ml" : "g"}`;
     if (x.tbsp) {
       const tb = g / x.tbsp;
@@ -1684,7 +1686,7 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
           <div class="slot">${SL[i]}</div>
           <div class="nm">${x.m.name}${ctx.liked(x.m) ? ' <span class="liked" title="Matches a food you asked for">★</span>' : ""}${wd.log?.[i] ? '<span class="logged">Logged</span>' : ""}</div>
           ${wd.log?.[i] ? `<button type="button" class="swap" data-undo>Undo</button>` : wd.addedTreats?.includes(i) ? `<button type="button" class="swap" data-rm aria-label="Remove treat on ${dayName(di)}">Remove</button>` : x.m.out || wd.passed ? "" : `<button type="button" class="swap" aria-label="Swap ${SL[i]} on ${dayName(di)}">Swap</button>`}
-          <div class="mt">${x.m.out ? "about " : ""}${fmt(x.n[0])} kcal · P ${fmt(x.n[1])} · C ${fmt(T.keto ? x.n[2] - x.n[4] : x.n[2])} · F ${fmt(x.n[3])}${x.m.out ? " · loose estimate" : ` · ${x.m.min} min${portionNote}`}</div>
+          <div class="mt">${x.m.out ? "about " : ""}${fmt(x.n[0])} kcal · P ${fmt(x.n[1])} · C ${fmt(T.keto ? x.n[2] - x.n[4] : x.n[2])} · F ${fmt(x.n[3])}${x.m.out ? " · loose estimate" : ` · ${x.m.min} min${x.m.tags.has("premade") ? " · premade" : ""}${portionNote}`}</div>
           ${x.m.out ? `<p class="hint">${x.m.how}</p>` : `<details><summary>Ingredients and method</summary>
             <ul>${x.items.map(({ k, g, fin }) => `<li>${amountText(k, g)}${fin ? ` <span class="logged" title="Includes ${fmt(fin)} ${(ING[k][8] || {}).ml ? "ml" : "g"} so nothing is left in the package">+${fmt(fin)} ${(ING[k][8] || {}).ml ? "ml" : "g"} to use it up</span>` : ""}</li>`).join("")}</ul>
             <p>${x.m.how}</p></details>`}`;
