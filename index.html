@@ -206,6 +206,8 @@ button.btn:hover { filter: brightness(1.08); }
 .keep.z { background: var(--accent-soft); color: var(--accent); }
 .keep.r { background: var(--warn-soft); color: var(--warn); }
 .keep.x { background: var(--bad-soft); color: var(--bad); }
+.store-nf { font-size: 11px; font-weight: 800; padding: 1px 7px; border-radius: 4px; background: #ffe11b; color: #1a1a1a; margin-right: 4px; white-space: nowrap; }
+.gsec .why { display: block; margin-top: 2px; }
 .btns { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 10px; align-items: stretch; }
 .day-tools { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
 .day-tools button { font: inherit; font-size: 12px; font-weight: 700; padding: 6px 4px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
@@ -440,6 +442,7 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
         <legend>Shopping</legend>
         <div class="seg" role="radiogroup" aria-label="Where you shop">
           <label><input type="radio" name="store" id="store-costco" value="costco" checked><span>Costco</span></label>
+          <label id="mostlyOpt"><input type="radio" name="store" id="store-mostly" value="mostly"><span>Mostly Costco</span></label>
           <label><input type="radio" name="store" id="store-any" value="any"><span>Any store</span></label>
         </div>
         <label class="check" id="packsRow"><input type="checkbox" id="packs" checked>
@@ -784,7 +787,66 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
   const FROZEN = new Set(["berries", "broccoli", "edamame", "cauli", "stirfry", "corn", "shrimp", "strawberries", "icecream", "icebar",
     "frittata", "bwrap", "lasagna", "pizza", "yakisoba", "yakitori", "gyoza", "chstrips", "salmonburger", "meatballs", "mango"]);
   const FREEZER = { all: Infinity, std: 10000, low: 5000, none: 0 };
-  const inFreezer = (k, cap) => FROZEN.has(k) || (cap > 0 && COSTCO[k]?.[3] === "z");
+  // No Frills (Vancouver, in-store prices from nofrills.ca): key: [product, size in purchase units, price]
+  const NOFRILLS = /*NF*/{
+    chicken: ["No Name Boneless Skinless Chicken Breasts Club Size", 2000, 42.0],
+    thigh: ["PC Blue Menu Boneless Skinless Chicken Thighs", 696, 14.0],
+    turkey: ["Raw Lean Ground Turkey", 1350, 10.0],
+    turkeyslice: ["Ziggy's Oven Roasted Turkey Slices", 175, 3.75],
+    beef: ["Butcher's Choice Lean Ground Beef", 450, 9.0],
+    steak: ["Beef Top Sirloin Steak, about 500 g", 500, 17.62],
+    pork: ["Pork Tenderloin, about 500 g", 500, 5.72],
+    bacon: ["Schneiders Hickory Smoked Classic Cut Bacon", 375, 5.0],
+    salmon: ["Atlantic Salmon Fillet", 405, 22.0],
+    cod: ["Seaquest Wild Pacific Cod Fillets", 400, 10.99],
+    tuna: ["No Name Chunk Light Tuna in Water", 120, 1.29],
+    shrimp: ["Seaquest Pacific White Shrimp", 300, 8.0],
+    egg: ["PC Free Run Brown Eggs Large, 12", 600, 6.99],
+    eggwhite: ["PC Blue Menu Egg Whites", 1000, 9.5],
+    tofu: ["Rooster Extra Firm Tofu", 454, 2.99],
+    edamame: ["PC Edamame frozen", 500, 5.0],
+    yogurt: ["PC 2% Plain Greek Yogurt Club Size", 1000, 7.0],
+    cottage: ["No Name Cottage Cheese Club Size", 1000, 7.29],
+    cheddar: ["No Name Medium Cheddar", 700, 8.79],
+    feta: ["Tre Stelle Feta", 200, 6.29],
+    parm: ["Saputo Shredded Parmesan", 140, 5.29],
+    mozz: ["No Name Pizza Mozzarella", 700, 8.79],
+    milk: ["Dairyland 2% Organic Milk", 4000, 10.79],
+    whey: ["Leanfit Chocolate Whey Protein", 875, 49.0],
+    pea: ["Vega Protein & Greens Vanilla", 526, 22.99],
+    soymilk: ["Natura Organic Soy Beverage", 946, 2.79],
+    cocofull: ["PC Organics Coconut Milk", 400, 3.0],
+    hummus: ["PC Hummus Chickpea Dip", 454, 7.0],
+    chickpeas: ["Unico Chick Peas, canned", 300, 1.5],
+    oats: ["No Name Large Flake 100% Whole Grain Oats", 1000, 3.0],
+    brice: ["No Name Long Grain Brown Rice", 2000, 5.49],
+    wrice: ["Rooster Thai Hom Mali Jasmine Rice", 2000, 5.5],
+    quinoa: ["Clic Quinoa Grains", 907, 6.29],
+    spaghetti: ["No Name Spaghetti", 900, 2.0],
+    bread: ["No Name 100% Whole Wheat Bread", 520, 2.5],
+    tortilla: ["Casa Mendosa Whole Wheat Large Tortillas, 10", 600, 5.0],
+    sweetpot: ["Sweet Potato, about 600 g", 600, 2.63],
+    potato: ["PC Yellow Potatoes 5 lb bag", 2268, 7.49],
+    banana: ["Bananas, about 700 g", 700, 1.2],
+    apple: ["Farmer's Market Gala Apples 5 lb bag", 2267, 6.99],
+    berries: ["No Name Frozen 4-Berry Blend", 2000, 16.0],
+    broccoli: ["PC Frozen Broccoli Florets", 500, 5.0],
+    spinach: ["PC Baby Spinach", 312, 6.99],
+    greens: ["PC Spring Mix", 312, 6.99],
+  }/*NF*/;
+  const NF_DATE = /*NFD*/"Nov 21, 2026"/*NFD*/;
+  const NF_KEEP = { blackbeans: "p", lentils: "p", tempeh: "r", corntort: "z", ricenoodle: "p", ricecake: "p", pasta: "p", tamari: "p", coco: "p", darkchoc: "p" };
+  // The pack you'd buy for k: Costco by default; No Frills when Costco doesn't have it or the smaller size wins this week.
+  // price is the in-store price.
+  function pk(k) {
+    const nf = NOFRILLS[k];
+    const atC = COSTCO[k] && !nostock.has(k);
+    if (nf && (!atC || week?.src?.[k] === "nf")) return { prod: nf[0], size: nf[1], price: nf[2], keep: COSTCO[k]?.[3] || NF_KEEP[k] || "r", nf: true, unit: nf[1] };
+    if (!atC && !nf) return null;
+    const c = COSTCO[k];
+    return { prod: c[0], size: c[1], price: c[2] / INSTORE, keep: c[3], nf: false, unit: UNIT[k] || c[1] };
+  }
+  const inFreezer = (k, cap) => FROZEN.has(k) || (cap > 0 && pk(k)?.keep === "z");
   const KEEP = { p: ["Keeps", "Pantry or freezer. Carries over."], z: ["Freeze", "Freeze what you won't use in a few days."], r: ["Keeps a few weeks", "Fridge or a cool cupboard."], x: ["Use this week", "Won't keep. Not carried over."] };
   const buyUnits = (k, g) => g * ((ING[k][8] || {}).dry || 1);
   const money = (v) => "$" + (v >= 100 ? Math.round(v).toLocaleString() : v.toFixed(2));
@@ -1249,9 +1311,14 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
     if (treat) SLOT_TYPE.Treat = treat;
     const course = { ...s.course, h: TREAT_COURSE, i: TREAT_COURSE, o: { effort: 999, variety: 1 } };
     const pools = {}, relaxed = [];
-    const costco = s.store === "costco";
+    const mostly = s.store === "mostly" && Object.keys(NOFRILLS).length > 0;
+    const costco = s.store === "costco" || mostly;
     const fcap = costco ? FREEZER[s.freezer] ?? FREEZER.std : Infinity;
-    const library = (costco ? COSTCO_MEALS.filter((m) => m.items.every(([k]) => COSTCO[k] && !nostock.has(k) && (fcap > 0 || !FROZEN.has(k)))) : MEALS)
+    const atC = (k) => COSTCO[k] && !nostock.has(k) && (fcap > 0 || !FROZEN.has(k));
+    const atAny = (k) => atC(k) || (mostly && NOFRILLS[k] && (fcap > 0 || !FROZEN.has(k)));
+    // Mostly Costco: keep the original recipe when No Frills fills the gap, else the Costco version
+    const library = (mostly ? MEALS.map((m) => (m.items.every(([k]) => atAny(k)) ? m : MEAL["c" + m.id.slice(1)])).filter((m) => m.items.every(([k]) => atAny(k)))
+      : costco ? COSTCO_MEALS.filter((m) => m.items.every(([k]) => atC(k))) : MEALS)
       .filter((m) => s.premade || !m.tags.has("premade"));
     for (const type of ["b", "l", "d", "s", ...(treat ? [treat] : [])]) {
       const fit = library.filter((m) => m.type === type && allowed(m, diets, avoid));
@@ -1263,7 +1330,7 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
     const T = { k: r.target, p: r.protein, c: r.carbs, f: r.fat, keto: r.keto };
     let treatNote = "";
     if (treat && !pools[treat].length) { slots = slots.filter((x) => x !== "Treat"); treatNote = `No ${treat === "h" ? "healthy" : "indulgent"} treats fit your diet and avoid list, so the week has none.`; }
-    return { slots, pools, liked, T, score: makeScorer(T), likes, relaxed, course, treatNote, out: s.out, start: s.start, treatPools: { h: library.filter((m) => m.type === "h" && allowed(m, diets, avoid)), i: library.filter((m) => m.type === "i" && allowed(m, diets, avoid)) }, costco, packs: costco && s.packs, library, fcap };
+    return { slots, pools, liked, T, score: makeScorer(T), likes, relaxed, course, treatNote, out: s.out, start: s.start, treatPools: { h: library.filter((m) => m.type === "h" && allowed(m, diets, avoid)), i: library.filter((m) => m.type === "i" && allowed(m, diets, avoid)) }, costco, mostly, packs: costco && s.packs, library, fcap };
   }
 
   function buildWeek(ctx, seed) {
@@ -1288,9 +1355,9 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
       for (const k in need) {
         const short = need[k] - (have[k] || 0);
         if (short <= 0) continue;
-        const n = Math.ceil(short / COSTCO[k][1]);
-        cost += n * COSTCO[k][2];
-        if (inFreezer(k, ctx.fcap)) add += n * COSTCO[k][1] - short;
+        const P = pk(k), n = Math.ceil(short / P.size);
+        cost += n * P.price * INSTORE;
+        if (inFreezer(k, ctx.fcap)) add += n * P.size - short;
       }
       let load = 0;
       if (add) for (const k in have) if (have[k] > 0 && inFreezer(k, ctx.fcap)) load += have[k];
@@ -1320,7 +1387,7 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
       best.ids.forEach((id) => { uses[id] = (uses[id] || 0) + 1; chosen[MEAL[id].type].add(id); });
       if (ctx.costco) best.ids.forEach((id, i) => MEAL[id].items.forEach(([k, g]) => {
         const u = buyUnits(k, g * best.ms[i]), short = u - (have[k] || 0);
-        if (short > 0) have[k] = (have[k] || 0) + Math.ceil(short / COSTCO[k][1]) * COSTCO[k][1];
+        if (short > 0) { const z = pk(k).size; have[k] = (have[k] || 0) + Math.ceil(short / z) * z; }
         have[k] -= u;
       }));
       days.push({ ids: best.ids, ms: best.ms });
@@ -1373,6 +1440,7 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
     if (!force && saved && saved.key === key && saved.seed === seed && saved.days?.every((d) => d.ids.every((id) => MEAL[id]))) { week = saved; if (!week.extra) finishUp(); }
     else {
       const prev = week?.days ? week : saved;
+      if (week) week.src = {};
       const b = buildWeek(ctx, seed);
       week = b.error ? { error: b.error } : { key, seed, days: b.days };
       if (!b.error) {
@@ -1432,14 +1500,16 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
   function finishUp() {
     week.extra = {};
     week.finished = [];
+    week.src = {};
     if (!ctx.costco) return;
     const all = week.days.map(dayData), tot = {}, uses = {};
     all.forEach((d, di) => d.meals.forEach((x, si) => x.items.forEach(({ k, g }) => { tot[k] = (tot[k] || 0) + g; (uses[k] ||= []).push([di, si, g]); })));
+    if (ctx.mostly) pickSources(tot);
     const touched = new Set();
     for (const k in tot) {
-      if (!COSTCO[k]) continue;
+      if (!pk(k)) continue;
       // Less than one of this week's portions left in the open package? It gets eaten, so count it.
-      const unit = UNIT[k] || COSTCO[k][1], u = buyUnits(k, tot[k]), r = u % unit, rest = unit - r, portionSize = u / uses[k].length;
+      const unit = pk(k).unit, u = buyUnits(k, tot[k]), r = u % unit, rest = unit - r, portionSize = u / uses[k].length;
       if (r < 1 || rest >= portionSize) continue;
       const add = rest / ((ING[k][8] || {}).dry || 1);
       if (add < 1) continue;
@@ -1464,6 +1534,27 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
       const t = dayT(d), meals = [...d.ids.map((id) => MEAL[id]), { type: "o", n: nutr(items) }];
       d.ms = optimize(meals, t, makeScorer(t), [...d.ms, 1]).ms.slice(0, d.ids.length);
     });
+  }
+  // Mostly Costco: buy the smaller No Frills size when most of the Costco pack would go to waste or sit for months.
+  // A leftover counts as waste past what you'd use in a few weeks at this week's pace (fresh food: none of it keeps).
+  const KEEP_WEEKS = { x: 0, r: 2, z: 8, p: 8 }, WASTE_WT = { x: 1, r: 1, z: 0.5, p: 0.5 };
+  function pickSources(tot) {
+    week.src = {};
+    week.alt = {};
+    for (const k in tot) {
+      if (!NOFRILLS[k] || !COSTCO[k] || nostock.has(k)) continue;
+      const need = buyUnits(k, tot[k]) - (pantry[k] || 0);
+      if (need <= 0) continue;
+      const c = { size: COSTCO[k][1], price: COSTCO[k][2] / INSTORE }, n = { size: NOFRILLS[k][1], price: NOFRILLS[k][2] };
+      const keep = COSTCO[k][3] === "z" && ctx.fcap === 0 ? "x" : COSTCO[k][3];
+      const real = (P) => {
+        const packs = Math.max(1, Math.ceil(need / P.size - 0.05)), left = Math.max(0, packs * P.size - need);
+        const waste = (Math.max(0, left - need * KEEP_WEEKS[keep]) / P.size) * P.price * WASTE_WT[keep];
+        return { cost: packs * P.price, total: (need / P.size) * P.price + waste, waste, left };
+      };
+      const rc = real(c), rn = real(n);
+      if (rc.waste >= 2 && rn.total < rc.total - Math.max(1, 0.1 * rc.total)) { week.src[k] = "nf"; week.alt[k] = { cost: rc.cost, left: rc.left }; }
+    }
   }
   function addTreat(di, kind) {
     const d = week.days[di], pool = ctx.treatPools[kind];
@@ -1723,18 +1814,19 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
   function renderCostco(sum) {
     const checked = new Set(ls.get("ad-checked") || []);
     const rows = Object.entries(sum).map(([k, g]) => {
-      const [prod, size, price, keep] = COSTCO[k];
+      const { prod, size, price, keep, nf } = pk(k);
       const used = buyUnits(k, g), inPantry = Math.min(used, pantry[k] || 0);
-      const packs = Math.ceil((used - inPantry) / size - 1e-9);
-      return { k, prod, size, price, keep, used, inPantry, packs, cost: packs * price, eaten: (used / size) * price };
+      // A few grams over a pack from rounding portions doesn't mean opening another one
+      const packs = used - inPantry > 0 ? Math.max(1, Math.ceil((used - inPantry) / size - 0.05)) : 0;
+      return { k, prod, size, price, keep, nf, used, inPantry, packs, cost: packs * price, eaten: (used / size) * price };
     });
     // Pantry items this week's menu doesn't touch still carry forward
-    Object.entries(pantry).forEach(([k, q]) => { if (!sum[k] && COSTCO[k] && q > 0) rows.push({ k, prod: COSTCO[k][0], size: COSTCO[k][1], price: COSTCO[k][2], keep: COSTCO[k][3], used: 0, inPantry: 0, packs: 0, cost: 0, eaten: 0, idle: q }); });
-    const shop = rows.reduce((a, r) => a + r.cost, 0), eaten = rows.reduce((a, r) => a + r.eaten, 0);
+    Object.entries(pantry).forEach(([k, q]) => { const P = pk(k); if (!sum[k] && P && q > 0) rows.push({ k, prod: P.prod, size: P.size, price: P.price, keep: P.keep, nf: P.nf, used: 0, inPantry: 0, packs: 0, cost: 0, eaten: 0, idle: q }); });
+    const shop = rows.reduce((a, r) => a + r.cost, 0), shopNF = rows.filter((r) => r.nf).reduce((a, r) => a + r.cost, 0), eaten = rows.reduce((a, r) => a + r.eaten, 0);
     const unit = (k) => ((ING[k][8] || {}).ml ? "ml" : "g");
     const mass = (v, u) => (v >= 1000 ? `${(v / 1000).toFixed(1)} ${u === "ml" ? "L" : "kg"}` : `${fmt(v)} ${u}`);
     const dry = (k) => ((ING[k][8] || {}).dry ? " dry" : "");
-    leftovers = rows.map((r) => ({ ...r, left: r.idle ?? (r.inPantry ? (pantry[r.k] || 0) - r.inPantry : 0) + r.packs * r.size - (r.used - r.inPantry) }))
+    leftovers = rows.map((r) => ({ ...r, left: r.idle ?? Math.max(0, (r.inPantry ? (pantry[r.k] || 0) - r.inPantry : 0) + r.packs * r.size - (r.used - r.inPantry)) }))
       .filter((r) => r.left > Math.max(20, r.size * 0.02));
     const fcap = ctx.fcap;
     if (fcap === 0) leftovers.forEach((r) => { if (r.keep === "z") r.keep = "x"; });
@@ -1745,7 +1837,7 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
     week.days.forEach((d, di) => {
       dayData(d, di).meals.forEach((x) => x.items.forEach(({ k, g }) => {
         const u = buyUnits(k, g), short = u - (hv[k] || 0);
-        if (short > 0) hv[k] = (hv[k] || 0) + Math.ceil(short / COSTCO[k][1]) * COSTCO[k][1];
+        if (short > 0) { const z = pk(k).size; hv[k] = (hv[k] || 0) + Math.ceil(short / z) * z; }
         hv[k] -= u;
       }));
       fzPeak = Math.max(fzPeak, Object.keys(hv).filter((k) => hv[k] > 0 && inFreezer(k, fcap)).reduce((a, k) => a + hv[k], 0));
@@ -1755,11 +1847,13 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
 
     $("cost").hidden = false;
     $("cost").innerHTML = `
-      <div><span>This week's shop, in-store</span><b>${money(shop / INSTORE)}</b><span>${money(shop)} on Costco Same-Day</span></div>
-      <div><span>Food you'll eat this week</span><b>${money(eaten / INSTORE)}</b><span>about ${money(eaten / INSTORE / 7)} a day</span></div>
-      <div><span>Left over for next week</span><b>${money(carryVal / INSTORE)}</b><span>${leftVal - carryVal > 0.5 ? money((leftVal - carryVal) / INSTORE) + " of fresh food won't keep" : "Mostly pantry and freezer"}</span></div>
+      <div><span>This week's shop, in-store</span><b>${money(shop)}</b><span>${shopNF ? `${money(shop - shopNF)} Costco · ${money(shopNF)} No Frills` : `${money(shop * INSTORE)} on Costco Same-Day`}</span></div>
+      <div><span>Food you'll eat this week</span><b>${money(eaten)}</b><span>about ${money(eaten / 7)} a day</span></div>
+      <div><span>Left over for next week</span><b>${money(carryVal)}</b><span>${leftVal - carryVal > 0.5 ? money(leftVal - carryVal) + " of fresh food won't keep" : "Mostly pantry and freezer"}</span></div>
       <div><span>Freezer, busiest day</span><b>${(fzPeak / 1000).toFixed(1)} kg</b><span>${fcap === Infinity ? `No limit set · ${(fzLeft / 1000).toFixed(1)} kg left at week's end` : fcap === 0 ? "No freezer, so no frozen packs" : `of ${fcap / 1000} kg${fzPeak > fcap ? ". Over your space: try Shuffle" : ""} · ${(fzLeft / 1000).toFixed(1)} kg left at week's end`}</span></div>`;
-    $("groceryNote").textContent = "Costco packs for the week above, at warehouse prices (Same-Day runs about 7.5% higher). Tick items off as you shop.";
+    $("groceryNote").textContent = ctx.mostly
+      ? `Costco packs at warehouse prices, plus No Frills for what Costco doesn't carry or where a Costco pack would mostly go to waste${NF_DATE ? ` (No Frills prices from ${NF_DATE})` : ""}. Tick items off as you shop.`
+      : "Costco packs for the week above, at warehouse prices (Same-Day runs about 7.5% higher). Tick items off as you shop.";
 
     const bySec = {};
     rows.filter((r) => !r.idle).forEach((r) => (bySec[ING[r.k][6]] ||= []).push(r));
@@ -1772,10 +1866,11 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
         const u = unit(r.k);
         const need = `uses ${mass(r.used, u)}${dry(r.k)}`;
         const buy = r.packs ? `${r.packs > 1 ? r.packs + " packs · " : ""}${need}${r.inPantry ? `, ${mass(r.inPantry, u)} from your pantry` : ""}` : `<span class="pantry">In your pantry</span> · ${need}`;
-        return `<label><input type="checkbox" data-k="${r.k}" ${checked.has(r.k) || !r.packs ? "checked" : ""}><span><span class="row2"><span>${r.prod}</span><span class="price">${r.packs ? money(r.cost / INSTORE) : ""}</span></span>
-          <small>${buy}<span class="keep ${r.keep}" title="${KEEP[r.keep][1]}">${KEEP[r.keep][0]}</span></small>
+        const alt = r.nf && week.alt?.[r.k] ? `<span class="why">Smaller size beats the Costco pack (${COSTCO[r.k][0]}, ${money(week.alt[r.k].cost)}), which would leave ${mass(week.alt[r.k].left, u)}${dry(r.k)} over.</span>` : r.nf ? `<span class="why">Not at Costco.</span>` : "";
+        return `<label><input type="checkbox" data-k="${r.k}" ${checked.has(r.k) || !r.packs ? "checked" : ""}><span><span class="row2"><span>${r.nf ? `<span class="store-nf">No Frills</span> ` : ""}${r.prod}</span><span class="price">${r.packs ? money(r.cost) : ""}</span></span>
+          <small>${buy}<span class="keep ${r.keep}" title="${KEEP[r.keep][1]}">${KEEP[r.keep][0]}</span>${alt}</small>
           ${r.packs ? `<button type="button" class="ghost small" data-have="${r.k}">Already have it</button>` : `<button type="button" class="ghost small" data-unhave="${r.k}">Don't have it</button>`}
-          <button type="button" class="ghost small" data-nostock="${r.k}">Not at my Costco</button></span></label>`;
+          ${r.nf ? "" : `<button type="button" class="ghost small" data-nostock="${r.k}">Not at my Costco</button>`}</span></label>`;
       }).join("");
       box.append(div);
     });
@@ -1786,14 +1881,14 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
 
     // Leftovers
     $("leftSec").hidden = false;
-    const pk = Object.keys(pantry).filter((k) => pantry[k] > 0);
-    $("clearPantry").hidden = !pk.length;
-    $("pantryNote").hidden = !pk.length;
-    $("pantryNote").textContent = pk.length ? `${pk.length} item${pk.length > 1 ? "s" : ""} in your pantry (carried over or marked "Already have it") ${pk.length > 1 ? "are" : "is"} counted in the list above.` : "";
+    const pkeys = Object.keys(pantry).filter((k) => pantry[k] > 0);
+    $("clearPantry").hidden = !pkeys.length;
+    $("pantryNote").hidden = !pkeys.length;
+    $("pantryNote").textContent = pkeys.length ? `${pkeys.length} item${pkeys.length > 1 ? "s" : ""} in your pantry (carried over or marked "Already have it") ${pkeys.length > 1 ? "are" : "is"} counted in the list above.` : "";
     $("leftovers").innerHTML = leftovers.length ? leftovers.sort((a, b) => "pzrx".indexOf(a.keep) - "pzrx".indexOf(b.keep) || b.left / b.size * b.price - a.left / a.size * a.price).map((r) => {
       const u = unit(r.k);
       return `<div class="li"><span>${ING[r.k][0].replace(/ \(.*\)/, "")}<span class="keep ${r.keep}">${KEEP[r.keep][0]}</span></span><em>${mass(r.left, u)}${dry(r.k)}</em>
-        <small>${Math.round((r.left / r.size) * 100)}% of a pack · worth about ${money((r.left / r.size) * r.price / INSTORE)} · ${KEEP[r.keep][1]}${r.idle ? " Not used this week." : ""}</small></div>`;
+        <small>${Math.round((r.left / r.size) * 100)}% of a pack · worth about ${money((r.left / r.size) * r.price)} · ${KEEP[r.keep][1]}${r.idle ? " Not used this week." : ""}</small></div>`;
     }).join("") : `<div class="li"><span>Nothing left over.</span></div>`;
     $("carry").hidden = !leftovers.some((r) => r.keep !== "x");
   }
@@ -1871,12 +1966,15 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
     (v.out || []).forEach((d) => { const el = $("out-" + d); if (el) el.checked = true; });
   }
   function showStore() {
-    const costco = radio("store") === "costco";
+    const costco = radio("store") !== "any";
+    $("mostlyOpt").hidden = !Object.keys(NOFRILLS).length;
     $("packsRow").hidden = !costco;
     $("freezerRow").hidden = !costco;
     const fz = radio("freezer");
     $("freezerHint").textContent = { all: "Chest freezer or plenty of room.", std: "About 10 kg free: a typical fridge freezer with some room.", low: "About 5 kg free: a small or mostly full freezer.", none: "No frozen packs. Fresh meat and bread get used within the week instead of frozen." }[fz] || "";
-    $("storeHint").textContent = costco
+    $("storeHint").textContent = radio("store") === "mostly"
+      ? "Costco for most things. No Frills fills in what Costco doesn't carry, and gets suggested when a smaller size beats wasting most of a Costco pack."
+      : costco
       ? "Menus use only what Costco carries, in Costco pack sizes. Prices are from Costco Same-Day (Nov 2026) minus about 7.5% for warehouse prices."
       : "Uses the full recipe library with everyday grocery amounts. No prices.";
   }
