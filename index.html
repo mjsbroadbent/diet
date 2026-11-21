@@ -3,29 +3,35 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Auto Dietitian</title>
+<title>Big Box Dietitian</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600;800;900&family=Inter:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Titan+One&family=Nunito:wght@400;600;700;800&family=Libre+Franklin:wght@400;500;600;800;900&display=swap">
 <style>
-/* Layout: stats form beside a nutrition-facts style plan, then a full-width weekly menu and grocery list. Light mode only, by request. */
+/* Layout: a cereal box. Box-front hero with a starburst, the stats form as a printed panel beside a side-panel nutrition label, then the week and grocery list as cut-out panels. Light mode only, by request. */
 :root {
-  --bg: #F4F6F1;
-  --surface: #FFFFFF;
-  --ink: #141A15;
-  --muted: #5B665D;
-  --line: #D6DCD3;
-  --accent: #2C6A3F;
-  --accent-soft: #E3EEE4;
+  --bg: #FFC93C;          /* box yellow */
+  --bg-dot: #FFBA1F;
+  --surface: #FFFDF6;     /* printed white */
+  --ink: #1D1B4A;         /* deep navy print */
+  --muted: #5D5A86;
+  --line: #D8D2EA;
+  --red: #E8402F;
+  --red-deep: #C22A1C;
+  --blue: #2457C5;
+  --accent: #E8402F;
+  --accent-soft: #FFE6DF;
   --on-accent: #FFFFFF;
-  --protein: #B5463B;
-  --carbs: #B88A12;
-  --fat: #3B6EA6;
-  --ok: #2C6A3F; --ok-soft: #E3EEE4;
-  --warn: #9A5B00; --warn-soft: #FBF0DC;
-  --bad: #A8322A; --bad-soft: #FBE5E2;
-  --display: "Libre Franklin", "Helvetica Neue", Arial, sans-serif;
-  --body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --protein: #D2352B;
+  --carbs: #E39400;
+  --fat: #2457C5;
+  --ok: #1E7D45; --ok-soft: #DDF3E4;
+  --warn: #9A5B00; --warn-soft: #FFF0CC;
+  --bad: #B8261A; --bad-soft: #FFE1DC;
+  --display: "Titan One", "Arial Black", Impact, sans-serif;
+  --label: "Libre Franklin", "Helvetica Neue", Arial, sans-serif;
+  --body: "Nunito", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --shadow: 5px 5px 0 var(--ink);
   color-scheme: light;
 }
 * { box-sizing: border-box; }
@@ -154,14 +160,81 @@ button.btn:hover { filter: brightness(1.08); }
 .gsec input { accent-color: var(--accent); margin-top: 3px; }
 .gsec small { display: block; color: var(--muted); font-size: 12.5px; font-variant-numeric: tabular-nums; }
 .gsec label:has(input:checked) span { text-decoration: line-through; color: var(--muted); }
+
+/* ---------- Cereal box theme ---------- */
+body { background-color: var(--bg); background-image: radial-gradient(var(--bg-dot) 1.6px, transparent 1.8px); background-size: 18px 18px; font-size: 15.5px; }
+.box-front {
+  position: relative; overflow: hidden; border: 4px solid var(--ink); border-radius: 22px; box-shadow: 8px 8px 0 var(--ink);
+  padding: 34px clamp(18px, 4vw, 44px) 26px; color: var(--surface);
+  background: repeating-conic-gradient(from 0deg at 18% 120%, var(--red) 0deg 7deg, var(--red-deep) 7deg 14deg);
+  display: grid; gap: 8px; justify-items: start;
+}
+.box-front .kicker { margin: 0; font-family: var(--label); font-weight: 800; font-size: 12px; text-transform: uppercase; letter-spacing: 0.14em; background: var(--ink); color: var(--bg); padding: 4px 10px; border-radius: 4px; transform: rotate(-2deg); }
+.box-front h1 { font-family: var(--display); font-weight: 400; font-size: clamp(44px, 9vw, 92px); line-height: 0.92; letter-spacing: 0.01em; margin: 6px 0 0; color: var(--bg); text-transform: uppercase;
+  text-shadow: 3px 3px 0 var(--ink), -2px -2px 0 var(--ink), 2px -2px 0 var(--ink), -2px 2px 0 var(--ink), 6px 7px 0 var(--ink); max-width: 11ch; }
+.box-front h1 span { display: block; color: var(--surface); }
+.box-front .tagline { margin: 6px 0 0; font-weight: 800; font-size: clamp(16px, 2vw, 19px); max-width: 40ch; color: var(--surface); text-shadow: 1px 1px 0 var(--red-deep); }
+.box-front .netwt { margin: 10px 0 0; font-family: var(--label); font-weight: 700; font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--surface); opacity: 0.9; }
+.burst {
+  position: absolute; right: clamp(10px, 4vw, 48px); top: 22px; width: clamp(118px, 18vw, 170px); aspect-ratio: 1; max-width: 100%;
+  background: var(--bg); color: var(--ink); display: grid; place-items: center; text-align: center; transform: rotate(12deg);
+  clip-path: polygon(50% 0%, 59% 13%, 75% 6%, 77% 23%, 94% 25%, 87% 41%, 100% 50%, 87% 59%, 94% 75%, 77% 77%, 75% 94%, 59% 87%, 50% 100%, 41% 87%, 25% 94%, 23% 77%, 6% 75%, 13% 59%, 0% 50%, 13% 41%, 6% 25%, 23% 23%, 25% 6%, 41% 13%);
+}
+.burst span { font-family: var(--display); font-size: clamp(13px, 1.9vw, 17px); line-height: 1.05; padding: 0 22%; }
+@media (max-width: 640px) { .burst { position: static; transform: rotate(-6deg); width: 120px; justify-self: end; margin: -10px 0 -6px; order: -1; } .box-front { padding-top: 22px; } }
+@media (prefers-reduced-motion: no-preference) { .burst { animation: wobble 4s ease-in-out infinite; } @keyframes wobble { 0%,100% { rotate: 0deg; } 50% { rotate: 6deg; } } }
+
+form { background: var(--surface); border: 3px solid var(--ink); border-radius: 16px; box-shadow: var(--shadow); padding: 22px clamp(14px, 3vw, 24px); }
+legend, .meal .slot, .course.head, .gsec h3 { font-family: var(--label); }
+legend { color: var(--red); font-weight: 900; }
+.opt, .courses { border-width: 2px; border-color: var(--line); border-radius: 12px; }
+.opt:has(input:checked) { border-color: var(--ink); background: var(--accent-soft); box-shadow: 3px 3px 0 var(--ink); }
+.opt input { accent-color: var(--red); }
+.seg { border: 2px solid var(--ink); border-radius: 10px; }
+.seg span { font-weight: 700; color: var(--ink); }
+.seg input:checked + span { background: var(--red); color: var(--on-accent); }
+.chip span { border: 2px solid var(--ink); font-weight: 700; }
+.chip input:checked + span { background: var(--blue); border-color: var(--ink); color: var(--surface); }
+input[type="number"], input[type="text"], select { border: 2px solid var(--line); border-radius: 10px; }
+input:focus-visible, select:focus-visible, button:focus-visible, .seg label:focus-within, .chip:focus-within { outline: 3px solid var(--blue); }
+
+.label { font-family: var(--label); border: 3px solid var(--ink); box-shadow: var(--shadow); background: var(--surface); }
+.label h2 { font-family: var(--label); }
+.badge { background: var(--ink); color: var(--bg); border-radius: 6px; transform: rotate(-2deg); }
+.how { background: var(--surface); border: 2px solid var(--ink); border-radius: 12px; padding: 10px 12px; }
+.warn { border: 2px solid var(--warn); border-radius: 12px; font-weight: 600; }
+
+.menu { border-top: 0; padding-top: 4px; }
+h2.sec { display: inline-block; font-family: var(--display); font-weight: 400; font-size: clamp(26px, 4vw, 36px); letter-spacing: 0.01em; text-transform: uppercase;
+  background: var(--blue); color: var(--surface); padding: 4px 16px 6px; border: 3px solid var(--ink); border-radius: 10px; box-shadow: 4px 4px 0 var(--ink); transform: rotate(-1.5deg); }
+.menu-head p { color: var(--ink); font-weight: 700; margin-top: 10px; }
+button.btn { font-family: var(--display); font-weight: 400; font-size: 17px; letter-spacing: 0.02em; padding: 10px 20px; border: 3px solid var(--ink); border-radius: 12px; background: var(--red); color: var(--surface); box-shadow: 4px 4px 0 var(--ink); transition: transform .08s, box-shadow .08s; }
+button.btn:hover { filter: none; background: var(--red-deep); }
+button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--ink); }
+.day, .gsec { border: 3px solid var(--ink); border-radius: 16px; box-shadow: var(--shadow); }
+.day-h { border-bottom: 3px dashed var(--line); padding-bottom: 8px; }
+.day-h h3 { font-family: var(--display); font-weight: 400; font-size: 22px; letter-spacing: 0.01em; color: var(--red); }
+.pill { border: 2px solid currentColor; font-weight: 800; }
+.meal .nm { font-weight: 800; }
+.meal .liked { color: var(--carbs); }
+.swap { border: 2px solid var(--ink); color: var(--ink); font-weight: 800; border-radius: 8px; background: var(--bg); }
+.swap:hover { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.gsec h3 { color: var(--red); font-weight: 900; }
+.gsec input { accent-color: var(--red); }
+.tag { border: 2px solid var(--ink); font-weight: 700; background: var(--accent-soft); }
+#likesTags .tag { background: #E3ECFF; color: var(--blue); border-color: var(--blue); }
+#avoidTags .tag { border-color: var(--bad); }
 </style>
 <style>body { margin: 0; } img { max-width: 100%; }</style>
 </head>
 <body>
 <div class="wrap">
-  <header>
-    <h1>Auto Dietitian</h1>
-    <p>Enter your stats and goal. Your daily targets and a full week of meals update as you type.</p>
+  <header class="box-front">
+    <div class="burst" aria-hidden="true"><span>NEW!<br>7-day menu inside</span></div>
+    <p class="kicker">Fortified with real math</p>
+    <h1><span>Big Box</span> Dietitian</h1>
+    <p class="tagline">Pour in your stats. Get your daily targets, a full week of meals, and the grocery list.</p>
+    <p class="netwt">Net wt. 7 days · Part of a balanced week</p>
   </header>
 
   <div class="grid">
