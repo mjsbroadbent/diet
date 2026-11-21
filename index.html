@@ -690,7 +690,6 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
   const UNIT = { chicken: 580, thigh: 560, turkey: 1000, turkeyslice: 300, beef: 600, steak: 400, pork: 670, bacon: 500, tuna: 130, eggwhite: 500, tofu: 454,
     yogurt: 650, cottage: 750, feta: 600, soymilk: 946, cocofull: 400, chickpeas: 300, spaghetti: 500, bread: 675, tortilla: 600, cantom: 796, cauli: 500,
     pb: 1000, honey: 750, salsa: 1050, marinara: 1250, icebar: 70 };
-  const FINISH_MAX = 1100; // g or ml
   const KEEP = { p: ["Keeps", "Pantry or freezer. Carries over."], z: ["Freeze", "Freeze what you won't use in a few days."], r: ["Keeps a few weeks", "Fridge or a cool cupboard."], x: ["Use this week", "Won't keep. Not carried over."] };
   const buyUnits = (k, g) => g * ((ING[k][8] || {}).dry || 1);
   const money = (v) => "$" + (v >= 100 ? Math.round(v).toLocaleString() : v.toFixed(2));
@@ -1261,36 +1260,40 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
       ? `About ${fmt(pending)} kcal from logged meals is left over: there are no days after it to absorb it, or they're already trimmed by the 20% limit.`
       : `You're about ${fmt(-pending)} kcal under for the week after logged meals.`;
   }
-  // People finish a box they've nearly used up. If the week uses 80%+ of the last unit opened,
-  // the rest goes into the last meal that uses it, and the rest of that day is trimmed to make room.
+  // People finish a box they've nearly used up. If less than one portion is left in the last unit opened,
+  // it's spread over the meals that use it, and the other meals on those days are trimmed to make room.
   function finishUp() {
     week.extra = {};
     week.finished = [];
     if (!ctx.costco) return;
-    const all = week.days.map(dayData), tot = {}, last = {};
-    all.forEach((d, di) => d.meals.forEach((x, si) => x.items.forEach(({ k, g }) => { tot[k] = (tot[k] || 0) + g; last[k] = [di, si]; })));
+    const all = week.days.map(dayData), tot = {}, uses = {};
+    all.forEach((d, di) => d.meals.forEach((x, si) => x.items.forEach(({ k, g }) => { tot[k] = (tot[k] || 0) + g; (uses[k] ||= []).push([di, si, g]); })));
     const touched = new Set();
     for (const k in tot) {
       if (!COSTCO[k]) continue;
-      const unit = UNIT[k] || COSTCO[k][1], u = buyUnits(k, tot[k]), r = u % unit;
-      // Only packages you'd finish in a sitting or a cook: not a 5 kg bag of rice or a jar of honey
-      if (unit > FINISH_MAX || (ING[k][8] || {}).tbsp) continue;
-      if (r < 1 || r / unit < 0.8) continue;
-      const add = Math.round((unit - r) / ((ING[k][8] || {}).dry || 1));
+      // Less than one of this week's portions left in the open package? It gets eaten, so count it.
+      const unit = UNIT[k] || COSTCO[k][1], u = buyUnits(k, tot[k]), r = u % unit, rest = unit - r, portionSize = u / uses[k].length;
+      if (r < 1 || rest >= portionSize) continue;
+      const add = rest / ((ING[k][8] || {}).dry || 1);
       if (add < 1) continue;
-      const [di, si] = last[k];
-      (week.extra[di + ":" + si] ||= {})[k] = add;
+      // Spread it over the week's meals that use it, a little more each time
+      uses[k].forEach(([di, si, g]) => {
+        const e = Math.round((add * g) / tot[k]);
+        if (e < 1) return;
+        const ex = (week.extra[di + ":" + si] ||= {});
+        ex[k] = (ex[k] || 0) + e;
+        touched.add(di);
+      });
       week.finished.push(k);
-      touched.add(di);
     }
     touched.forEach((di) => {
       const d = week.days[di];
       if (d.log && Object.keys(d.log).length) return;
-      const fixed = new Set(Object.keys(week.extra).filter((key) => +key.split(":")[0] === di).map((key) => +key.split(":")[1]));
-      const dd = dayData(d, di), t = dayT(d);
-      const meals = d.ids.map((id, i) => (fixed.has(i) ? { ...MEAL[id], type: "o", n: dd.meals[i].n } : MEAL[id]));
-      const o = optimize(meals, t, makeScorer(t), d.ids.map((id, i) => (fixed.has(i) ? 1 : d.ms[i])));
-      d.ms = o.ms.map((x, i) => (fixed.has(i) ? d.ms[i] : x));
+      // The finishing amounts are fixed calories; re-portion the day's meals around them
+      const items = [];
+      Object.keys(week.extra).filter((key) => +key.split(":")[0] === di).forEach((key) => { for (const k in week.extra[key]) items.push({ k, g: week.extra[key][k] }); });
+      const t = dayT(d), meals = [...d.ids.map((id) => MEAL[id]), { type: "o", n: nutr(items) }];
+      d.ms = optimize(meals, t, makeScorer(t), [...d.ms, 1]).ms.slice(0, d.ids.length);
     });
   }
   function logMeal(di, si, kind, kcal) {
@@ -1351,7 +1354,7 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
     const unmatched = ctx.likes.filter((t) => !ctx.library.some((m) => m.text.includes(t)));
     if (unmatched.length) notes.push(`No built-in recipes use ${unmatched.join(", ")} yet.`);
     if (week.note) notes.push(week.note);
-    if (week.finished?.length) notes.push(`You'd nearly finish the ${week.finished.map((k) => ING[k][0].toLowerCase().replace(/ \(.*\)/, "").split(",")[0]).join(", ").replace(/, ([^,]*)$/, " and $1")} this week, so the last meal using it finishes the package and those calories are counted.`);
+    if (week.finished?.length) notes.push(`You'd nearly finish the ${week.finished.map((k) => ING[k][0].toLowerCase().replace(/ \(.*\)/, "").split(",")[0]).join(", ").replace(/, ([^,]*)$/, " and $1")} this week, so the last bit is spread over the meals that use it and those calories are counted.`);
     warn.hidden = !notes.length; warn.textContent = notes.join(" ");
 
     days.innerHTML = "";
@@ -1380,7 +1383,7 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
           ${wd.log?.[i] ? `<button type="button" class="swap" data-undo>Undo</button>` : x.m.out ? "" : `<button type="button" class="swap" aria-label="Swap ${ctx.slots[i]} on ${DAY_NAMES[di]}">Swap</button>`}
           <div class="mt">${x.m.out ? "about " : ""}${fmt(x.n[0])} kcal · P ${fmt(x.n[1])} · C ${fmt(T.keto ? x.n[2] - x.n[4] : x.n[2])} · F ${fmt(x.n[3])}${x.m.out ? " · loose estimate" : ` · ${x.m.min} min${portionNote}`}</div>
           ${x.m.out ? `<p class="hint">${x.m.how}</p>` : `<details><summary>Ingredients and method</summary>
-            <ul>${x.items.map(({ k, g, fin }) => `<li>${amountText(k, g)}${fin ? ` <span class="logged" title="Includes ${fmt(fin)} ${(ING[k][8] || {}).ml ? "ml" : "g"} to finish the ${UNIT[k] ? "package" : "pack"}">finishes it</span>` : ""}</li>`).join("")}</ul>
+            <ul>${x.items.map(({ k, g, fin }) => `<li>${amountText(k, g)}${fin ? ` <span class="logged" title="Includes ${fmt(fin)} ${(ING[k][8] || {}).ml ? "ml" : "g"} so nothing is left in the package">+${fmt(fin)} ${(ING[k][8] || {}).ml ? "ml" : "g"} to use it up</span>` : ""}</li>`).join("")}</ul>
             <p>${x.m.how}</p></details>`}`;
         if (wd.log?.[i]) mm.querySelector("[data-undo]").addEventListener("click", () => undoLog(di, i));
         else if (!x.m.out) mm.querySelector(".swap").addEventListener("click", () => swap(di, i));
