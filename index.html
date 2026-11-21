@@ -1,1 +1,938 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Auto Dietitian</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600;800;900&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* Layout: stats form beside a nutrition-facts style plan, then a full-width weekly menu and grocery list. Light mode only, by request. */
+:root {
+  --bg: #F4F6F1;
+  --surface: #FFFFFF;
+  --ink: #141A15;
+  --muted: #5B665D;
+  --line: #D6DCD3;
+  --accent: #2C6A3F;
+  --accent-soft: #E3EEE4;
+  --on-accent: #FFFFFF;
+  --protein: #B5463B;
+  --carbs: #B88A12;
+  --fat: #3B6EA6;
+  --ok: #2C6A3F; --ok-soft: #E3EEE4;
+  --warn: #9A5B00; --warn-soft: #FBF0DC;
+  --bad: #A8322A; --bad-soft: #FBE5E2;
+  --display: "Libre Franklin", "Helvetica Neue", Arial, sans-serif;
+  --body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 56px;
+}
+.wrap { max-width: 1120px; margin: 0 auto; display: grid; gap: 32px; }
+header h1 { font-family: var(--display); font-weight: 900; font-size: clamp(28px, 4.5vw, 40px); letter-spacing: -0.02em; margin: 0; text-wrap: balance; }
+header p { margin: 6px 0 0; color: var(--muted); max-width: 62ch; }
+h2.sec { font-family: var(--display); font-weight: 900; font-size: 26px; letter-spacing: -0.01em; margin: 0; }
+.grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 400px); gap: 28px; align-items: start; }
+@media (max-width: 820px) { .grid { grid-template-columns: minmax(0, 1fr); } }
 
+/* Form */
+form { display: grid; gap: 22px; min-width: 0; }
+fieldset { border: 0; padding: 0; margin: 0; display: grid; gap: 12px; min-width: 0; }
+legend { font-family: var(--display); font-weight: 800; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); padding: 0; margin-bottom: 10px; }
+.row { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; }
+.f { display: grid; gap: 4px; font-size: 13px; font-weight: 500; color: var(--muted); min-width: 0; align-content: start; }
+input[type="number"], input[type="text"], select {
+  font: inherit; font-size: 16px; color: var(--ink); background: var(--surface);
+  border: 1px solid var(--line); border-radius: 6px; padding: 9px 10px; width: 100%; min-width: 0;
+  font-variant-numeric: tabular-nums;
+}
+input:focus-visible, select:focus-visible, button:focus-visible, .seg label:focus-within, .chip:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+.unit-in { position: relative; }
+.unit-in span { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 13px; pointer-events: none; }
+.unit-in input { padding-right: 34px; }
+.hint { margin: 0; font-size: 12.5px; color: var(--muted); font-weight: 400; }
+
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--surface); flex-wrap: wrap; }
+.seg label { cursor: pointer; }
+.seg input { position: absolute; opacity: 0; pointer-events: none; }
+.seg span { display: block; padding: 8px 14px; font-size: 14px; font-weight: 500; color: var(--muted); }
+.seg input:checked + span { background: var(--accent); color: var(--on-accent); }
+.seg-row { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; }
+
+.options { display: grid; gap: 8px; }
+.opt { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; padding: 10px 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; cursor: pointer; }
+.opt:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+.opt input { accent-color: var(--accent); margin: 0; }
+.opt b { font-weight: 600; font-size: 14px; }
+.opt small { display: block; color: var(--muted); font-size: 12.5px; }
+.opt em { font-style: normal; color: var(--muted); font-size: 12.5px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { cursor: pointer; }
+.chip input { position: absolute; opacity: 0; pointer-events: none; }
+.chip span { display: inline-block; padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px; font-size: 13.5px; background: var(--surface); color: var(--ink); }
+.chip input:checked + span { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+
+/* Label */
+aside { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 16px); display: grid; gap: 12px; min-width: 0; }
+@media (max-width: 820px) { aside { position: static; } }
+.label { background: var(--surface); border: 2px solid var(--ink); padding: 10px 12px 12px; font-family: var(--display); color: var(--ink); }
+.label h2 { font-weight: 900; font-size: 34px; letter-spacing: -0.01em; margin: 0; line-height: 1; }
+.label .serv { font-size: 14px; padding: 4px 0 6px; border-bottom: 10px solid var(--ink); display: flex; justify-content: space-between; gap: 8px; }
+.label .cal { display: flex; justify-content: space-between; align-items: end; border-bottom: 5px solid var(--ink); padding: 4px 0 2px; }
+.label .cal .k { font-weight: 900; font-size: 22px; }
+.label .cal .v { font-weight: 900; font-size: 44px; line-height: 1; font-variant-numeric: tabular-nums; }
+.label .dvh { text-align: right; font-size: 12px; font-weight: 800; padding: 3px 0; border-bottom: 1px solid var(--ink); }
+.label .ln { display: flex; justify-content: space-between; gap: 10px; padding: 3px 0; border-bottom: 1px solid var(--ink); font-size: 14.5px; font-variant-numeric: tabular-nums; }
+.label .ln b { font-weight: 800; }
+.label .ln.sub { padding-left: 16px; }
+.label .ln.thick { border-bottom-width: 10px; }
+.label .ln i, .key i { font-style: normal; display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 6px; vertical-align: 1px; }
+.label .foot { font-family: var(--body); font-size: 11.5px; line-height: 1.45; padding-top: 6px; }
+.bar { display: flex; height: 10px; border-radius: 3px; overflow: hidden; margin: 8px 0 2px; }
+.bar div { height: 100%; }
+.badge { justify-self: start; font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 999px; background: var(--warn-soft); color: var(--warn); }
+.warn { font-size: 13.5px; padding: 10px 12px; border-radius: 8px; background: var(--warn-soft); color: var(--warn); }
+.how { font-size: 13px; color: var(--muted); }
+.how summary { cursor: pointer; font-weight: 600; color: var(--ink); }
+.how ul { margin: 8px 0 0; padding-left: 18px; display: grid; gap: 4px; }
+
+/* Menu */
+.menu { display: grid; gap: 18px; border-top: 2px solid var(--ink); padding-top: 24px; }
+.menu-head { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: end; justify-content: space-between; }
+.menu-head p { margin: 4px 0 0; color: var(--muted); font-size: 14px; font-variant-numeric: tabular-nums; }
+button.btn { font: inherit; font-weight: 600; font-size: 14px; padding: 9px 16px; border-radius: 8px; border: 1px solid var(--accent); background: var(--accent); color: var(--on-accent); cursor: pointer; }
+button.btn:hover { filter: brightness(1.08); }
+.days { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 14px; }
+.day { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.day-h { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.day-h h3 { font-family: var(--display); font-weight: 900; font-size: 19px; margin: 0; }
+.pill { font-size: 12.5px; font-weight: 600; padding: 2px 9px; border-radius: 999px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pill.ok { background: var(--ok-soft); color: var(--ok); }
+.pill.warn { background: var(--warn-soft); color: var(--warn); }
+.pill.bad { background: var(--bad-soft); color: var(--bad); }
+.macros { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.macros b { font-weight: 600; }
+.macros .off { color: var(--bad); }
+.meal { border-top: 1px solid var(--line); padding-top: 10px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 8px; }
+.meal .slot { grid-column: 1 / -1; font-family: var(--display); font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.meal .nm { font-weight: 600; font-size: 14.5px; line-height: 1.3; }
+.meal .mt { grid-column: 1; font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.meal .liked { color: var(--accent); font-weight: 600; }
+.swap { grid-row: 2 / span 2; grid-column: 2; align-self: start; font: inherit; font-size: 12.5px; font-weight: 600; color: var(--accent); background: transparent; border: 1px solid var(--line); border-radius: 6px; padding: 4px 9px; cursor: pointer; }
+.swap:hover { border-color: var(--accent); }
+.meal details { grid-column: 1 / -1; font-size: 13px; }
+.meal summary { cursor: pointer; color: var(--muted); font-size: 12.5px; }
+.meal ul { margin: 6px 0; padding-left: 18px; display: grid; gap: 2px; font-variant-numeric: tabular-nums; }
+.meal p { margin: 4px 0 0; color: var(--muted); }
+.grocery { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
+.gsec { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; min-width: 0; }
+.gsec h3 { font-family: var(--display); font-weight: 800; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin: 0 0 6px; }
+.gsec label { display: grid; grid-template-columns: auto 1fr; gap: 8px; align-items: start; padding: 4px 0; font-size: 14px; cursor: pointer; }
+.gsec input { accent-color: var(--accent); margin-top: 3px; }
+.gsec small { display: block; color: var(--muted); font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.gsec label:has(input:checked) span { text-decoration: line-through; color: var(--muted); }
+</style>
+<style>body { margin: 0; } img { max-width: 100%; }</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Auto Dietitian</h1>
+    <p>Enter your stats and goal. Your daily targets and a full week of meals update as you type.</p>
+  </header>
+
+  <div class="grid">
+    <form id="form" autocomplete="off">
+      <fieldset>
+        <legend>About you</legend>
+        <div class="seg-row">
+          <div class="seg" role="radiogroup" aria-label="Sex">
+            <label><input type="radio" name="sex" id="sex-m" value="male" checked><span>Male</span></label>
+            <label><input type="radio" name="sex" id="sex-f" value="female"><span>Female</span></label>
+          </div>
+          <div class="seg" role="radiogroup" aria-label="Units">
+            <label><input type="radio" name="units" id="units-metric" value="metric" checked><span>kg · cm</span></label>
+            <label><input type="radio" name="units" id="units-imperial" value="imperial"><span>lb · ft</span></label>
+          </div>
+        </div>
+        <div class="row">
+          <label class="f">Age
+            <div class="unit-in"><input type="number" id="age" min="15" max="90" step="1" value="34" inputmode="numeric"><span>yrs</span></div>
+          </label>
+          <div class="f" id="hMetric">
+            <label for="heightCm">Height</label>
+            <div class="unit-in"><input type="number" id="heightCm" min="120" max="230" step="1" value="178" inputmode="decimal"><span>cm</span></div>
+          </div>
+          <div class="f" id="hImperial" hidden>
+            <label for="heightFt">Height</label>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+              <div class="unit-in"><input type="number" id="heightFt" min="4" max="7" step="1" value="5" inputmode="numeric" aria-label="Feet"><span>ft</span></div>
+              <div class="unit-in"><input type="number" id="heightIn" min="0" max="11.9" step="0.5" value="10" inputmode="decimal" aria-label="Inches"><span>in</span></div>
+            </div>
+          </div>
+          <label class="f">Weight
+            <div class="unit-in"><input type="number" id="weight" min="30" max="300" step="0.1" value="82" inputmode="decimal"><span id="wUnit">kg</span></div>
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Activity level</legend>
+        <div class="options" id="activity"></div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Goal</legend>
+        <div class="options" id="goal"></div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Dietary preferences</legend>
+        <div class="chips" id="diets"></div>
+        <label class="f">Allergies or foods to avoid
+          <input type="text" id="avoid" placeholder="e.g. peanuts, mushrooms, shellfish">
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Menu</legend>
+        <div class="f">Meals per day
+          <div class="seg" role="radiogroup" aria-label="Meals per day" style="justify-self:start">
+            <label><input type="radio" name="mpd" id="mpd-3" value="3"><span>3 meals</span></label>
+            <label><input type="radio" name="mpd" id="mpd-4" value="4" checked><span>3 + snack</span></label>
+            <label><input type="radio" name="mpd" id="mpd-5" value="5"><span>3 + 2 snacks</span></label>
+          </div>
+        </div>
+        <label class="f">Foods you'd like to see more of (optional)
+          <input type="text" id="likes" placeholder="e.g. salmon, eggs, sweet potato">
+          <p class="hint">Meals containing these get picked more often.</p>
+        </label>
+      </fieldset>
+    </form>
+
+    <aside aria-live="polite">
+      <span class="badge" id="exampleBadge">Example values. Enter yours.</span>
+      <div class="label" id="label"></div>
+      <div class="warn" id="warn" hidden></div>
+      <details class="how">
+        <summary>How these numbers are worked out</summary>
+        <ul>
+          <li>Resting burn (BMR) uses the Mifflin-St Jeor equation: 10 × kg + 6.25 × cm − 5 × age, then +5 for men or −161 for women.</li>
+          <li>Maintenance (TDEE) is BMR × your activity multiplier.</li>
+          <li>The goal adds or removes calories per day. 7,700 kcal is roughly 1 kg of body fat.</li>
+          <li>Protein is set per kg of body weight (more when cutting to keep muscle). With a BMI over 30 it uses the weight at BMI 25 instead, so the target stays realistic.</li>
+          <li>Fat is 30% of calories (25% if carbs would drop too low). Carbs fill the rest. Keto fixes net carbs at 30 g and fat fills the rest.</li>
+          <li>Calories never go below 1,500 for men or 1,200 for women without medical supervision.</li>
+          <li>These are estimates, typically within ±10%. Weigh in for 2 to 3 weeks and adjust by 100 to 200 kcal if the trend is off.</li>
+        </ul>
+      </details>
+    </aside>
+  </div>
+
+  <section class="menu" aria-labelledby="menuTitle">
+    <div class="menu-head">
+      <div>
+        <h2 class="sec" id="menuTitle">Your week</h2>
+        <p id="menuSummary"></p>
+      </div>
+      <button type="button" class="btn" id="shuffle">Shuffle menu</button>
+    </div>
+    <div class="warn" id="menuWarn" hidden></div>
+    <div class="days" id="days"></div>
+  </section>
+
+  <section class="menu" aria-labelledby="groceryTitle">
+    <div class="menu-head">
+      <div>
+        <h2 class="sec" id="groceryTitle">Grocery list</h2>
+        <p>Everything for the week above. Tick items off as you shop.</p>
+      </div>
+    </div>
+    <div class="grocery" id="grocery"></div>
+  </section>
+</div>
+
+<script>
+(() => {
+  // ---------- Reference data ----------
+  const ACTIVITY = [
+    { v: 1.2,   name: "Sedentary",         desc: "Desk job, little exercise" },
+    { v: 1.375, name: "Lightly active",    desc: "Exercise 1 to 3 days a week" },
+    { v: 1.55,  name: "Moderately active", desc: "Exercise 3 to 5 days a week" },
+    { v: 1.725, name: "Very active",       desc: "Hard exercise 6 to 7 days a week" },
+    { v: 1.9,   name: "Athlete",           desc: "Physical job plus daily training" },
+  ];
+  const GOALS = [
+    { id: "lose_fast", name: "Lose weight fast",   delta: -750, protein: 2.0 },
+    { id: "lose",      name: "Lose weight",        delta: -500, protein: 2.0 },
+    { id: "lose_slow", name: "Lose weight slowly", delta: -250, protein: 1.8 },
+    { id: "maintain",  name: "Maintain",           delta: 0,    protein: 1.6 },
+    { id: "gain_lean", name: "Lean muscle gain",   delta: 250,  protein: 1.8 },
+    { id: "gain",      name: "Bulk",               delta: 500,  protein: 1.8 },
+  ];
+  const DIETS = ["Vegetarian", "Vegan", "Pescatarian", "Keto", "Gluten-free", "Dairy-free", "Halal", "Kosher"];
+
+  // Ingredients, per 100 g: [name, kcal, protein, carbs, fat, fiber, store section, tags, extra]
+  // extra: each = grams per countable unit (unit = label when counted in recipes), tbsp = grams per tablespoon, dry = dry/cooked ratio, ml = liquid
+  const S = { P: "Produce", M: "Meat & fish", D: "Dairy, eggs & fridge", G: "Grains & bread", N: "Pantry", F: "Frozen" };
+  const ING = {
+    chicken:     ["Chicken breast", 120, 22.5, 0, 2.6, 0, S.M, "poultry"],
+    thigh:       ["Chicken thighs, skinless", 145, 19, 0, 7.5, 0, S.M, "poultry"],
+    turkey:      ["Ground turkey (93% lean)", 150, 19, 0, 8, 0, S.M, "poultry"],
+    turkeyslice: ["Sliced turkey breast", 104, 17, 4, 2, 0, S.M, "poultry"],
+    beef:        ["Lean ground beef (90%)", 176, 20, 0, 10, 0, S.M, "meat"],
+    steak:       ["Sirloin steak", 160, 23, 0, 7, 0, S.M, "meat"],
+    pork:        ["Pork tenderloin", 120, 21, 0, 3.5, 0, S.M, "pork"],
+    bacon:       ["Bacon", 417, 13, 1.4, 40, 0, S.M, "pork", { each: 25, unit: ["slice", "slices"] }],
+    salmon:      ["Salmon fillet", 208, 20, 0, 13, 0, S.M, "fish"],
+    cod:         ["Cod fillet", 82, 18, 0, 0.7, 0, S.M, "fish"],
+    tuna:        ["Canned tuna in water, drained", 116, 26, 0, 0.8, 0, S.N, "fish"],
+    shrimp:      ["Shrimp, peeled", 85, 20, 0, 0.5, 0, S.M, "shellfish"],
+    egg:         ["Eggs", 143, 12.6, 0.7, 9.5, 0, S.D, "egg", { each: 50, unit: ["egg", "eggs"] }],
+    eggwhite:    ["Liquid egg whites", 52, 11, 0.7, 0.2, 0, S.D, "egg", { ml: 1 }],
+    tofu:        ["Firm tofu", 144, 15.8, 2.8, 8.7, 2.3, S.P, "soy"],
+    tempeh:      ["Tempeh", 192, 20, 7.6, 10.8, 0, S.P, "soy"],
+    edamame:     ["Shelled edamame", 121, 12, 9, 5, 5, S.F, "soy"],
+    yogurt:      ["Plain nonfat Greek yogurt", 59, 10.3, 3.6, 0.4, 0, S.D, "dairy"],
+    cottage:     ["Cottage cheese (2%)", 84, 11, 4.3, 2.3, 0, S.D, "dairy"],
+    cheddar:     ["Cheddar", 403, 25, 1.3, 33, 0, S.D, "dairy"],
+    feta:        ["Feta", 264, 14, 4, 21, 0, S.D, "dairy"],
+    parm:        ["Parmesan", 431, 38, 4, 29, 0, S.D, "dairy"],
+    mozz:        ["Part-skim mozzarella", 254, 24, 2.8, 16, 0, S.D, "dairy"],
+    milk:        ["Milk (2%)", 50, 3.3, 4.8, 2, 0, S.D, "dairy", { ml: 1 }],
+    whey:        ["Whey protein powder", 400, 80, 8, 6, 0, S.N, "dairy", { each: 30, unit: ["scoop", "scoops"] }],
+    pea:         ["Plant protein powder", 380, 80, 4, 6, 0, S.N, "", { each: 30, unit: ["scoop", "scoops"] }],
+    soymilk:     ["Unsweetened soy milk", 33, 2.9, 1.7, 1.6, 0.5, S.D, "soy", { ml: 1 }],
+    coco:        ["Light coconut milk (canned)", 70, 0.6, 2.4, 6.5, 0, S.N, "", { ml: 1 }],
+    hummus:      ["Hummus", 166, 7.9, 14.3, 9.6, 6, S.D, "sesame", { tbsp: 15 }],
+    blackbeans:  ["Black beans (canned, drained)", 132, 8.9, 23.7, 0.5, 8.7, S.N, ""],
+    chickpeas:   ["Chickpeas (canned, drained)", 164, 8.9, 27.4, 2.6, 7.6, S.N, ""],
+    lentils:     ["Lentils (canned or cooked)", 116, 9, 20, 0.4, 7.9, S.N, ""],
+    oats:        ["Rolled oats", 379, 13, 68, 6.5, 10, S.G, "oats"],
+    brice:       ["Brown rice (cooked)", 123, 2.7, 25.6, 1, 1.6, S.G, "", { dry: 0.4 }],
+    wrice:       ["White rice (cooked)", 130, 2.7, 28, 0.3, 0.4, S.G, "", { dry: 0.33 }],
+    quinoa:      ["Quinoa (cooked)", 120, 4.4, 21.3, 1.9, 2.8, S.G, "", { dry: 0.37 }],
+    pasta:       ["Whole-wheat pasta (dry)", 348, 14.6, 71, 2.5, 9, S.G, "gluten"],
+    bread:       ["Whole-wheat bread", 252, 12.4, 43, 3.5, 6, S.G, "gluten", { each: 40, unit: ["slice", "slices"] }],
+    tortilla:    ["Whole-wheat tortillas (large)", 300, 8.5, 48, 8, 6, S.G, "gluten", { each: 60, unit: ["tortilla", "tortillas"] }],
+    corntort:    ["Corn tortillas", 218, 5.7, 44.6, 2.9, 6.3, S.G, "", { each: 26, unit: ["tortilla", "tortillas"] }],
+    ricenoodle:  ["Rice noodles (dry)", 364, 6, 80, 0.6, 1.6, S.G, ""],
+    ricecake:    ["Rice cakes", 387, 8, 81, 2.8, 4, S.G, "", { each: 9, unit: ["cake", "cakes"] }],
+    sweetpot:    ["Sweet potatoes", 86, 1.6, 20, 0.1, 3, S.P, "", { each: 200 }],
+    potato:      ["Potatoes", 77, 2, 17, 0.1, 2.2, S.P, "", { each: 200 }],
+    banana:      ["Bananas", 89, 1.1, 22.8, 0.3, 2.6, S.P, "", { each: 120 }],
+    apple:       ["Apples", 52, 0.3, 13.8, 0.2, 2.4, S.P, "", { each: 180 }],
+    berries:     ["Mixed berries (frozen)", 45, 0.8, 10.5, 0.3, 2.5, S.F, ""],
+    broccoli:    ["Broccoli", 34, 2.8, 6.6, 0.4, 2.6, S.P, ""],
+    spinach:     ["Baby spinach", 23, 2.9, 3.6, 0.4, 2.2, S.P, ""],
+    greens:      ["Salad greens", 17, 1.5, 3, 0.2, 1.5, S.P, ""],
+    pepper:      ["Bell peppers", 31, 1, 6, 0.3, 2.1, S.P, "", { each: 150 }],
+    onion:       ["Onions", 40, 1.1, 9.3, 0.1, 1.7, S.P, "", { each: 110 }],
+    tomato:      ["Tomatoes", 18, 0.9, 3.9, 0.2, 1.2, S.P, "", { each: 120 }],
+    cantom:      ["Canned diced tomatoes", 20, 1, 4.4, 0.1, 1, S.N, ""],
+    cherry:      ["Cherry tomatoes", 18, 0.9, 3.9, 0.2, 1.2, S.P, ""],
+    cucumber:    ["Cucumbers", 15, 0.7, 3.6, 0.1, 0.5, S.P, "", { each: 300 }],
+    carrot:      ["Carrots", 41, 0.9, 9.6, 0.2, 2.8, S.P, "", { each: 70 }],
+    zucchini:    ["Zucchini", 17, 1.2, 3.1, 0.3, 1, S.P, "", { each: 200 }],
+    cauli:       ["Cauliflower rice", 25, 1.9, 5, 0.3, 2, S.F, ""],
+    greenbeans:  ["Green beans", 31, 1.8, 7, 0.2, 2.7, S.P, ""],
+    mushroom:    ["Mushrooms", 22, 3.1, 3.3, 0.3, 1, S.P, ""],
+    stirfry:     ["Stir-fry vegetable mix", 35, 2, 7, 0.2, 2.5, S.F, ""],
+    avocado:     ["Avocados", 160, 2, 8.5, 14.7, 6.7, S.P, "", { each: 150 }],
+    asparagus:   ["Asparagus", 20, 2.2, 3.9, 0.1, 2.1, S.P, ""],
+    corn:        ["Corn kernels", 86, 3.3, 19, 1.4, 2, S.F, ""],
+    oil:         ["Olive oil", 884, 0, 0, 100, 0, S.N, "", { tbsp: 13.5 }],
+    pb:          ["Peanut butter", 588, 25, 20, 50, 6, S.N, "peanut", { tbsp: 16 }],
+    ab:          ["Almond butter", 614, 21, 19, 56, 10, S.N, "treenut", { tbsp: 16 }],
+    almonds:     ["Almonds", 579, 21, 22, 50, 12.5, S.N, "treenut"],
+    walnuts:     ["Walnuts", 654, 15, 14, 65, 6.7, S.N, "treenut"],
+    chia:        ["Chia seeds", 486, 17, 42, 31, 34, S.N, "", { tbsp: 12 }],
+    pepitas:     ["Pumpkin seeds", 559, 30, 11, 49, 6, S.N, "", { tbsp: 9 }],
+    honey:       ["Honey", 304, 0.3, 82, 0, 0.2, S.N, "honey", { tbsp: 21 }],
+    maple:       ["Maple syrup", 260, 0, 67, 0.1, 0, S.N, "", { tbsp: 20 }],
+    salsa:       ["Salsa", 36, 1.5, 7, 0.2, 1.8, S.N, "", { tbsp: 16 }],
+    tamari:      ["Tamari (gluten-free soy sauce)", 60, 10, 5.6, 0.1, 0.8, S.N, "soy", { tbsp: 18 }],
+    pesto:       ["Basil pesto", 387, 5, 6, 38, 1, S.N, "dairy treenut", { tbsp: 16 }],
+    marinara:    ["Marinara sauce", 50, 1.5, 8, 1.5, 1.8, S.N, ""],
+  };
+
+  // Recipes at a base portion. Portions are scaled per day to hit your targets.
+  const MEALS = [
+    // Breakfast
+    ["b", "Greek yogurt berry bowl", [["yogurt",250],["berries",100],["almonds",15],["chia",10],["honey",10]], "Stir chia into the yogurt, then top with berries, chopped almonds and a drizzle of honey."],
+    ["b", "Peanut butter overnight oats", [["oats",60],["milk",200],["chia",10],["banana",60],["pb",16]], "Mix oats, milk and chia in a jar the night before. Top with sliced banana and peanut butter."],
+    ["b", "Vegan protein overnight oats", [["oats",60],["soymilk",220],["pea",20],["chia",10],["berries",100],["maple",10]], "Shake oats, soy milk, protein powder and chia in a jar and chill overnight. Top with berries and maple syrup."],
+    ["b", "Veggie scramble on toast", [["egg",150],["spinach",40],["pepper",75],["feta",20],["bread",40],["oil",5]], "Sauté diced pepper and spinach in oil, add beaten eggs and scramble. Finish with feta and serve with toast."],
+    ["b", "Tofu scramble on toast", [["tofu",200],["spinach",40],["onion",40],["tomato",60],["oil",7],["bread",40]], "Crumble tofu into a hot pan with oil and onion. Season with turmeric, salt and pepper, add spinach and tomato. Serve on toast."],
+    ["b", "Berry protein smoothie", [["banana",120],["berries",100],["whey",30],["milk",250],["pb",16]], "Blend everything until smooth."],
+    ["b", "Vegan berry smoothie", [["banana",120],["berries",100],["pea",30],["soymilk",300],["ab",16]], "Blend everything until smooth."],
+    ["b", "Eggs, bacon and avocado", [["egg",150],["bacon",25],["avocado",75],["spinach",40],["oil",5]], "Fry the bacon, cook the eggs your way, wilt spinach in the pan, and serve with sliced avocado."],
+    ["b", "Cottage cheese, berries and walnuts", [["cottage",200],["berries",100],["walnuts",15]], "Top cottage cheese with berries and chopped walnuts."],
+    ["b", "Breakfast burrito", [["tortilla",60],["egg",100],["blackbeans",60],["cheddar",20],["salsa",40]], "Scramble the eggs and warm the beans. Fill the tortilla with eggs, beans, cheese and salsa, roll, and toast seam-side down."],
+    ["b", "Mushroom mozzarella omelette", [["eggwhite",150],["egg",100],["mushroom",80],["mozz",30],["spinach",30],["oil",5]], "Sauté mushrooms and spinach in oil, pour in whisked eggs and whites, add mozzarella and fold."],
+    ["b", "Peanut butter banana toast", [["bread",80],["pb",24],["banana",120]], "Toast the bread, spread with peanut butter and top with sliced banana."],
+    ["b", "Coconut chia pudding", [["chia",30],["coco",200],["almonds",15],["berries",40]], "Stir chia into coconut milk and chill overnight. Top with almonds and berries."],
+    // Lunch
+    ["l", "Chicken quinoa bowl", [["chicken",150],["quinoa",150],["broccoli",100],["oil",10],["tamari",10]], "Season and pan-sear the chicken in oil, then slice. Serve over quinoa with steamed broccoli and a splash of tamari."],
+    ["l", "Turkey hummus wrap", [["tortilla",60],["turkeyslice",100],["hummus",30],["greens",30],["tomato",60],["cheddar",20]], "Spread hummus on the tortilla, layer turkey, cheese, greens and tomato, and roll up."],
+    ["l", "Mediterranean tuna salad", [["tuna",120],["greens",80],["cherry",100],["cucumber",80],["chickpeas",80],["oil",10],["feta",20]], "Toss everything with the olive oil, a squeeze of lemon, salt and pepper."],
+    ["l", "Lentil vegetable soup", [["lentils",250],["carrot",60],["onion",50],["cantom",120],["spinach",30],["oil",7],["bread",40]], "Soften onion and carrot in oil, add lentils, tomatoes and stock, simmer 15 minutes, then stir in spinach. Serve with bread. Keeps well for leftovers."],
+    ["l", "Chickpea Buddha bowl", [["chickpeas",150],["quinoa",120],["sweetpot",120],["spinach",40],["hummus",30]], "Roast cubed sweet potato and chickpeas at 220°C / 425°F for 25 minutes. Serve over quinoa and spinach with hummus."],
+    ["l", "Black bean burrito bowl", [["blackbeans",150],["brice",150],["corn",50],["salsa",60],["avocado",50],["greens",30]], "Warm the beans and corn. Build a bowl with rice, greens, beans, corn, salsa and sliced avocado."],
+    ["l", "Chicken Caesar-style salad", [["chicken",150],["greens",120],["parm",20],["oil",15],["avocado",50]], "Grill or pan-sear the chicken. Toss greens with olive oil, lemon and parmesan, and top with chicken and avocado."],
+    ["l", "Salmon avocado salad", [["salmon",130],["greens",100],["cucumber",80],["avocado",60],["oil",10]], "Bake salmon at 200°C / 400°F for 12 minutes, flake it over greens, cucumber and avocado, and dress with oil and lemon."],
+    ["l", "Egg salad sandwich", [["egg",100],["yogurt",30],["bread",80],["greens",20],["tomato",60]], "Chop hard-boiled eggs and mix with yogurt, mustard, salt and pepper. Sandwich with greens and tomato."],
+    ["l", "Peanut tofu noodles", [["tofu",180],["ricenoodle",70],["stirfry",150],["tamari",15],["pb",16]], "Cook the noodles. Pan-fry cubed tofu, add vegetables, then toss everything with peanut butter thinned with tamari and hot water."],
+    ["l", "Beef and bean chili", [["beef",120],["blackbeans",100],["cantom",150],["onion",50],["pepper",60],["cheddar",15]], "Brown the beef with onion and pepper, add beans, tomatoes and chili spices, and simmer 20 minutes. Top with cheddar. Batch-cooks well."],
+    ["l", "Shrimp quinoa salad", [["shrimp",150],["quinoa",120],["pepper",75],["cucumber",60],["feta",25],["oil",10]], "Sauté the shrimp 2 to 3 minutes a side. Toss with quinoa, diced pepper, cucumber, feta, oil and lemon."],
+    ["l", "Tempeh rice bowl", [["tempeh",120],["brice",150],["broccoli",100],["tamari",10],["pepitas",10]], "Slice and pan-fry the tempeh with tamari. Serve over rice with steamed broccoli and pumpkin seeds."],
+    ["l", "Cobb salad", [["chicken",120],["egg",50],["bacon",12.5],["avocado",50],["greens",100],["cheddar",15],["oil",10]], "Top greens with sliced chicken, chopped egg, crumbled bacon, avocado and cheddar. Dress with oil and vinegar."],
+    ["l", "Tofu avocado salad", [["tofu",200],["greens",100],["avocado",75],["cucumber",80],["pepitas",15],["oil",10]], "Pan-fry cubed tofu until crisp. Toss with greens, cucumber, avocado and pumpkin seeds, and dress with oil and lemon."],
+    // Dinner
+    ["d", "Salmon, sweet potato and green beans", [["salmon",150],["sweetpot",200],["greenbeans",120],["oil",5]], "Roast sweet potato wedges at 220°C / 425°F for 25 minutes, adding the salmon and green beans for the last 12."],
+    ["d", "Chicken vegetable stir-fry", [["chicken",160],["wrice",180],["stirfry",180],["tamari",15],["oil",10]], "Stir-fry sliced chicken in oil until cooked, add vegetables and tamari, and serve over rice."],
+    ["d", "Turkey bolognese", [["turkey",130],["pasta",80],["marinara",150],["onion",40],["spinach",30],["parm",10]], "Brown the turkey with onion, add marinara and simmer 10 minutes, stir in spinach. Toss with cooked pasta and top with parmesan."],
+    ["d", "Beef and broccoli", [["steak",150],["broccoli",150],["brice",150],["tamari",15],["oil",7]], "Sear thin strips of steak in oil, add broccoli and tamari with a splash of water, and cook until tender. Serve over rice."],
+    ["d", "Sheet-pan chicken and potatoes", [["thigh",170],["potato",250],["carrot",80],["oil",10]], "Toss chicken, potato chunks and carrots with oil and herbs, then roast at 220°C / 425°F for 35 minutes."],
+    ["d", "Lemon cod with quinoa and asparagus", [["cod",180],["quinoa",160],["asparagus",120],["oil",10]], "Roast cod and asparagus with oil, lemon and garlic at 200°C / 400°F for 12 minutes. Serve with quinoa."],
+    ["d", "Chickpea spinach curry", [["chickpeas",180],["coco",120],["cantom",120],["spinach",60],["onion",50],["brice",150]], "Soften onion with curry powder, add chickpeas, tomatoes and coconut milk, simmer 15 minutes, and stir in spinach. Serve over rice."],
+    ["d", "Black bean tacos", [["corntort",78],["blackbeans",150],["avocado",50],["salsa",60],["greens",30],["corn",40]], "Warm the beans with cumin and the corn. Fill warm tortillas with beans, corn, avocado, greens and salsa."],
+    ["d", "Tofu coconut curry", [["tofu",200],["coco",100],["stirfry",150],["wrice",150]], "Brown cubed tofu, add vegetables, curry paste and coconut milk, and simmer 10 minutes. Serve over rice."],
+    ["d", "Shrimp tacos", [["shrimp",160],["corntort",78],["avocado",50],["greens",30],["salsa",40]], "Season shrimp with chili and lime and sear 2 minutes a side. Serve in warm tortillas with greens, avocado and salsa."],
+    ["d", "Pork tenderloin with rice and green beans", [["pork",160],["wrice",150],["greenbeans",120],["oil",7]], "Sear the pork, then roast at 200°C / 400°F to 63°C / 145°F inside, about 15 minutes. Rest, slice, and serve with rice and green beans."],
+    ["d", "Steak with cauliflower mash", [["steak",170],["cauli",200],["asparagus",120],["oil",15]], "Sear the steak to your liking and rest it. Steam the cauliflower and mash with oil and garlic. Roast or pan-fry the asparagus."],
+    ["d", "Garlic salmon with zucchini", [["salmon",170],["zucchini",200],["spinach",50],["oil",10]], "Bake salmon with garlic at 200°C / 400°F for 12 minutes. Sauté sliced zucchini and spinach in oil."],
+    ["d", "Cheesy chicken and broccoli bake", [["thigh",170],["broccoli",150],["cheddar",25],["oil",10]], "Roast chicken and broccoli with oil at 220°C / 425°F for 25 minutes, top with cheddar, and bake 5 more minutes."],
+    ["d", "Lentil mushroom bolognese", [["lentils",180],["pasta",75],["marinara",150],["mushroom",80],["oil",5]], "Brown chopped mushrooms in oil, add lentils and marinara, and simmer 10 minutes. Toss with cooked pasta."],
+    ["d", "Pesto chicken pasta", [["chicken",140],["pasta",75],["pesto",25],["cherry",100],["spinach",30]], "Cook pasta and pan-sear sliced chicken. Toss with pesto, halved tomatoes and spinach until wilted."],
+    ["d", "Tofu zucchini stir-fry", [["tofu",220],["zucchini",150],["mushroom",100],["tamari",15],["oil",10],["pepitas",10]], "Crisp cubed tofu in oil, add zucchini and mushrooms, finish with tamari, and top with pumpkin seeds."],
+    ["d", "Turkey stuffed peppers", [["turkey",130],["pepper",300],["brice",100],["marinara",80],["mozz",25]], "Brown the turkey, mix with rice and marinara, and stuff halved peppers. Top with mozzarella and bake at 200°C / 400°F for 25 minutes."],
+    ["d", "Veggie egg fried rice", [["egg",100],["brice",180],["stirfry",150],["edamame",60],["tamari",15],["oil",10]], "Stir-fry vegetables and edamame in oil, push aside and scramble the eggs, then add cold rice and tamari and toss until hot."],
+    // Snacks
+    ["s", "Apple with peanut butter", [["apple",180],["pb",20]], "Slice the apple and dip."],
+    ["s", "Greek yogurt and berries", [["yogurt",170],["berries",75]], "Top yogurt with berries."],
+    ["s", "Hummus and veggie sticks", [["hummus",60],["carrot",80],["cucumber",80],["pepper",50]], "Cut vegetables into sticks and dip."],
+    ["s", "Almonds", [["almonds",30]], "A small handful."],
+    ["s", "Cottage cheese and tomatoes", [["cottage",150],["cherry",60]], "Top cottage cheese with halved tomatoes and black pepper."],
+    ["s", "Protein shake", [["whey",30],["milk",250]], "Shake or blend."],
+    ["s", "Plant protein shake", [["pea",30],["soymilk",250]], "Shake or blend."],
+    ["s", "Hard-boiled eggs", [["egg",100]], "Boil 9 to 10 minutes, cool in cold water, and peel."],
+    ["s", "Rice cakes with almond butter", [["ricecake",18],["ab",16],["banana",60]], "Spread almond butter on the rice cakes and top with banana slices."],
+    ["s", "Edamame", [["edamame",150]], "Steam or microwave, and sprinkle with salt."],
+    ["s", "Cheddar and walnuts", [["cheddar",30],["walnuts",15]], "Cube the cheese and pair with walnuts."],
+    ["s", "Tuna rice cakes", [["tuna",80],["ricecake",18],["yogurt",20]], "Mix tuna with yogurt and pepper, and pile onto rice cakes."],
+    ["s", "Banana", [["banana",120]], "Grab and go."],
+  ].map(([type, name, items, how], i) => {
+    const n = [0, 0, 0, 0, 0];
+    const tags = new Set();
+    items.forEach(([k, g]) => {
+      const d = ING[k];
+      if (!d) throw new Error("Unknown ingredient " + k);
+      for (let j = 0; j < 5; j++) n[j] += (d[1 + j] * g) / 100;
+      d[7].split(" ").filter(Boolean).forEach((t) => tags.add(t));
+    });
+    const text = (name + " " + items.map(([k]) => ING[k][0]).join(" ")).toLowerCase();
+    return { id: "m" + i, type, name, items, how, n, tags, text };
+  });
+  const MEAL = Object.fromEntries(MEALS.map((m) => [m.id, m]));
+
+  const SLOTS = {
+    3: ["Breakfast", "Lunch", "Dinner"],
+    4: ["Breakfast", "Lunch", "Dinner", "Snack"],
+    5: ["Breakfast", "Snack", "Lunch", "Snack", "Dinner"],
+  };
+  const SLOT_TYPE = { Breakfast: "b", Lunch: "l", Dinner: "d", Snack: "s" };
+  const DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+  const STEPS = { b: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.25, 2.5], l: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.25, 2.5], d: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.25, 2.5], s: [0.5, 0.75, 1, 1.25, 1.5, 2] };
+
+  // Allergy words that map to whole food groups, on top of plain text matching
+  const GROUP_WORDS = {
+    nut: ["treenut", "peanut"], "tree nut": ["treenut"], peanut: ["peanut"], dairy: ["dairy"], milk: ["dairy"], lactose: ["dairy"],
+    cheese: ["dairy"], gluten: ["gluten"], wheat: ["gluten"], soy: ["soy"], egg: ["egg"], fish: ["fish"], seafood: ["fish", "shellfish"],
+    shellfish: ["shellfish"], pork: ["pork"], meat: ["meat", "pork", "poultry"], "red meat": ["meat", "pork"], poultry: ["poultry"], sesame: ["sesame"],
+  };
+
+  // ---------- Helpers ----------
+  const $ = (id) => document.getElementById(id);
+  const ls = {
+    get(k) { try { return JSON.parse(localStorage.getItem(k) || "null"); } catch { return null; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+  };
+  const fmt = (n) => Math.round(n).toLocaleString();
+  const radio = (name) => document.querySelector(`input[name="${name}"]:checked`)?.value;
+  const singular = (t) => (t.length > 4 && t.endsWith("es") && !t.endsWith("oes") ? t.slice(0, -2) : t.length > 3 && t.endsWith("s") ? t.slice(0, -1) : t);
+  const terms = (s) => s.toLowerCase().split(/[,;\n]+/).map((t) => singular(t.trim())).filter((t) => t.length > 1);
+  function rng(seed) {
+    let a = seed >>> 0;
+    return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  }
+  const half = (x) => { const w = Math.floor(x + 1e-9), h = x - w >= 0.5 - 1e-9; return (w ? String(w) : "") + (h ? "½" : "") || "0"; };
+
+  // ---------- Form setup ----------
+  $("activity").innerHTML = ACTIVITY.map((a, i) => `
+    <label class="opt"><input type="radio" name="activity" id="act-${i}" value="${a.v}" ${a.v === 1.55 ? "checked" : ""}>
+      <span><b>${a.name}</b><small>${a.desc}</small></span><em>× ${a.v}</em></label>`).join("");
+  $("goal").innerHTML = GOALS.map((g) => `
+    <label class="opt"><input type="radio" name="goal" id="goal-${g.id}" value="${g.id}" ${g.id === "lose" ? "checked" : ""}>
+      <span><b>${g.name}</b><small id="goal-rate-${g.id}"></small></span><em>${g.delta > 0 ? "+" : g.delta < 0 ? "−" : "±"}${Math.abs(g.delta)} kcal</em></label>`).join("");
+  $("diets").innerHTML = DIETS.map((d) => `
+    <label class="chip"><input type="checkbox" name="diet" id="diet-${d.toLowerCase()}" value="${d}"><span>${d}</span></label>`).join("");
+
+  let isExample = true;
+
+  function read() {
+    const units = radio("units");
+    const w = parseFloat($("weight").value);
+    let heightCm, weightKg;
+    if (units === "imperial") {
+      heightCm = ((parseFloat($("heightFt").value) || 0) * 12 + (parseFloat($("heightIn").value) || 0)) * 2.54;
+      weightKg = w * 0.45359237;
+    } else {
+      heightCm = parseFloat($("heightCm").value);
+      weightKg = w;
+    }
+    return {
+      units, sex: radio("sex"), age: parseFloat($("age").value), heightCm, weightKg,
+      activity: parseFloat(radio("activity")), goal: radio("goal"),
+      diets: [...document.querySelectorAll('input[name="diet"]:checked')].map((x) => x.value),
+      avoid: $("avoid").value.trim(), likes: $("likes").value.trim(), mpd: radio("mpd"),
+    };
+  }
+  const valid = (s) => s.age >= 15 && s.age <= 90 && s.heightCm >= 120 && s.heightCm <= 230 && s.weightKg >= 30 && s.weightKg <= 300;
+
+  // ---------- Diet plan ----------
+  function compute(s) {
+    const goal = GOALS.find((g) => g.id === s.goal);
+    const bmr = 10 * s.weightKg + 6.25 * s.heightCm - 5 * s.age + (s.sex === "male" ? 5 : -161);
+    const tdee = bmr * s.activity;
+    const floor = s.sex === "male" ? 1500 : 1200;
+    let target = tdee + goal.delta;
+    const floorApplied = target < floor;
+    if (floorApplied) target = floor;
+    target = Math.round(target / 10) * 10;
+    const hM = s.heightCm / 100;
+    const bmi = s.weightKg / (hM * hM);
+    const basisKg = bmi > 30 ? 25 * hM * hM : s.weightKg;
+    const protein = Math.round(basisKg * goal.protein);
+    const keto = s.diets.includes("Keto");
+    let carbs, fat;
+    if (keto) {
+      carbs = 30;
+      fat = Math.max(0, Math.round((target - protein * 4 - carbs * 4) / 9));
+    } else {
+      fat = Math.round((target * 0.30) / 9);
+      carbs = Math.round((target - protein * 4 - fat * 9) / 4);
+      if (carbs < 100) {
+        fat = Math.round((target * 0.25) / 9);
+        carbs = Math.round((target - protein * 4 - fat * 9) / 4);
+      }
+      carbs = Math.max(0, carbs);
+    }
+    const fiber = Math.round((target / 1000) * 14);
+    const waterL = Math.round(s.weightKg * 0.035 * 10) / 10;
+    const weeklyKg = ((target - tdee) * 7) / 7700;
+    return { bmr, tdee, target, floor, floorApplied, protein, carbs, fat, fiber, waterL, bmi, basisKg, weeklyKg, keto, goal };
+  }
+
+  function rateText(weeklyKg, units) {
+    if (Math.abs(weeklyKg) < 0.02) return "Hold your current weight";
+    const v = units === "imperial" ? Math.abs(weeklyKg) * 2.20462 : Math.abs(weeklyKg);
+    return `About ${v.toFixed(v < 1 ? 2 : 1)} ${units === "imperial" ? "lb" : "kg"} per week ${weeklyKg < 0 ? "lost" : "gained"}`;
+  }
+
+  function renderPlan(s, r) {
+    const pP = Math.round((r.protein * 400) / r.target), pC = Math.round((r.carbs * 400) / r.target), pF = 100 - pP - pC;
+    const wUnit = s.units === "imperial" ? "lb" : "kg";
+    const bmiNote = r.bmi > 30 ? ` (based on ${fmt(s.units === "imperial" ? r.basisKg * 2.20462 : r.basisKg)} ${wUnit})` : "";
+    $("label").innerHTML = `
+      <h2>Daily Plan</h2>
+      <div class="serv"><span>${r.goal.name}</span><span>${s.diets.length ? s.diets.join(", ") : "No restrictions"}</span></div>
+      <div class="cal"><span class="k">Calories</span><span class="v">${fmt(r.target)}</span></div>
+      <div class="bar" role="img" aria-label="Calories from protein ${pP}%, carbs ${pC}%, fat ${pF}%">
+        <div style="width:${pP}%;background:var(--protein)"></div><div style="width:${pC}%;background:var(--carbs)"></div><div style="width:${pF}%;background:var(--fat)"></div>
+      </div>
+      <div class="dvh">% Calories</div>
+      <div class="ln"><span><i style="background:var(--protein)"></i><b>Protein</b> ${r.protein} g</span><span><b>${pP}%</b></span></div>
+      <div class="ln sub"><span>${(r.protein / r.basisKg).toFixed(1)} g per kg${bmiNote}</span><span></span></div>
+      <div class="ln"><span><i style="background:var(--carbs)"></i><b>${r.keto ? "Net Carbs" : "Total Carbohydrate"}</b> ${r.carbs} g</span><span><b>${pC}%</b></span></div>
+      <div class="ln sub"><span>Dietary Fiber, at least ${r.fiber} g</span><span></span></div>
+      <div class="ln"><span><i style="background:var(--fat)"></i><b>Total Fat</b> ${r.fat} g</span><span><b>${pF}%</b></span></div>
+      <div class="ln thick"><span><b>Water</b> about ${r.waterL} L</span><span></span></div>
+      <div class="ln"><span>Resting burn (BMR)</span><span>${fmt(r.bmr)} kcal</span></div>
+      <div class="ln"><span>Maintenance (TDEE)</span><span>${fmt(r.tdee)} kcal</span></div>
+      <div class="ln"><span>Daily adjustment</span><span>${r.target - r.tdee >= 0 ? "+" : "−"}${fmt(Math.abs(r.target - r.tdee))} kcal</span></div>
+      <div class="ln"><span>Expected rate</span><span>${rateText(r.weeklyKg, s.units).replace("About ", "~").replace(" per week", "/wk")}</span></div>
+      <div class="ln"><span>BMI</span><span>${r.bmi.toFixed(1)}</span></div>
+      <p class="foot">Mifflin-St Jeor with activity × ${s.activity}. Estimates are usually within ±10%. Track your weight for 2 to 3 weeks and adjust.</p>`;
+    const msgs = [];
+    if (r.floorApplied) msgs.push(`This goal would put you under ${fmt(r.floor)} kcal a day, so the target is held at that floor. Pick a slower goal or add activity.`);
+    if (r.keto && r.fat * 9 > r.target * 0.8) msgs.push("Keto: fat is over 80% of calories at this target.");
+    if (r.bmi < 18.5 && r.goal.delta < 0) msgs.push("Your BMI is under 18.5. Losing more weight is not recommended without a doctor's advice.");
+    $("warn").hidden = !msgs.length;
+    $("warn").textContent = msgs.join(" ");
+    GOALS.forEach((g) => {
+      const t = Math.max(r.floor, r.tdee + g.delta);
+      $(`goal-rate-${g.id}`).textContent = rateText(((t - r.tdee) * 7) / 7700, s.units);
+    });
+    $("exampleBadge").hidden = !isExample;
+  }
+
+  // ---------- Menu engine ----------
+  function allowed(m, diets, avoid) {
+    const t = m.tags;
+    const has = (...xs) => xs.some((x) => t.has(x));
+    if (diets.includes("Vegan") && has("meat", "poultry", "pork", "fish", "shellfish", "egg", "dairy", "honey")) return false;
+    if (diets.includes("Vegetarian") && has("meat", "poultry", "pork", "fish", "shellfish")) return false;
+    if (diets.includes("Pescatarian") && has("meat", "poultry", "pork")) return false;
+    if (diets.includes("Gluten-free") && has("gluten")) return false;
+    if (diets.includes("Dairy-free") && has("dairy")) return false;
+    if (diets.includes("Halal") && has("pork")) return false;
+    if (diets.includes("Kosher") && (has("pork", "shellfish") || (has("meat", "poultry") && has("dairy")))) return false;
+    if (diets.includes("Keto") && ((m.n[2] - m.n[4]) * 4) / m.n[0] > 0.12) return false;
+    for (const term of avoid) {
+      if (m.text.includes(term)) return false;
+      const groups = GROUP_WORDS[term] || GROUP_WORDS[term + "s"];
+      if (groups && has(...groups)) return false;
+    }
+    return true;
+  }
+
+  function makeScorer(T) {
+    return (k, p, c, f, fib) => {
+      const ek = (k - T.k) / T.k;
+      const ep = (p - T.p) / T.p;
+      const ef = (f - T.f) / T.f;
+      let s = 6 * ek * ek + (ep < 0 ? 4 : 1) * ep * ep + ef * ef;
+      if (T.keto) { const over = Math.max(0, (c - fib - T.c) / T.c); s += 5 * over * over; }
+      else { const ec = (c - T.c) / T.c; s += ec * ec; }
+      return s;
+    };
+  }
+
+  // Pick portion multipliers for a day's meals to land closest to the targets
+  function optimize(meals, T, score, start) {
+    const tot = [0, 0, 0, 0, 0];
+    const sumK = meals.reduce((a, m) => a + m.n[0], 0);
+    const ms = meals.map((m, i) => {
+      if (start) return start[i];
+      const steps = STEPS[m.type];
+      const g = T.k / sumK;
+      return steps.reduce((b, x) => (Math.abs(x - g) < Math.abs(b - g) ? x : b), 1);
+    });
+    meals.forEach((m, i) => { for (let j = 0; j < 5; j++) tot[j] += m.n[j] * ms[i]; });
+    const sc = () => score(tot[0], tot[1], tot[2], tot[3], tot[4]) + 0.004 * ms.reduce((a, x) => a + Math.abs(x - 1), 0);
+    let best = sc();
+    for (let pass = 0; pass < 3; pass++) {
+      let improved = false;
+      meals.forEach((m, i) => {
+        for (const x of STEPS[m.type]) {
+          if (x === ms[i]) continue;
+          const d = x - ms[i];
+          for (let j = 0; j < 5; j++) tot[j] += m.n[j] * d;
+          const old = ms[i]; ms[i] = x;
+          const s = sc();
+          if (s < best - 1e-9) { best = s; improved = true; }
+          else { ms[i] = old; for (let j = 0; j < 5; j++) tot[j] -= m.n[j] * d; }
+        }
+      });
+      if (!improved) break;
+    }
+    return { ms, s: best };
+  }
+
+  function context(s, r) {
+    const diets = s.diets, avoid = terms(s.avoid), likes = terms(s.likes);
+    const slots = SLOTS[s.mpd];
+    const pools = {};
+    for (const type of ["b", "l", "d", "s"]) pools[type] = MEALS.filter((m) => m.type === type && allowed(m, diets, avoid));
+    const liked = (m) => likes.some((t) => m.text.includes(t));
+    const T = { k: r.target, p: r.protein, c: r.carbs, f: r.fat, keto: r.keto };
+    return { slots, pools, liked, T, score: makeScorer(T), likes };
+  }
+
+  function buildWeek(ctx, seed) {
+    const rand = rng(seed);
+    const { slots, pools, liked, T, score } = ctx;
+    const empty = [...new Set(slots)].filter((sl) => !pools[SLOT_TYPE[sl]].length);
+    if (empty.length) return { error: `No ${empty.map((x) => x.toLowerCase()).join(" or ")} recipes fit your diet and avoid list. Loosen a filter to build a menu.` };
+    const uses = {};
+    const days = [];
+    for (let d = 0; d < 7; d++) {
+      let best = null;
+      for (let t = 0; t < 220; t++) {
+        const picked = [];
+        for (const sl of slots) {
+          const pool = pools[SLOT_TYPE[sl]];
+          const avail = pool.length > picked.filter((m) => m.type === SLOT_TYPE[sl]).length ? pool.filter((m) => !picked.includes(m)) : pool;
+          const cap = Math.ceil(7 / avail.length) + 1;
+          const w = avail.map((m) => (liked(m) ? 3 : 1) * ((uses[m.id] || 0) >= cap ? 0.02 : 1 / (1 + 1.5 * (uses[m.id] || 0))));
+          let x = rand() * w.reduce((a, b) => a + b, 0), i = 0;
+          while (i < w.length - 1 && (x -= w[i]) > 0) i++;
+          picked.push(avail[i]);
+        }
+        const o = optimize(picked, T, score);
+        const s = o.s + picked.reduce((a, m) => a + 0.05 * (uses[m.id] || 0) - (liked(m) ? 0.01 : 0), 0);
+        if (!best || s < best.s) best = { ids: picked.map((m) => m.id), ms: o.ms, s };
+      }
+      best.ids.forEach((id) => (uses[id] = (uses[id] || 0) + 1));
+      days.push({ ids: best.ids, ms: best.ms });
+    }
+    return { days };
+  }
+
+  // Round a scaled recipe to amounts you can actually measure
+  function portion(m, mult) {
+    return m.items.map(([k, g]) => {
+      const d = ING[k], x = d[8] || {};
+      const raw = g * mult;
+      const step = x.unit ? x.each / 2 : raw < 40 ? 5 : 10;
+      return { k, g: Math.max(step, Math.round(raw / step) * step) };
+    });
+  }
+  function nutr(items) {
+    const n = [0, 0, 0, 0, 0];
+    items.forEach(({ k, g }) => { for (let j = 0; j < 5; j++) n[j] += (ING[k][1 + j] * g) / 100; });
+    return n;
+  }
+  function amountText(k, g) {
+    const d = ING[k], x = d[8] || {};
+    if (x.unit) { const c = g / x.each; return `${half(c)} ${c > 1 ? x.unit[1] : x.unit[0]} ${k === "egg" ? "" : d[0].toLowerCase().replace(/ \(.*\)/, "")}`.replace(/\s+$/, ""); }
+    let s = `${d[0].replace(/ \(cooked\)/, ", cooked")}: ${fmt(g)} ${x.ml ? "ml" : "g"}`;
+    if (x.tbsp) {
+      const tb = g / x.tbsp;
+      s += tb < 1 ? ` (${half(Math.max(0.5, Math.round(tb * 3 * 2) / 2))} tsp)` : ` (${half(Math.round(tb * 2) / 2)} tbsp)`;
+    } else if (x.each && g >= x.each * 0.4) {
+      s += ` (about ${half(Math.round((g / x.each) * 2) / 2)})`;
+    }
+    return s;
+  }
+
+  // ---------- Menu state and rendering ----------
+  let ctx = null, week = null, seed = ls.get("ad-seed") || 1 + Math.floor(Math.random() * 1e9);
+  const skipped = {};
+
+  function inputsKey(s, r) { return JSON.stringify([r.target, r.protein, r.carbs, r.fat, r.keto, s.diets, s.avoid, s.likes, s.mpd]); }
+
+  function refreshMenu(s, r, force) {
+    ctx = context(s, r);
+    const key = inputsKey(s, r);
+    const saved = ls.get("ad-week");
+    if (!force && saved && saved.key === key && saved.seed === seed && saved.days?.every((d) => d.ids.every((id) => MEAL[id]))) week = saved;
+    else {
+      const b = buildWeek(ctx, seed);
+      week = b.error ? { error: b.error } : { key, seed, days: b.days };
+      if (!b.error) ls.set("ad-week", week);
+      Object.keys(skipped).forEach((k) => delete skipped[k]);
+    }
+    renderMenu();
+  }
+
+  function dayData(day) {
+    const meals = day.ids.map((id, i) => {
+      const m = MEAL[id];
+      const items = portion(m, day.ms[i]);
+      return { m, items, n: nutr(items), mult: day.ms[i] };
+    });
+    const tot = [0, 0, 0, 0, 0];
+    meals.forEach((x) => x.n.forEach((v, j) => (tot[j] += v)));
+    return { meals, tot };
+  }
+
+  function renderMenu() {
+    const days = $("days"), warn = $("menuWarn");
+    if (!week || week.error) {
+      days.innerHTML = ""; $("grocery").innerHTML = "";
+      warn.hidden = false; warn.textContent = week?.error || "";
+      $("menuSummary").textContent = "";
+      return;
+    }
+    const T = ctx.T;
+    const all = week.days.map(dayData);
+    const avg = [0, 0, 0, 0, 0];
+    all.forEach((d) => d.tot.forEach((v, j) => (avg[j] += v / 7)));
+    const carbOf = (n) => (T.keto ? n[2] - n[4] : n[2]);
+    $("menuSummary").textContent = `Daily average ${fmt(avg[0])} kcal · ${fmt(avg[1])} g protein · ${fmt(carbOf(avg))} g ${T.keto ? "net carbs" : "carbs"} · ${fmt(avg[3])} g fat. Target ${fmt(T.k)} kcal.`;
+
+    const offDays = all.filter((d) => Math.abs(d.tot[0] - T.k) / T.k > 0.1).length;
+    const thin = Object.entries(ctx.pools).filter(([t, p]) => ctx.slots.some((sl) => SLOT_TYPE[sl] === t) && p.length < 4).map(([t]) => ({ b: "breakfast", l: "lunch", d: "dinner", s: "snack" })[t]);
+    const notes = [];
+    if (thin.length) notes.push(`Only a few ${thin.join(", ")} recipes fit your filters, so some meals repeat.`);
+    if (offDays) notes.push(`${offDays} day${offDays > 1 ? "s are" : " is"} more than 10% off your calorie target. Try Shuffle or a different number of meals.`);
+    const unmatched = ctx.likes.filter((t) => !MEALS.some((m) => m.text.includes(t)));
+    if (unmatched.length) notes.push(`No built-in recipes use ${unmatched.join(", ")} yet.`);
+    warn.hidden = !notes.length; warn.textContent = notes.join(" ");
+
+    days.innerHTML = "";
+    all.forEach((d, di) => {
+      const dev = (d.tot[0] - T.k) / T.k;
+      const cls = Math.abs(dev) <= 0.05 ? "ok" : Math.abs(dev) <= 0.1 ? "warn" : "bad";
+      const off = (v, t) => (Math.abs(v - t) / t > 0.15 ? ' class="off"' : "");
+      const el = document.createElement("article");
+      el.className = "day";
+      el.innerHTML = `
+        <div class="day-h"><h3>${DAY_NAMES[di]}</h3><span class="pill ${cls}" title="${dev >= 0 ? "+" : ""}${Math.round(dev * 100)}% vs target">${fmt(d.tot[0])} kcal</span></div>
+        <div class="macros">
+          <span${d.tot[1] < T.p * 0.85 ? ' class="off"' : ""}><b>P</b> ${fmt(d.tot[1])}/${T.p} g</span>
+          <span${T.keto ? (carbOf(d.tot) > T.c * 1.15 ? ' class="off"' : "") : off(d.tot[2], T.c)}><b>${T.keto ? "Net C" : "C"}</b> ${fmt(carbOf(d.tot))}/${T.c} g</span>
+          <span${off(d.tot[3], T.f)}><b>F</b> ${fmt(d.tot[3])}/${T.f} g</span>
+        </div>`;
+      d.meals.forEach((x, i) => {
+        const mm = document.createElement("div");
+        mm.className = "meal";
+        const portionNote = x.mult === 1 ? "" : ` · ${x.mult}× portion`;
+        mm.innerHTML = `
+          <div class="slot">${ctx.slots[i]}</div>
+          <div class="nm">${x.m.name}${ctx.liked(x.m) ? ' <span class="liked" title="Matches a food you asked for">★</span>' : ""}</div>
+          <button type="button" class="swap" aria-label="Swap ${ctx.slots[i]} on ${DAY_NAMES[di]}">Swap</button>
+          <div class="mt">${fmt(x.n[0])} kcal · P ${fmt(x.n[1])} · C ${fmt(T.keto ? x.n[2] - x.n[4] : x.n[2])} · F ${fmt(x.n[3])}${portionNote}</div>
+          <details><summary>Ingredients and method</summary>
+            <ul>${x.items.map(({ k, g }) => `<li>${amountText(k, g)}</li>`).join("")}</ul>
+            <p>${x.m.how}</p></details>`;
+        mm.querySelector(".swap").addEventListener("click", () => swap(di, i));
+        el.append(mm);
+      });
+      days.append(el);
+    });
+    renderGrocery(all);
+  }
+
+  function swap(di, si) {
+    const day = week.days[di];
+    const cur = MEAL[day.ids[si]];
+    const key = di + ":" + si;
+    const seen = (skipped[key] ||= new Set());
+    seen.add(cur.id);
+    const uses = {};
+    week.days.forEach((d, j) => j !== di && d.ids.forEach((id) => (uses[id] = (uses[id] || 0) + 1)));
+    const pool = ctx.pools[cur.type];
+    let cands = pool.filter((m) => !seen.has(m.id) && !day.ids.some((id, j) => j !== si && id === m.id));
+    if (!cands.length) { seen.clear(); seen.add(cur.id); cands = pool.filter((m) => m.id !== cur.id); }
+    if (!cands.length) return;
+    let best = null;
+    for (const m of cands) {
+      const meals = day.ids.map((id, j) => (j === si ? m : MEAL[id]));
+      const o = optimize(meals, ctx.T, ctx.score);
+      const s = o.s + 0.05 * (uses[m.id] || 0) - (ctx.liked(m) ? 0.01 : 0);
+      if (!best || s < best.s) best = { m, ms: o.ms, s };
+    }
+    day.ids[si] = best.m.id;
+    day.ms = best.ms;
+    ls.set("ad-week", week);
+    renderMenu();
+  }
+
+  function renderGrocery(all) {
+    const sum = {};
+    all.forEach((d) => d.meals.forEach((x) => x.items.forEach(({ k, g }) => (sum[k] = (sum[k] || 0) + g))));
+    const checked = new Set(ls.get("ad-checked") || []);
+    const bySec = {};
+    Object.entries(sum).forEach(([k, g]) => (bySec[ING[k][6]] ||= []).push([k, g]));
+    const order = Object.values(S);
+    const box = $("grocery");
+    box.innerHTML = "";
+    order.filter((sec) => bySec[sec]).forEach((sec) => {
+      const div = document.createElement("div");
+      div.className = "gsec";
+      div.innerHTML = `<h3>${sec}</h3>` + bySec[sec].sort((a, b) => ING[a[0]][0].localeCompare(ING[b[0]][0])).map(([k, g]) => {
+        const d = ING[k], x = d[8] || {};
+        let name = d[0].replace(/ \(cooked\)/, "").replace(/ \(dry\)/, "");
+        let amt;
+        const mass = (v, u = "g") => (v >= 1000 ? `${(v / 1000).toFixed(1)} ${u === "ml" ? "L" : "kg"}` : `${fmt(v)} ${u}`);
+        if (x.unit) { const c = Math.ceil(g / x.each - 1e-9); amt = k === "egg" ? String(c) : `${c} ${x.unit[c > 1 ? 1 : 0]}`; }
+        else if (x.dry) amt = `${mass(g * x.dry)} dry (${mass(g)} cooked)`;
+        else if (x.each) amt = `${Math.max(1, Math.ceil(g / x.each - 0.15))} (about ${mass(g)})`;
+        else amt = mass(g, x.ml ? "ml" : "g");
+        return `<label><input type="checkbox" id="g-${k}" data-k="${k}" ${checked.has(k) ? "checked" : ""}><span>${name}<small>${amt}</small></span></label>`;
+      }).join("");
+      box.append(div);
+    });
+  }
+  $("grocery").addEventListener("change", (e) => {
+    const k = e.target.dataset.k;
+    if (!k) return;
+    const set = new Set(ls.get("ad-checked") || []);
+    e.target.checked ? set.add(k) : set.delete(k);
+    ls.set("ad-checked", [...set]);
+  });
+
+  // ---------- Wiring ----------
+  function setUnits(units, convert) {
+    $("hMetric").hidden = units !== "metric";
+    $("hImperial").hidden = units !== "imperial";
+    $("wUnit").textContent = units === "imperial" ? "lb" : "kg";
+    if (!convert) return;
+    const w = parseFloat($("weight").value);
+    if (units === "imperial") {
+      const totalIn = parseFloat($("heightCm").value) / 2.54;
+      $("heightFt").value = Math.floor(totalIn / 12);
+      $("heightIn").value = Math.round((totalIn % 12) * 2) / 2;
+      $("weight").value = Math.round(w * 2.20462);
+    } else {
+      $("heightCm").value = Math.round(((parseFloat($("heightFt").value) || 0) * 12 + (parseFloat($("heightIn").value) || 0)) * 2.54);
+      $("weight").value = Math.round((w / 2.20462) * 10) / 10;
+    }
+  }
+
+  function saveInputs() {
+    const v = { radios: {}, diets: read().diets, fields: {} };
+    ["sex", "units", "activity", "goal", "mpd"].forEach((n) => (v.radios[n] = radio(n)));
+    ["age", "heightCm", "heightFt", "heightIn", "weight", "avoid", "likes"].forEach((id) => (v.fields[id] = $(id).value));
+    ls.set("ad-inputs", v);
+  }
+  function restoreInputs() {
+    const v = ls.get("ad-inputs");
+    if (!v) return;
+    isExample = false;
+    Object.entries(v.fields || {}).forEach(([id, val]) => { if ($(id) && val != null) $(id).value = val; });
+    Object.entries(v.radios || {}).forEach(([n, val]) => { const el = document.querySelector(`input[name="${n}"][value="${val}"]`); if (el) el.checked = true; });
+    (v.diets || []).forEach((d) => { const el = document.querySelector(`input[name="diet"][value="${d}"]`); if (el) el.checked = true; });
+  }
+
+  let timer = null;
+  function update(immediateMenu) {
+    const s = read();
+    if (!valid(s)) {
+      $("warn").hidden = false;
+      $("warn").textContent = "Check your stats: age 15 to 90, height 120 to 230 cm (3′11″ to 7′6″), weight 30 to 300 kg (66 to 660 lb).";
+      return;
+    }
+    const r = compute(s);
+    renderPlan(s, r);
+    clearTimeout(timer);
+    if (immediateMenu) refreshMenu(s, r);
+    else timer = setTimeout(() => refreshMenu(s, r), 250);
+  }
+
+  $("form").addEventListener("submit", (e) => e.preventDefault());
+  $("form").addEventListener("input", (e) => {
+    if (e.target.name === "units") setUnits(e.target.value, true);
+    isExample = false;
+    update(false);
+    saveInputs();
+  });
+  $("shuffle").addEventListener("click", () => {
+    seed = 1 + Math.floor(Math.random() * 1e9);
+    ls.set("ad-seed", seed);
+    ls.set("ad-checked", []);
+    const s = read();
+    if (valid(s)) refreshMenu(s, compute(s), true);
+  });
+
+  ls.set("ad-seed", seed);
+  restoreInputs();
+  setUnits(radio("units"), false);
+  update(true);
+})();
+</script>
+
+</body>
+</html>
