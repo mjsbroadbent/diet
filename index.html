@@ -204,6 +204,12 @@ button.btn:hover { filter: brightness(1.08); }
 .keep.r { background: var(--warn-soft); color: var(--warn); }
 .keep.x { background: var(--bad-soft); color: var(--bad); }
 .btns { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.log { border-top: 1px dashed var(--line); padding-top: 8px; font-size: 13px; }
+.log summary { cursor: pointer; color: var(--muted); font-weight: 700; font-size: 12.5px; }
+.logf { display: grid; gap: 6px; margin-top: 8px; }
+.logf select, .logf input { font-size: 14px; padding: 6px 8px; }
+.logged { font-size: 11px; font-weight: 800; padding: 1px 7px; border-radius: 999px; background: var(--warn-soft); color: var(--warn); margin-left: 6px; }
+.tk { font-size: 12px; color: var(--muted); margin-top: -4px; }
 </style>
 <style id="skin-cereal">
 /* ---------- Cereal box theme ---------- */
@@ -356,7 +362,7 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
         <legend>Dietary preferences</legend>
         <div class="chips" id="diets"></div>
         <label class="f">Allergies or foods to avoid
-          <input type="text" id="avoid" placeholder="Type a food and press Enter, e.g. peanuts">
+          <input type="text" id="avoid" placeholder="Type a food and press Enter, e.g. peanuts or dairy">
           <div class="tags" id="avoidTags"></div>
         </label>
       </fieldset>
@@ -492,7 +498,7 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
     { id: "gain_lean", name: "Lean muscle gain",   delta: 250,  protein: 1.8 },
     { id: "gain",      name: "Bulk",               delta: 500,  protein: 1.8 },
   ];
-  const DIETS = ["Vegetarian", "Vegan", "Pescatarian", "Keto", "Gluten-free", "Dairy-free", "Halal", "Kosher"];
+  const DIETS = ["Vegetarian", "Vegan", "Pescatarian", "Keto", "Gluten-free", "Halal", "Kosher"];
 
   // Ingredients, per 100 g: [name, kcal, protein, carbs, fat, fiber, store section, tags, extra]
   // extra: each = grams per countable unit (unit = label when counted in recipes), tbsp = grams per tablespoon, dry = dry/cooked ratio, ml = liquid
@@ -800,7 +806,16 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
     i: { id: "oi", type: "o", out: true, name: "Eating out: burger and fries", items: [], min: 0, n: [1350, 45, 130, 70, 8], tags: new Set(), text: "",
       how: "Loose estimate for a burger with regular fries and no shake. The rest of the day is lighter to make room." },
   };
-  const MEAL = Object.fromEntries([...MEALS, ...COSTCO_MEALS, OUT.h, OUT.i].map((m) => [m.id, m]));
+  OUT.p = { id: "op", type: "o", out: true, name: "Pizza, 3 slices", items: [], min: 0, n: [850, 36, 100, 33, 6], tags: new Set(), text: "",
+    how: "Loose estimate for three slices of a large cheese or pepperoni pizza." };
+  const MEAL = Object.fromEntries([...MEALS, ...COSTCO_MEALS, OUT.h, OUT.i, OUT.p].map((m) => [m.id, m]));
+  // A logged meal with your own calorie guess: 20% protein, 40% carbs, 40% fat
+  function customMeal(kcal) {
+    const id = "x" + kcal;
+    MEAL[id] ||= { id, type: "o", out: true, name: `Something else, about ${fmt(kcal)} kcal`, items: [], min: 0, n: [kcal, (kcal * 0.2) / 4, (kcal * 0.4) / 4, (kcal * 0.4) / 9, 4], tags: new Set(), text: "",
+      how: "Your own estimate. Protein, carbs and fat are guessed from the calories." };
+    return MEAL[id];
+  }
 
   // Day layout for each number of meals and snacks
   const LAYOUT = {
@@ -1189,6 +1204,7 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
     ctx = context(s, r);
     const key = inputsKey(s, r);
     const saved = ls.get("ad-week");
+    saved?.days?.forEach((d) => d.ids.forEach((id) => id[0] === "x" && customMeal(+id.slice(1))));
     if (!force && saved && saved.key === key && saved.seed === seed && saved.days?.every((d) => d.ids.every((id) => MEAL[id]))) week = saved;
     else {
       const b = buildWeek(ctx, seed);
@@ -1197,6 +1213,59 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
       Object.keys(skipped).forEach((k) => delete skipped[k]);
     }
     renderMenu();
+  }
+
+  // A day's target, after any trimming to absorb an off-plan meal earlier in the week
+  function dayT(day) {
+    const T = ctx.T;
+    if (day.tk == null) return T;
+    const r = Math.max(0, (day.tk - 4 * T.p) / (T.k - 4 * T.p));
+    return { ...T, k: day.tk, c: T.keto ? T.c : T.c * r, f: T.f * r };
+  }
+  // Spread the surplus (or deficit) from logged meals over the days after them, at most 20% a day
+  function rebalance() {
+    const T = ctx.T;
+    let pending = 0;
+    week.note = "";
+    week.days.forEach((d, di) => {
+      const logged = d.log && Object.keys(d.log).length;
+      const before = d.tk;
+      if (logged) {
+        // Meals up to the logged one are eaten; anything later that day shrinks first
+        delete d.tk;
+        const L = Math.max(...Object.keys(d.log).map(Number));
+        if (L < d.ids.length - 1) {
+          const meals = d.ids.map((id, i) => (i <= L ? { ...MEAL[id], type: "o", n: MEAL[id].n.map((v) => v * (MEAL[id].out ? 1 : d.ms[i])) } : MEAL[id]));
+          const o = optimize(meals, T, makeScorer(T), d.ids.map((id, i) => (i <= L ? 1 : d.ms[i])));
+          d.ms = o.ms.map((x, i) => (i <= L ? d.ms[i] : x));
+        }
+        pending += dayData(d).tot[0] - T.k;
+        return;
+      }
+      const left = week.days.slice(di).filter((x) => !(x.log && Object.keys(x.log).length)).length;
+      let cut = left && Math.abs(pending) > 1 ? pending / left : 0;
+      cut = Math.max(-0.2 * T.k, Math.min(0.2 * T.k, cut));
+      if (Math.abs(cut) < 10) cut = 0;
+      pending -= cut;
+      if (cut) d.tk = Math.round((T.k - cut) / 10) * 10; else delete d.tk;
+      if (d.tk !== before) { const t = dayT(d); d.ms = optimize(d.ids.map((id) => MEAL[id]), t, makeScorer(t)).ms; }
+    });
+    if (Math.abs(pending) >= 50) week.note = pending > 0
+      ? `About ${fmt(pending)} kcal from logged meals is left over: there are no days after it to absorb it, or they're already trimmed by the 20% limit.`
+      : `You're about ${fmt(-pending)} kcal under for the week after logged meals.`;
+  }
+  function logMeal(di, si, kind, kcal) {
+    const d = week.days[di];
+    const m = kind === "x" ? customMeal(Math.round(kcal / 10) * 10) : OUT[kind];
+    (d.log ||= {})[si] ??= d.ids[si];
+    d.ids[si] = m.id;
+    rebalance(); ls.set("ad-week", week); renderMenu();
+  }
+  function undoLog(di, si) {
+    const d = week.days[di];
+    d.ids[si] = d.log[si]; delete d.log[si];
+    if (!Object.keys(d.log).length) { const t = dayT(d); d.ms = optimize(d.ids.map((id) => MEAL[id]), t, makeScorer(t)).ms; }
+    rebalance(); ls.set("ad-week", week); renderMenu();
   }
 
   function dayData(day) {
@@ -1227,7 +1296,7 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
     const carbOf = (n) => (T.keto ? n[2] - n[4] : n[2]);
     $("menuSummary").textContent = `Daily average ${fmt(avg[0])} kcal · ${fmt(avg[1])} g protein · ${fmt(carbOf(avg))} g ${T.keto ? "net carbs" : "carbs"} · ${fmt(avg[3])} g fat. Target ${fmt(T.k)} kcal.`;
 
-    const offDays = all.filter((d) => Math.abs(d.tot[0] - T.k) / T.k > 0.1).length;
+    const offDays = all.filter((d, di) => !(week.days[di].log && Object.keys(week.days[di].log).length) && Math.abs(d.tot[0] - dayT(week.days[di]).k) / dayT(week.days[di]).k > 0.1).length;
     const thin = Object.entries(ctx.pools).filter(([t, p]) => ctx.slots.some((sl) => SLOT_TYPE[sl] === t) && p.length < 4 && ctx.course[t].variety >= 7).map(([t]) => ({ b: "breakfast", l: "lunch", d: "dinner", s: "snack", h: "treat", i: "treat" })[t]);
     const notes = [];
     if (thin.length) notes.push(`Only a few ${thin.join(", ")} recipes fit your filters, so some meals repeat.`);
@@ -1237,21 +1306,24 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
     if (offDays) notes.push(`${offDays} day${offDays > 1 ? "s are" : " is"} more than 10% off your calorie target. Try Shuffle or a different number of meals.`);
     const unmatched = ctx.likes.filter((t) => !ctx.library.some((m) => m.text.includes(t)));
     if (unmatched.length) notes.push(`No built-in recipes use ${unmatched.join(", ")} yet.`);
+    if (week.note) notes.push(week.note);
     warn.hidden = !notes.length; warn.textContent = notes.join(" ");
 
     days.innerHTML = "";
     all.forEach((d, di) => {
-      const dev = (d.tot[0] - T.k) / T.k;
+      const wd = week.days[di], DT = dayT(wd);
+      const dev = (d.tot[0] - DT.k) / DT.k;
       const cls = Math.abs(dev) <= 0.05 ? "ok" : Math.abs(dev) <= 0.1 ? "warn" : "bad";
       const off = (v, t) => (Math.abs(v - t) / t > 0.15 ? ' class="off"' : "");
       const el = document.createElement("article");
       el.className = "day";
       el.innerHTML = `
         <div class="day-h"><h3>${DAY_NAMES[di]}</h3><span class="pill ${cls}" title="${dev >= 0 ? "+" : ""}${Math.round(dev * 100)}% vs target">${fmt(d.tot[0])} kcal</span></div>
+        ${wd.tk != null ? `<p class="tk">Target ${wd.tk < T.k ? "trimmed" : "raised"} to ${fmt(wd.tk)} kcal to balance a logged meal.</p>` : ""}
         <div class="macros">
-          <span${d.tot[1] < T.p * 0.85 ? ' class="off"' : ""}><b>P</b> ${fmt(d.tot[1])}/${T.p} g</span>
-          <span${T.keto ? (carbOf(d.tot) > T.c * 1.15 ? ' class="off"' : "") : off(d.tot[2], T.c)}><b>${T.keto ? "Net C" : "C"}</b> ${fmt(carbOf(d.tot))}/${T.c} g</span>
-          <span${off(d.tot[3], T.f)}><b>F</b> ${fmt(d.tot[3])}/${T.f} g</span>
+          <span${d.tot[1] < DT.p * 0.85 ? ' class="off"' : ""}><b>P</b> ${fmt(d.tot[1])}/${DT.p} g</span>
+          <span${T.keto ? (carbOf(d.tot) > DT.c * 1.15 ? ' class="off"' : "") : off(d.tot[2], DT.c)}><b>${T.keto ? "Net C" : "C"}</b> ${fmt(carbOf(d.tot))}/${fmt(DT.c)} g</span>
+          <span${off(d.tot[3], DT.f)}><b>F</b> ${fmt(d.tot[3])}/${fmt(DT.f)} g</span>
         </div>`;
       d.meals.forEach((x, i) => {
         const mm = document.createElement("div");
@@ -1259,15 +1331,37 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
         const portionNote = x.mult === 1 ? "" : ` · ${x.mult}× portion`;
         mm.innerHTML = `
           <div class="slot">${ctx.slots[i]}</div>
-          <div class="nm">${x.m.name}${ctx.liked(x.m) ? ' <span class="liked" title="Matches a food you asked for">★</span>' : ""}</div>
-          ${x.m.out ? "" : `<button type="button" class="swap" aria-label="Swap ${ctx.slots[i]} on ${DAY_NAMES[di]}">Swap</button>`}
+          <div class="nm">${x.m.name}${ctx.liked(x.m) ? ' <span class="liked" title="Matches a food you asked for">★</span>' : ""}${wd.log?.[i] ? '<span class="logged">Logged</span>' : ""}</div>
+          ${wd.log?.[i] ? `<button type="button" class="swap" data-undo>Undo</button>` : x.m.out ? "" : `<button type="button" class="swap" aria-label="Swap ${ctx.slots[i]} on ${DAY_NAMES[di]}">Swap</button>`}
           <div class="mt">${x.m.out ? "about " : ""}${fmt(x.n[0])} kcal · P ${fmt(x.n[1])} · C ${fmt(T.keto ? x.n[2] - x.n[4] : x.n[2])} · F ${fmt(x.n[3])}${x.m.out ? " · loose estimate" : ` · ${x.m.min} min${portionNote}`}</div>
           ${x.m.out ? `<p class="hint">${x.m.how}</p>` : `<details><summary>Ingredients and method</summary>
             <ul>${x.items.map(({ k, g }) => `<li>${amountText(k, g)}</li>`).join("")}</ul>
             <p>${x.m.how}</p></details>`}`;
-        if (!x.m.out) mm.querySelector(".swap").addEventListener("click", () => swap(di, i));
+        if (wd.log?.[i]) mm.querySelector("[data-undo]").addEventListener("click", () => undoLog(di, i));
+        else if (!x.m.out) mm.querySelector(".swap").addEventListener("click", () => swap(di, i));
         el.append(mm);
       });
+      const free = ctx.slots.map((sl, i) => [sl, i]).filter(([, i]) => !wd.log?.[i]);
+      if (free.length) {
+        const lg = document.createElement("details");
+        lg.className = "log";
+        lg.innerHTML = `<summary>Ate something else?</summary><div class="logf">
+          <select aria-label="Which meal">${free.map(([sl, i]) => `<option value="${i}">Instead of ${sl.toLowerCase()}: ${d.meals[i].m.name}</option>`).join("")}</select>
+          <select aria-label="What you had">
+            <option value="i">Burger and fries (about 1,350 kcal)</option>
+            <option value="p">Pizza, 3 slices (about 850 kcal)</option>
+            <option value="h">Salad with protein (about 650 kcal)</option>
+            <option value="x">Something else, I'll guess the calories</option></select>
+          <input type="number" min="50" max="4000" step="50" placeholder="Calories, e.g. 900" aria-label="Calories" hidden>
+          <button type="button" class="ghost">Log it and rebalance the week</button></div>`;
+        const [slotSel, kindSel] = lg.querySelectorAll("select"), kc = lg.querySelector("input");
+        kindSel.addEventListener("change", () => (kc.hidden = kindSel.value !== "x"));
+        lg.querySelector("button").addEventListener("click", () => {
+          if (kindSel.value === "x" && !(+kc.value >= 50)) { kc.focus(); return; }
+          logMeal(di, +slotSel.value, kindSel.value, +kc.value);
+        });
+        el.append(lg);
+      }
       days.append(el);
     });
     renderGrocery(all);
@@ -1288,7 +1382,8 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
     let best = null;
     for (const m of cands) {
       const meals = day.ids.map((id, j) => (j === si ? m : MEAL[id]));
-      const o = optimize(meals, ctx.T, ctx.score);
+      const DT = dayT(day);
+      const o = optimize(meals, DT, makeScorer(DT));
       const s = o.s + 0.05 * (uses[m.id] || 0) - (ctx.liked(m) ? 0.01 : 0);
       if (!best || s < best.s) best = { m, ms: o.ms, s };
     }
@@ -1299,7 +1394,8 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
       week.days.forEach((d, j) => {
         if (j === di || d.ids[si] !== cur.id) return;
         d.ids[si] = best.m.id;
-        d.ms = optimize(d.ids.map((id) => MEAL[id]), ctx.T, ctx.score).ms;
+        const DT = dayT(d);
+        d.ms = optimize(d.ids.map((id) => MEAL[id]), DT, makeScorer(DT)).ms;
       });
     }
     ls.set("ad-week", week);
@@ -1463,6 +1559,8 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
     if (v.fields) { delete v.fields.avoid; delete v.fields.likes; }
     Object.entries(v.fields || {}).forEach(([id, val]) => { if ($(id) && val != null) $(id).value = val; });
     Object.entries(v.radios || {}).forEach(([n, val]) => { const el = document.querySelector(`input[name="${n}"][value="${val}"]`); if (el) el.checked = true; });
+    // Dairy-free moved to the allergies field
+    if ((v.diets || []).includes("Dairy-free") && !tags.avoid.some((t) => /dairy/i.test(t))) { tags.avoid.push("dairy"); renderTags("avoid"); }
     (v.diets || []).forEach((d) => { const el = document.querySelector(`input[name="diet"][value="${d}"]`); if (el) el.checked = true; });
     if (v.packs != null) $("packs").checked = v.packs;
     (v.out || []).forEach((d) => { const el = $("out-" + d); if (el) el.checked = true; });
