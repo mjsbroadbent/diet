@@ -690,6 +690,7 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
   const UNIT = { chicken: 580, thigh: 560, turkey: 1000, turkeyslice: 300, beef: 600, steak: 400, pork: 670, bacon: 500, tuna: 130, eggwhite: 500, tofu: 454,
     yogurt: 650, cottage: 750, feta: 600, soymilk: 946, cocofull: 400, chickpeas: 300, spaghetti: 500, bread: 675, tortilla: 600, cantom: 796, cauli: 500,
     pb: 1000, honey: 750, salsa: 1050, marinara: 1250, icebar: 70 };
+  const FINISH_MAX = 1100; // g or ml
   const KEEP = { p: ["Keeps", "Pantry or freezer. Carries over."], z: ["Freeze", "Freeze what you won't use in a few days."], r: ["Keeps a few weeks", "Fridge or a cool cupboard."], x: ["Use this week", "Won't keep. Not carried over."] };
   const buyUnits = (k, g) => g * ((ING[k][8] || {}).dry || 1);
   const money = (v) => "$" + (v >= 100 ? Math.round(v).toLocaleString() : v.toFixed(2));
@@ -1272,6 +1273,8 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
     for (const k in tot) {
       if (!COSTCO[k]) continue;
       const unit = UNIT[k] || COSTCO[k][1], u = buyUnits(k, tot[k]), r = u % unit;
+      // Only packages you'd finish in a sitting or a cook: not a 5 kg bag of rice or a jar of honey
+      if (unit > FINISH_MAX || (ING[k][8] || {}).tbsp) continue;
       if (r < 1 || r / unit < 0.8) continue;
       const add = Math.round((unit - r) / ((ING[k][8] || {}).dry || 1));
       if (add < 1) continue;
@@ -1348,7 +1351,7 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
     const unmatched = ctx.likes.filter((t) => !ctx.library.some((m) => m.text.includes(t)));
     if (unmatched.length) notes.push(`No built-in recipes use ${unmatched.join(", ")} yet.`);
     if (week.note) notes.push(week.note);
-    if (week.finished?.length) notes.push(`You'd nearly finish the ${week.finished.map((k) => ING[k][0].toLowerCase().replace(/ \(.*\)/, "").split(",")[0]).join(", ").replace(/, ([^,]*)$/, " and $1")} this week, so the last meal using each finishes the package and those calories are counted.`);
+    if (week.finished?.length) notes.push(`You'd nearly finish the ${week.finished.map((k) => ING[k][0].toLowerCase().replace(/ \(.*\)/, "").split(",")[0]).join(", ").replace(/, ([^,]*)$/, " and $1")} this week, so the last meal using it finishes the package and those calories are counted.`);
     warn.hidden = !notes.length; warn.textContent = notes.join(" ");
 
     days.innerHTML = "";
