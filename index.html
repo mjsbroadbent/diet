@@ -67,7 +67,10 @@ input:focus-visible, select:focus-visible, button:focus-visible, .seg label:focu
 .unit-in input { padding-right: 34px; }
 .hint { margin: 0; font-size: 12.5px; color: var(--muted); font-weight: 400; }
 
-.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--surface); flex-wrap: wrap; }
+.seg { display: inline-grid; grid-auto-flow: column; grid-auto-columns: 1fr; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--surface); }
+.seg label { display: grid; }
+.seg span { text-align: center; white-space: nowrap; }
+@media (max-width: 480px) { .seg { display: grid; width: 100%; } .seg span { padding-inline: 6px !important; font-size: 13px; } }
 .seg label { cursor: pointer; }
 .seg input { position: absolute; opacity: 0; pointer-events: none; }
 .seg span { display: block; padding: 8px 14px; font-size: 14px; font-weight: 500; color: var(--muted); }
@@ -203,7 +206,13 @@ button.btn:hover { filter: brightness(1.08); }
 .keep.z { background: var(--accent-soft); color: var(--accent); }
 .keep.r { background: var(--warn-soft); color: var(--warn); }
 .keep.x { background: var(--bad-soft); color: var(--bad); }
-.btns { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.btns { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 10px; align-items: stretch; }
+.day-tools { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.day-tools button { font: inherit; font-size: 12px; font-weight: 700; padding: 6px 4px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
+.day-tools button:hover { border-color: var(--accent); }
+.day.passed { opacity: 0.72; }
+.day.passed .day-tools button[data-pass] { background: var(--ink); color: var(--surface); }
+.swap { min-width: 62px; text-align: center; }
 .log { border-top: 1px dashed var(--line); padding-top: 8px; font-size: 13px; }
 .log summary { cursor: pointer; color: var(--muted); font-weight: 700; font-size: 12.5px; }
 .logf { display: grid; gap: 6px; margin-top: 8px; }
@@ -281,6 +290,8 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
 .tag { border: 2px solid var(--ink); font-weight: 700; background: var(--accent-soft); }
 #likesTags .tag { background: #E3ECFF; color: var(--blue); border-color: var(--blue); }
 #avoidTags .tag { border-color: var(--bad); }
+.day-tools button { border: 2px solid var(--ink); border-radius: 10px; }
+.day-tools button:hover { background: var(--bg); }
 </style>
 <script>
   (function () { var k; try { k = JSON.parse(localStorage.getItem("ad-skin")); } catch (e) {} k = k === "light" || k === "dark" ? k : "cereal";
@@ -1127,7 +1138,7 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
     const T = { k: r.target, p: r.protein, c: r.carbs, f: r.fat, keto: r.keto };
     let treatNote = "";
     if (treat && !pools[treat].length) { slots = slots.filter((x) => x !== "Treat"); treatNote = `No ${treat === "h" ? "healthy" : "indulgent"} treats fit your diet and avoid list, so the week has none.`; }
-    return { slots, pools, liked, T, score: makeScorer(T), likes, relaxed, course, treatNote, out: s.out, costco, packs: costco && s.packs, library, fcap };
+    return { slots, pools, liked, T, score: makeScorer(T), likes, relaxed, course, treatNote, out: s.out, treatPools: { h: library.filter((m) => m.type === "h" && allowed(m, diets, avoid)), i: library.filter((m) => m.type === "i" && allowed(m, diets, avoid)) }, costco, packs: costco && s.packs, library, fcap };
   }
 
   function buildWeek(ctx, seed) {
@@ -1236,14 +1247,21 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
     saved?.days?.forEach((d) => d.ids.forEach((id) => id[0] === "x" && customMeal(+id.slice(1))));
     if (!force && saved && saved.key === key && saved.seed === seed && saved.days?.every((d) => d.ids.every((id) => MEAL[id]))) { week = saved; if (!week.extra) finishUp(); }
     else {
+      const prev = week?.days ? week : saved;
       const b = buildWeek(ctx, seed);
       week = b.error ? { error: b.error } : { key, seed, days: b.days };
-      if (!b.error) { finishUp(); ls.set("ad-week", week); }
+      if (!b.error) {
+        // Days marked done stay exactly as eaten
+        prev?.days?.forEach((d, i) => { if (d.passed && d.ids.every((id) => MEAL[id])) week.days[i] = d; });
+        rebalance(); finishUp(); ls.set("ad-week", week);
+      }
       Object.keys(skipped).forEach((k) => delete skipped[k]);
     }
     renderMenu();
   }
 
+  const slotsOf = (d) => d.slots || ctx.slots;
+  const fixedDay = (d) => d.passed || (d.log && Object.keys(d.log).length);
   // A day's target, after any trimming to absorb an off-plan meal earlier in the week
   function dayT(day) {
     const T = ctx.T;
@@ -1259,6 +1277,7 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
     week.days.forEach((d, di) => {
       const logged = d.log && Object.keys(d.log).length;
       const before = d.tk;
+      if (d.passed) { delete d.tk; pending += dayData(d, di).tot[0] - T.k; return; }
       if (logged) {
         // Meals up to the logged one are eaten; anything later that day shrinks first
         delete d.tk;
@@ -1271,8 +1290,8 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
         pending += dayData(d, di).tot[0] - T.k;
         return;
       }
-      const left = week.days.slice(di).filter((x) => !(x.log && Object.keys(x.log).length)).length;
-      let cut = left && Math.abs(pending) > 1 ? pending / left : 0;
+      const left = week.days.slice(di).filter((x) => !fixedDay(x)).length;
+      let cut = left && Math.abs(pending) >= 70 ? pending / left : 0;
       cut = Math.max(-0.2 * T.k, Math.min(0.2 * T.k, cut));
       if (Math.abs(cut) < 10) cut = 0;
       pending -= cut;
@@ -1280,8 +1299,8 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
       if (d.tk !== before) { const t = dayT(d); d.ms = optimize(d.ids.map((id) => MEAL[id]), t, makeScorer(t)).ms; }
     });
     if (Math.abs(pending) >= 50) week.note = pending > 0
-      ? `About ${fmt(pending)} kcal from logged meals is left over: there are no days after it to absorb it, or they're already trimmed by the 20% limit.`
-      : `You're about ${fmt(-pending)} kcal under for the week after logged meals.`;
+      ? `About ${fmt(pending)} kcal over for the week that the remaining days can't absorb (they're trimmed by at most 20%).`
+      : `You're about ${fmt(-pending)} kcal under for the week so far.`;
   }
   // People finish a box they've nearly used up. If less than one portion is left in the last unit opened,
   // it's spread over the meals that use it, and the other meals on those days are trimmed to make room.
@@ -1299,9 +1318,11 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
       if (r < 1 || rest >= portionSize) continue;
       const add = rest / ((ING[k][8] || {}).dry || 1);
       if (add < 1) continue;
-      // Spread it over the week's meals that use it, a little more each time
-      uses[k].forEach(([di, si, g]) => {
-        const e = Math.round((add * g) / tot[k]);
+      // Spread it over the week's meals that use it, a little more each time (not on days already eaten)
+      const open = uses[k].filter(([di]) => !week.days[di].passed), openG = open.reduce((a, x) => a + x[2], 0);
+      if (!openG) continue;
+      open.forEach(([di, si, g]) => {
+        const e = Math.round((add * g) / openG);
         if (e < 1) return;
         const ex = (week.extra[di + ":" + si] ||= {});
         ex[k] = (ex[k] || 0) + e;
@@ -1311,7 +1332,7 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
     }
     touched.forEach((di) => {
       const d = week.days[di];
-      if (d.log && Object.keys(d.log).length) return;
+      if (fixedDay(d)) return;
       // The finishing amounts are fixed calories; re-portion the day's meals around them
       const items = [];
       Object.keys(week.extra).filter((key) => +key.split(":")[0] === di).forEach((key) => { for (const k in week.extra[key]) items.push({ k, g: week.extra[key][k] }); });
@@ -1319,6 +1340,48 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
       d.ms = optimize(meals, t, makeScorer(t), [...d.ms, 1]).ms.slice(0, d.ids.length);
     });
   }
+  function addTreat(di, kind) {
+    const d = week.days[di], pool = ctx.treatPools[kind];
+    if (!pool.length) { alertNote(`No ${kind === "h" ? "healthy" : "indulgent"} treats fit your diet and avoid list.`); return; }
+    const t = dayT(d), used = new Set(week.days.flatMap((x) => x.ids));
+    let best = null;
+    for (const m of pool) {
+      const meals = [...d.ids.map((id) => MEAL[id]), m];
+      const o = fixedDay(d) ? { s: 0, ms: [...d.ms, 1] } : optimize(meals, t, makeScorer(t));
+      const sc = o.s + (d.ids.includes(m.id) ? 1 : used.has(m.id) ? 0.01 : 0) + Math.random() * 0.002;
+      if (!best || sc < best.sc) best = { m, ms: o.ms, sc };
+    }
+    d.slots = [...slotsOf(d), "Treat"];
+    d.ids.push(best.m.id);
+    d.ms = best.ms;
+    (d.addedTreats ||= []).push(d.ids.length - 1);
+    afterDayChange();
+  }
+  function removeTreat(di, si) {
+    const d = week.days[di];
+    d.ids.splice(si, 1); d.ms.splice(si, 1);
+    d.slots = slotsOf(d).filter((_, i) => i !== si);
+    d.addedTreats = d.addedTreats.filter((i) => i !== si).map((i) => (i > si ? i - 1 : i));
+    const shift = (o) => o && Object.fromEntries(Object.entries(o).filter(([i]) => +i !== si).map(([i, v]) => [+i > si ? +i - 1 : +i, v]));
+    if (d.log) d.log = shift(d.log);
+    if (d.fx) d.fx = shift(d.fx);
+    if (!fixedDay(d)) { const t = dayT(d); d.ms = optimize(d.ids.map((id) => MEAL[id]), t, makeScorer(t)).ms; }
+    afterDayChange();
+  }
+  function togglePassed(di) {
+    const d = week.days[di];
+    d.passed = !d.passed;
+    if (d.passed) {
+      // Freeze the day exactly as planned, including any use-it-up extras
+      d.slots = [...slotsOf(d)];
+      d.fx = {};
+      d.ids.forEach((_, i) => { const e = week.extra?.[di + ":" + i]; if (e) d.fx[i] = { ...e }; });
+    } else delete d.fx;
+    afterDayChange();
+  }
+  function afterDayChange() { rebalance(); finishUp(); ls.set("ad-week", week); renderMenu(); }
+  function alertNote(t) { const w = $("menuWarn"); w.hidden = false; w.textContent = t; }
+
   function logMeal(di, si, kind, kcal) {
     const d = week.days[di];
     const m = kind === "x" ? customMeal(Math.round(kcal / 10) * 10) : OUT[kind];
@@ -1338,7 +1401,7 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
       const m = MEAL[id];
       if (m.out) return { m, items: [], n: m.n.slice(), mult: 1 };
       const items = portion(m, day.ms[i]);
-      const extra = week?.extra?.[di + ":" + i];
+      const extra = day.passed ? day.fx?.[i] : week?.extra?.[di + ":" + i];
       if (extra) for (const k in extra) {
         const it = items.find((x) => x.k === k);
         if (it) { it.g += extra[k]; it.fin = extra[k]; } else items.push({ k, g: extra[k], fin: extra[k] });
@@ -1366,7 +1429,7 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
     const carbOf = (n) => (T.keto ? n[2] - n[4] : n[2]);
     $("menuSummary").textContent = `Daily average ${fmt(avg[0])} kcal · ${fmt(avg[1])} g protein · ${fmt(carbOf(avg))} g ${T.keto ? "net carbs" : "carbs"} · ${fmt(avg[3])} g fat. Target ${fmt(T.k)} kcal.`;
 
-    const offDays = all.filter((d, di) => !(week.days[di].log && Object.keys(week.days[di].log).length) && Math.abs(d.tot[0] - dayT(week.days[di]).k) / dayT(week.days[di]).k > 0.1).length;
+    const offDays = all.filter((d, di) => !week.days[di].passed && !(week.days[di].log && Object.keys(week.days[di].log).length) && Math.abs(d.tot[0] - dayT(week.days[di]).k) / dayT(week.days[di]).k > 0.1).length;
     const thin = Object.entries(ctx.pools).filter(([t, p]) => ctx.slots.some((sl) => SLOT_TYPE[sl] === t) && p.length < 4 && ctx.course[t].variety >= 7).map(([t]) => ({ b: "breakfast", l: "lunch", d: "dinner", s: "snack", h: "treat", i: "treat" })[t]);
     const notes = [];
     if (thin.length) notes.push(`Only a few ${thin.join(", ")} recipes fit your filters, so some meals repeat.`);
@@ -1387,10 +1450,11 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
       const cls = Math.abs(dev) <= 0.05 ? "ok" : Math.abs(dev) <= 0.1 ? "warn" : "bad";
       const off = (v, t) => (Math.abs(v - t) / t > 0.15 ? ' class="off"' : "");
       const el = document.createElement("article");
-      el.className = "day";
+      el.className = "day" + (wd.passed ? " passed" : "");
+      const SL = slotsOf(wd);
       el.innerHTML = `
-        <div class="day-h"><h3>${DAY_NAMES[di]}</h3><span class="pill ${cls}" title="${dev >= 0 ? "+" : ""}${Math.round(dev * 100)}% vs target">${fmt(d.tot[0])} kcal</span></div>
-        ${wd.tk != null ? `<p class="tk">Target ${wd.tk < T.k ? "trimmed" : "raised"} to ${fmt(wd.tk)} kcal to balance a logged meal.</p>` : ""}
+        <div class="day-h"><h3>${DAY_NAMES[di]}${wd.passed ? ' <span class="logged">Done</span>' : ""}</h3><span class="pill ${cls}" title="${dev >= 0 ? "+" : ""}${Math.round(dev * 100)}% vs target">${fmt(d.tot[0])} kcal</span></div>
+        ${wd.tk != null ? `<p class="tk">Target ${wd.tk < T.k ? "trimmed" : "raised"} to ${fmt(wd.tk)} kcal to balance the rest of the week.</p>` : ""}
         <div class="macros">
           <span${d.tot[1] < DT.p * 0.85 ? ' class="off"' : ""}><b>P</b> ${fmt(d.tot[1])}/${DT.p} g</span>
           <span${T.keto ? (carbOf(d.tot) > DT.c * 1.15 ? ' class="off"' : "") : off(d.tot[2], DT.c)}><b>${T.keto ? "Net C" : "C"}</b> ${fmt(carbOf(d.tot))}/${fmt(DT.c)} g</span>
@@ -1401,18 +1465,19 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
         mm.className = "meal";
         const portionNote = x.mult === 1 ? "" : ` · ${x.mult}× portion`;
         mm.innerHTML = `
-          <div class="slot">${ctx.slots[i]}</div>
+          <div class="slot">${SL[i]}</div>
           <div class="nm">${x.m.name}${ctx.liked(x.m) ? ' <span class="liked" title="Matches a food you asked for">★</span>' : ""}${wd.log?.[i] ? '<span class="logged">Logged</span>' : ""}</div>
-          ${wd.log?.[i] ? `<button type="button" class="swap" data-undo>Undo</button>` : x.m.out ? "" : `<button type="button" class="swap" aria-label="Swap ${ctx.slots[i]} on ${DAY_NAMES[di]}">Swap</button>`}
+          ${wd.log?.[i] ? `<button type="button" class="swap" data-undo>Undo</button>` : wd.addedTreats?.includes(i) ? `<button type="button" class="swap" data-rm aria-label="Remove treat on ${DAY_NAMES[di]}">Remove</button>` : x.m.out || wd.passed ? "" : `<button type="button" class="swap" aria-label="Swap ${SL[i]} on ${DAY_NAMES[di]}">Swap</button>`}
           <div class="mt">${x.m.out ? "about " : ""}${fmt(x.n[0])} kcal · P ${fmt(x.n[1])} · C ${fmt(T.keto ? x.n[2] - x.n[4] : x.n[2])} · F ${fmt(x.n[3])}${x.m.out ? " · loose estimate" : ` · ${x.m.min} min${portionNote}`}</div>
           ${x.m.out ? `<p class="hint">${x.m.how}</p>` : `<details><summary>Ingredients and method</summary>
             <ul>${x.items.map(({ k, g, fin }) => `<li>${amountText(k, g)}${fin ? ` <span class="logged" title="Includes ${fmt(fin)} ${(ING[k][8] || {}).ml ? "ml" : "g"} so nothing is left in the package">+${fmt(fin)} ${(ING[k][8] || {}).ml ? "ml" : "g"} to use it up</span>` : ""}</li>`).join("")}</ul>
             <p>${x.m.how}</p></details>`}`;
         if (wd.log?.[i]) mm.querySelector("[data-undo]").addEventListener("click", () => undoLog(di, i));
-        else if (!x.m.out) mm.querySelector(".swap").addEventListener("click", () => swap(di, i));
+        else if (wd.addedTreats?.includes(i)) mm.querySelector("[data-rm]").addEventListener("click", () => removeTreat(di, i));
+        else if (!x.m.out && !wd.passed) mm.querySelector(".swap").addEventListener("click", () => swap(di, i));
         el.append(mm);
       });
-      const free = ctx.slots.map((sl, i) => [sl, i]).filter(([, i]) => !wd.log?.[i]);
+      const free = SL.map((sl, i) => [sl, i]).filter(([, i]) => !wd.log?.[i]);
       if (free.length) {
         const lg = document.createElement("details");
         lg.className = "log";
@@ -1433,6 +1498,13 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
         });
         el.append(lg);
       }
+      const tools = document.createElement("div");
+      tools.className = "day-tools";
+      tools.innerHTML = `<button type="button" data-treat="h">+ Healthy treat</button><button type="button" data-treat="i">+ Indulgent treat</button>
+        <button type="button" data-pass title="Freeze this day as eaten, so the rest of the week balances around it">${wd.passed ? "Undo done" : "Mark day done"}</button>`;
+      tools.querySelectorAll("[data-treat]").forEach((b) => b.addEventListener("click", () => addTreat(di, b.dataset.treat)));
+      tools.querySelector("[data-pass]").addEventListener("click", () => togglePassed(di));
+      el.append(tools);
       days.append(el);
     });
     renderGrocery(all);
@@ -1446,7 +1518,7 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
     seen.add(cur.id);
     const uses = {};
     week.days.forEach((d, j) => j !== di && d.ids.forEach((id) => (uses[id] = (uses[id] || 0) + 1)));
-    const pool = ctx.pools[cur.type];
+    const pool = ctx.pools[cur.type] || ctx.treatPools[cur.type] || [];
     let cands = pool.filter((m) => !seen.has(m.id) && !day.ids.some((id, j) => j !== si && id === m.id));
     if (!cands.length) { seen.clear(); seen.add(cur.id); cands = pool.filter((m) => m.id !== cur.id); }
     if (!cands.length) return;
