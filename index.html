@@ -427,6 +427,8 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
           <p class="hint" id="outHint"></p>
         </div>
         <div class="courses" id="courses"></div>
+        <label class="check"><input type="checkbox" id="premade" checked>
+          <span>Premade meals and salad kits<small>Frozen entrées, soups, egg bites and bagged salads with their dressing. Turn off to cook everything from ingredients.</small></span></label>
         <label class="f">Foods you'd like to see more of (optional)
           <input type="text" id="likes" placeholder="Type a food and press Enter, e.g. salmon">
           <div class="tags" id="likesTags"></div>
@@ -578,10 +580,10 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
     quinoa:      ["Quinoa (cooked)", 120, 4.4, 21.3, 1.9, 2.8, S.G, "", { dry: 0.37 }],
     pasta:       ["Whole-wheat pasta (dry)", 348, 14.6, 71, 2.5, 9, S.G, "gluten"],
     bread:       ["Whole-wheat bread", 252, 12.4, 43, 3.5, 6, S.G, "gluten", { each: 40, unit: ["slice", "slices"] }],
-    tortilla:    ["Whole-wheat tortillas (large)", 300, 8.5, 48, 8, 6, S.G, "gluten", { each: 60, unit: ["tortilla", "tortillas"] }],
-    corntort:    ["Corn tortillas", 218, 5.7, 44.6, 2.9, 6.3, S.G, "", { each: 26, unit: ["tortilla", "tortillas"] }],
+    tortilla:    ["Whole-wheat tortillas (large)", 300, 8.5, 48, 8, 6, S.G, "gluten", { each: 60, full: true, unit: ["large whole-wheat tortilla", "large whole-wheat tortillas"] }],
+    corntort:    ["Corn tortillas", 218, 5.7, 44.6, 2.9, 6.3, S.G, "", { each: 26, full: true, unit: ["corn tortilla", "corn tortillas"] }],
     ricenoodle:  ["Rice noodles (dry)", 364, 6, 80, 0.6, 1.6, S.G, ""],
-    ricecake:    ["Rice cakes", 387, 8, 81, 2.8, 4, S.G, "", { each: 9, unit: ["cake", "cakes"] }],
+    ricecake:    ["Rice cakes", 387, 8, 81, 2.8, 4, S.G, "", { each: 9, full: true, unit: ["rice cake", "rice cakes"] }],
     sweetpot:    ["Sweet potatoes", 86, 1.6, 20, 0.1, 3, S.P, "", { each: 200 }],
     potato:      ["Potatoes", 77, 2, 17, 0.1, 2.2, S.P, "", { each: 200 }],
     banana:      ["Bananas", 89, 1.1, 22.8, 0.3, 2.6, S.P, "", { each: 120 }],
@@ -622,14 +624,41 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
     darkchoc:    ["Dark chocolate (70%+)", 598, 7.8, 46, 43, 11, S.N, "", { each: 10, unit: ["square", "squares"] }],
     strawberries:["Strawberries (frozen)", 32, 0.7, 7.7, 0.3, 2, S.F, ""],
     icecream:    ["Vanilla ice cream", 207, 3.5, 24, 11, 0.7, S.F, "dairy"],
-    icebar:      ["Chocolate almond ice cream bars", 357, 5, 30, 25, 1.5, S.F, "dairy treenut", { each: 70, unit: ["bar", "bars"] }],
-    cookie:      ["Chocolate chunk cookies", 470, 5, 63, 23, 2, S.G, "gluten dairy egg", { each: 45, unit: ["cookie", "cookies"] }],
+    icebar:      ["Chocolate almond ice cream bars", 357, 5, 30, 25, 1.5, S.F, "dairy treenut", { each: 70, full: true, unit: ["ice cream bar", "ice cream bars"] }],
+    cookie:      ["Chocolate chunk cookies", 470, 5, 63, 23, 2, S.G, "gluten dairy egg", { each: 45, full: true, unit: ["chocolate chunk cookie", "chocolate chunk cookies"] }],
     chips:       ["Kettle potato chips", 520, 6.5, 55, 30, 4.5, S.N, ""],
     // Costco stand-ins
     darkbites:   ["Dark chocolate fruit bites", 475, 5, 65, 22.5, 5, S.N, "dairy"],
     spaghetti:   ["Spaghetti (dry)", 371, 13, 75, 1.5, 3.2, S.G, "gluten"],
     soysauce:    ["Soy sauce", 53, 8.1, 4.9, 0.6, 0.8, S.N, "soy gluten", { tbsp: 16 }],
     cocofull:    ["Coconut milk, full fat (top up with equal water)", 197, 2, 2.8, 21, 0, S.N, "", { ml: 1 }],
+    // Ready-to-eat and convenience (label values, rounded). "premade" ones can be switched off.
+    saladkit:    ["Chopped salad kit with dressing", 150, 3, 11, 11, 3, S.P, "premade dairy egg", { each: 340, full: true, unit: ["bag salad kit", "bags salad kit"] }],
+    frittata:    ["Spinach egg white frittatas (frozen)", 88, 8, 5, 4, 1, S.F, "premade egg dairy", { each: 57, full: true, unit: ["egg white frittata", "egg white frittatas"] }],
+    eggbites:    ["Sous vide egg bites", 160, 12, 3, 11, 0, S.D, "premade egg dairy", { each: 65, full: true, unit: ["egg bite", "egg bites"] }],
+    bwrap:       ["Breakfast wraps (frozen)", 234, 9.4, 26, 10, 1.5, S.F, "premade egg dairy pork gluten", { each: 128, full: true, unit: ["breakfast wrap", "breakfast wraps"] }],
+    lasagna:     ["Sausage and beef lasagna (frozen)", 160, 9, 13, 8, 1, S.F, "premade meat pork dairy gluten egg"],
+    pizza:       ["Thin crust pepperoni pizza (frozen)", 270, 12, 27, 13, 1.5, S.F, "premade pork dairy gluten"],
+    yakisoba:    ["Vegetable yakisoba bowls (frozen)", 130, 3.1, 21.6, 3.1, 1.6, S.F, "premade soy gluten", { each: 255, full: true, unit: ["yakisoba bowl", "yakisoba bowls"] }],
+    yakitori:    ["Yakitori chicken fried rice bowls (frozen)", 153, 6, 24, 3.5, 1, S.F, "premade poultry soy gluten egg", { each: 255, full: true, unit: ["yakitori rice bowl", "yakitori rice bowls"] }],
+    gyoza:       ["Chicken gyoza (frozen)", 200, 9, 25, 7, 1.5, S.F, "premade poultry gluten soy sesame", { each: 20, full: true, unit: ["gyoza", "gyoza"] }],
+    ctsoup:      ["Chicken tortilla soup", 60, 4, 6, 2, 1, S.D, "premade poultry dairy", { ml: 1 }],
+    lentsoup:    ["Lentil vegetable soup (canned)", 55, 3, 9, 0.8, 3, S.N, "premade", { ml: 1 }],
+    potpie:      ["Chicken pot pie", 220, 8, 18, 13, 1, S.D, "premade poultry dairy gluten"],
+    chstrips:    ["Cooked chicken breast strips", 120, 22, 2, 2.5, 0, S.F, "poultry"],
+    salmonburger:["Salmon burgers (frozen)", 140, 17, 2, 7, 0, S.F, "fish", { each: 91, full: true, unit: ["salmon burger", "salmon burgers"] }],
+    meatballs:   ["Italian-style meatballs (frozen, cooked)", 280, 14, 9, 21, 0.5, S.F, "meat pork dairy gluten egg", { each: 28, full: true, unit: ["meatball", "meatballs"] }],
+    smsalmon:    ["Smoked salmon", 117, 18, 0, 4.3, 0, S.M, "fish"],
+    tortelloni:  ["Sausage tortelloni (fresh)", 280, 13, 38, 8, 2, S.D, "meat pork dairy gluten egg"],
+    naan:        ["Naan", 290, 9, 50, 6, 2, S.G, "gluten dairy", { each: 100, full: true, unit: ["naan", "naan"] }],
+    pita:        ["Pita bread", 262, 9, 51, 2.3, 2, S.G, "gluten", { each: 65, full: true, unit: ["pita", "pitas"] }],
+    emuffin:     ["English muffins", 235, 8, 46, 2, 2.5, S.G, "gluten", { each: 57, full: true, unit: ["English muffin", "English muffins"] }],
+    granola:     ["Granola", 450, 10, 64, 18, 7, S.G, "oats"],
+    mango:       ["Mango chunks (frozen)", 60, 0.8, 15, 0.4, 1.6, S.F, ""],
+    cheesestr:   ["Cheese strings", 333, 24, 2, 24, 0, S.D, "dairy", { each: 21, full: true, unit: ["cheese string", "cheese strings"] }],
+    beefstick:   ["Grass-fed beef sticks", 312, 28, 3, 22, 0, S.N, "meat", { each: 32, full: true, unit: ["beef stick", "beef sticks"] }],
+    protbar:     ["Protein bars", 400, 40, 34, 12, 4, S.N, "dairy soy peanut", { each: 50, full: true, unit: ["protein bar", "protein bars"] }],
+    shake:       ["Ready-to-drink protein shakes", 44, 8.8, 1.2, 0.7, 0, S.N, "dairy", { ml: 1, each: 340, full: true, unit: ["bottle protein shake", "bottles protein shake"] }],
   };
 
   // ---------- Costco ----------
@@ -717,15 +746,43 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
     icebar: ["Kirkland Signature chocolate almond ice cream bars, 18", 1260, 18.69, "p"],
     cookie: ["Costco bakery chocolate chunk cookies (about 24)", 1080, 13.19, "z"],
     chips: ["Kettle Brand krinkle cut Himalayan salt chips, 907 g", 907, 10.44, "p"],
+    saladkit: ["Taylor Farms chopped salad kits, 2 bags (Mexican street corn, dill pickle or Thai mango)", 680, 9.89, "x"],
+    frittata: ["Veggies Made Great spinach egg white frittatas, 20", 1140, 21.99, "p"],
+    eggbites: ["Kirkland Signature sous vide egg bites, 595 g", 595, 19.79, "r"],
+    bwrap: ["El Monterey breakfast wraps, 14 × 128 g", 1792, 20.34, "p"],
+    lasagna: ["Kirkland Signature sausage and beef lasagna, 2 × 1.5 kg", 3000, 20.89, "p"],
+    pizza: ["Kirkland Signature thin crust pepperoni pizza, 4 × 555 g", 2220, 20.89, "p"],
+    yakisoba: ["Ajinomoto vegetable yakisoba, 6 bowls", 1530, 15.39, "p"],
+    yakitori: ["Ajinomoto yakitori chicken with fried rice, 6 bowls", 1530, 24.19, "p"],
+    gyoza: ["Summ! sesame ginger chicken gyoza, 900 g", 900, 12.09, "p"],
+    ctsoup: ["Kirkland Signature chicken tortilla soup, 2 × 830 ml", 1660, 14.29, "r"],
+    lentsoup: ["Sprague organic lentil soup, 8 × 398 ml", 3184, 14.29, "p"],
+    potpie: ["Kirkland Signature chicken pot pie, 1.25 kg", 1250, 14.29, "z"],
+    chstrips: ["Pinty's EatWell oven roasted chicken breast strips, 1 kg", 1000, 21.99, "p"],
+    salmonburger: ["Trident wild pink salmon burgers, 12", 1092, 32.99, "p"],
+    meatballs: ["Kirkland Signature Italian-style meatballs, 2.72 kg", 2720, 32.99, "p"],
+    smsalmon: ["One Ocean smoked sockeye salmon, 454 g", 454, 29.69, "z"],
+    tortelloni: ["Italian sausage tortelloni, 2 × 500 g", 1000, 15.39, "z"],
+    naan: ["Bakestone Brothers naan, 12", 1200, 9.34, "z"],
+    pita: ["Sunrise pita bread, 4 × 6", 1560, 5.49, "z"],
+    emuffin: ["Dempster's English muffins, 4 × 6", 1368, 10.44, "z"],
+    granola: ["One Degree organic classic granola, 1 kg", 1000, 10.99, "p"],
+    mango: ["Moov frozen organic mango chunks, 2 kg", 2000, 14.29, "p"],
+    cheesestr: ["Black Diamond marble cheese strings, 40", 840, 16.38, "r"],
+    beefstick: ["Kirkland Signature grass-fed beef sticks, 12", 384, 20.89, "p"],
+    protbar: ["Pure Protein bars variety pack, 18", 900, 30.79, "p"],
+    shake: ["fairlife protein shakes, 18 × 340 ml", 6120, 54.99, "p"],
   };
   // Library items Costco doesn't carry, and what replaces them (grams × factor)
   const SUB = { blackbeans: ["chickpeas", 1], lentils: ["chickpeas", 1], tempeh: ["tofu", 1.3], corntort: ["tortilla", 0.75], ricenoodle: ["wrice", 3], ricecake: ["bread", 1.5], pasta: ["spaghetti", 1], tamari: ["soysauce", 1], coco: ["cocofull", 0.36], darkchoc: ["darkbites", 1.25] };
   // The unit you actually open inside a Costco pack (a box, can, tub or tray). Default: the whole pack.
   const UNIT = { chicken: 580, thigh: 560, turkey: 1000, turkeyslice: 300, beef: 600, steak: 400, pork: 670, bacon: 500, tuna: 130, eggwhite: 500, tofu: 454,
     yogurt: 650, cottage: 750, feta: 600, soymilk: 946, cocofull: 400, chickpeas: 300, spaghetti: 500, bread: 675, tortilla: 600, cantom: 796, cauli: 500,
-    pb: 1000, honey: 750, salsa: 1050, marinara: 1250, icebar: 70 };
+    pb: 1000, honey: 750, salsa: 1050, marinara: 1250, icebar: 70,
+    saladkit: 340, lasagna: 1500, pizza: 555, yakisoba: 255, yakitori: 255, ctsoup: 830, lentsoup: 398, pita: 390, emuffin: 342, tortelloni: 500, shake: 340, protbar: 50, beefstick: 32, cheesestr: 21, bwrap: 128 };
   // Freezer: frozen-aisle packs always need it; fresh meat, bread and the like go in to keep past a few days
-  const FROZEN = new Set(["berries", "broccoli", "edamame", "cauli", "stirfry", "corn", "shrimp", "strawberries", "icecream", "icebar"]);
+  const FROZEN = new Set(["berries", "broccoli", "edamame", "cauli", "stirfry", "corn", "shrimp", "strawberries", "icecream", "icebar",
+    "frittata", "bwrap", "lasagna", "pizza", "yakisoba", "yakitori", "gyoza", "chstrips", "salmonburger", "meatballs", "mango"]);
   const FREEZER = { all: Infinity, std: 10000, low: 5000, none: 0 };
   const inFreezer = (k, cap) => FROZEN.has(k) || (cap > 0 && COSTCO[k]?.[3] === "z");
   const KEEP = { p: ["Keeps", "Pantry or freezer. Carries over."], z: ["Freeze", "Freeze what you won't use in a few days."], r: ["Keeps a few weeks", "Fridge or a cool cupboard."], x: ["Use this week", "Won't keep. Not carried over."] };
@@ -817,6 +874,56 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
     ["i", "Chocolate chunk cookies", [["cookie",90]], "Two cookies, warmed for 10 seconds if you like.", 1],
     ["i", "Kettle chips", [["chips",45]], "Pour one bowl, then put the bag away.", 1],
     ["i", "Cookie and ice cream", [["cookie",45],["icecream",70]], "Crumble a cookie over a small scoop of ice cream.", 1],
+    // Round 2: premade, frozen and new Costco finds
+    ["b", "Egg white frittatas with an English muffin", [["frittata",171],["emuffin",57],["berries",100]], "Microwave three frozen frittatas for about 90 seconds. Toast the English muffin and have the berries on the side.", 3],
+    ["b", "Egg bites and fruit", [["eggbites",130],["apple",180],["almonds",10]], "Warm the egg bites 60 to 90 seconds in the microwave. Slice an apple and add a few almonds.", 2],
+    ["b", "Egg bite breakfast sandwich", [["eggbites",65],["emuffin",57],["cheddar",15],["spinach",20]], "Toast the English muffin, warm an egg bite and press it flat, then stack with cheddar and spinach.", 4],
+    ["b", "Breakfast wrap and yogurt", [["bwrap",128],["yogurt",150]], "Microwave the frozen wrap about 2 minutes, turning halfway, or air-fry 10 minutes. Have plain Greek yogurt on the side.", 3],
+    ["b", "Smoked salmon English muffin", [["emuffin",57],["smsalmon",60],["cottage",60],["cucumber",40]], "Toast the English muffin, spread with cottage cheese, and top with smoked salmon, sliced cucumber and black pepper.", 5],
+    ["b", "Mango granola parfait", [["yogurt",200],["granola",40],["mango",80]], "Thaw the mango for a few minutes, then layer yogurt, mango and granola.", 3],
+    ["b", "Mango protein smoothie", [["mango",120],["banana",60],["whey",30],["milk",250],["chia",10]], "Blend everything until smooth.", 5],
+    ["b", "Smoked salmon scramble", [["egg",150],["smsalmon",50],["spinach",30],["bread",40],["oil",5]], "Wilt the spinach in oil, add beaten eggs and scramble softly, then fold in torn smoked salmon off the heat. Serve with toast.", 10],
+    ["b", "Cottage cheese granola bowl", [["cottage",200],["granola",30],["strawberries",100]], "Thaw the strawberries, then top cottage cheese with them and the granola.", 3],
+    ["b", "Protein shake and a banana", [["shake",340],["banana",120]], "Grab a shake from the fridge and a banana on the way out.", 1],
+    ["b", "Turkey egg English muffin", [["egg",100],["emuffin",57],["turkeyslice",40],["cheddar",15]], "Fry or scramble the eggs, toast the muffin, and stack with turkey and cheddar.", 10],
+    ["l", "Salad kit with chicken", [["saladkit",340],["chstrips",120]], "Empty a bag into a bowl with its dressing and toppings, toss, and top with the chicken strips, warmed or cold.", 5],
+    ["l", "Salad kit with a salmon burger", [["saladkit",340],["salmonburger",91]], "Cook the salmon burger from frozen, about 4 minutes a side in a pan or 12 minutes in the air fryer. Serve on the tossed salad kit.", 12],
+    ["l", "Salad kit with eggs and chickpeas", [["saladkit",340],["egg",100],["chickpeas",80]], "Toss the salad kit with its dressing, then top with sliced hard-boiled eggs and drained chickpeas.", 12],
+    ["l", "Chicken tortilla soup and pita", [["ctsoup",415],["chstrips",80],["pita",65]], "Heat half a tub of soup with the chicken strips stirred in. Warm a pita to dip.", 6],
+    ["l", "Lentil soup with hummus pita", [["lentsoup",398],["pita",65],["hummus",30]], "Heat a can of soup. Spread hummus on a warm pita to have alongside.", 5],
+    ["l", "Chicken pita with yogurt sauce", [["pita",130],["chstrips",120],["yogurt",60],["cucumber",60],["tomato",60]], "Grate some cucumber into the yogurt with salt and garlic. Fill warm pitas with chicken, tomato and the sauce.", 10],
+    ["l", "Smoked salmon rice bowl", [["smsalmon",80],["wrice",150],["edamame",60],["cucumber",80],["avocado",40],["soysauce",10]], "Heat the rice and edamame, then top with smoked salmon, cucumber, avocado and a splash of soy sauce.", 10],
+    ["l", "Meatball pita melt", [["meatballs",140],["marinara",100],["mozz",25],["pita",65]], "Heat the meatballs in the marinara, spoon onto a pita, top with mozzarella and broil 2 minutes.", 15],
+    ["l", "Gyoza and edamame bowl", [["gyoza",160],["edamame",100],["stirfry",120],["soysauce",10]], "Pan-fry the gyoza from frozen with a splash of water and a lid, about 8 minutes. Steam the edamame and vegetables, and serve with soy sauce.", 12],
+    ["l", "Yakisoba with chicken", [["yakisoba",255],["chstrips",100]], "Microwave the yakisoba bowl per the box, stirring the chicken strips in for the last minute.", 6],
+    ["l", "Naan chicken pizza", [["naan",100],["chstrips",100],["marinara",50],["mozz",30],["spinach",20]], "Spread marinara on a naan, top with spinach, chicken and mozzarella, and bake at 220°C / 425°F for 8 to 10 minutes.", 12],
+    ["l", "Greek chicken quinoa bowl", [["chstrips",130],["quinoa",120],["cucumber",80],["cherry",80],["feta",20],["hummus",30]], "Warm the chicken and quinoa, then top with cucumber, tomatoes, feta and a spoon of hummus.", 10],
+    ["l", "Tuna salad pita", [["tuna",120],["yogurt",30],["pita",65],["greens",30],["cucumber",50]], "Mix tuna with yogurt, mustard and pepper, and stuff into a pita with greens and cucumber.", 5],
+    ["d", "Lasagna with a side salad", [["lasagna",350],["greens",80],["cherry",80],["oil",7]], "Bake a tray from frozen on the weekend (about 75 minutes at 190°C / 375°F), then reheat portions 3 to 4 minutes. Serve with a dressed salad.", 10],
+    ["d", "Pizza night with a salad kit", [["pizza",185],["saladkit",170]], "Bake the pizza per the box, about 12 minutes. Have a third of it with half a bag of salad kit.", 15],
+    ["d", "Yakitori fried rice and edamame", [["yakitori",255],["edamame",100]], "Microwave the yakitori bowl per the box and steam the edamame on the side.", 8],
+    ["d", "Salmon burgers with sweet potato wedges", [["salmonburger",182],["sweetpot",200],["greenbeans",100],["oil",7]], "Roast sweet potato wedges at 220°C / 425°F for 25 minutes. Cook the salmon burgers from frozen alongside for the last 12, and steam the green beans.", 30],
+    ["d", "Meatballs and spaghetti", [["meatballs",140],["spaghetti",80],["marinara",150],["parm",10]], "Simmer the frozen meatballs in marinara for 15 minutes while the spaghetti cooks. Toss and top with parmesan.", 20],
+    ["d", "Chicken pot pie with green beans", [["potpie",300],["greenbeans",150]], "Bake the pot pie per the label, then reheat slices as needed. Steam green beans on the side.", 10],
+    ["d", "Gyoza vegetable stir-fry", [["gyoza",200],["stirfry",200],["edamame",60],["soysauce",15],["oil",5]], "Crisp the gyoza in oil, add a splash of water and cover 4 minutes, then toss in the vegetables, edamame and soy sauce until hot.", 15],
+    ["d", "Sausage tortelloni with spinach", [["tortelloni",200],["marinara",120],["spinach",50],["parm",10]], "Boil the tortelloni 4 to 5 minutes, toss with warm marinara and spinach until wilted, and top with parmesan.", 12],
+    ["d", "Chicken naan curry", [["chstrips",150],["cocofull",80],["cantom",120],["spinach",50],["naan",100]], "Simmer tomatoes and coconut milk with curry powder for 10 minutes, add the chicken and spinach, and serve with warm naan.", 20],
+    ["d", "Smoked salmon pasta", [["spaghetti",80],["smsalmon",80],["spinach",40],["yogurt",50],["parm",10]], "Cook the spaghetti, then toss off the heat with yogurt, a splash of pasta water, spinach, parmesan and torn smoked salmon.", 15],
+    ["d", "Salmon burger rice bowl", [["salmonburger",182],["wrice",150],["cucumber",80],["edamame",60],["soysauce",10]], "Cook the salmon burgers from frozen, slice, and serve over rice with cucumber, edamame and soy sauce.", 15],
+    ["d", "Chicken strip fajitas", [["chstrips",150],["tortilla",120],["pepper",150],["onion",60],["salsa",40],["oil",7]], "Sizzle sliced pepper and onion in oil with fajita spices, add the chicken to heat through, and wrap in warm tortillas with salsa.", 15],
+    ["d", "Lentil soup and grilled cheese", [["lentsoup",398],["bread",80],["cheddar",30]], "Heat a can of soup. Toast a cheddar sandwich in a dry pan, 2 to 3 minutes a side.", 10],
+    ["d", "Mango shrimp rice bowl", [["shrimp",160],["wrice",150],["mango",80],["cucumber",60],["avocado",40],["soysauce",10]], "Sear the shrimp 2 minutes a side. Serve over rice with thawed mango, cucumber, avocado and soy sauce.", 15],
+    ["d", "Veggie yakisoba with tofu", [["yakisoba",255],["tofu",150],["oil",5]], "Crisp cubed tofu in oil while the yakisoba heats, then toss together.", 10],
+    ["s", "Cheese strings and an apple", [["cheesestr",42],["apple",180]], "Two cheese strings and an apple.", 1],
+    ["s", "Beef sticks", [["beefstick",64]], "Two sticks from the pantry.", 1],
+    ["s", "Protein bar", [["protbar",50]], "Keep one in your bag.", 1],
+    ["s", "Protein shake, ready to drink", [["shake",340]], "Straight from the fridge.", 1],
+    ["s", "Cottage cheese with mango", [["cottage",150],["mango",80]], "Top cottage cheese with thawed mango.", 2],
+    ["s", "Smoked salmon cucumber bites", [["smsalmon",50],["cucumber",120],["cottage",40]], "Slice cucumber into rounds and top with a little cottage cheese and smoked salmon.", 5],
+    ["s", "Yogurt with granola", [["yogurt",150],["granola",25]], "Sprinkle granola over the yogurt.", 2],
+    ["h", "Mango soft serve", [["mango",150],["yogurt",50]], "Blend frozen mango with the yogurt until it looks like soft serve. Eat right away.", 3],
+    ["h", "Mango and dark chocolate", [["mango",120],["darkchoc",10]], "Let the mango thaw 10 minutes and have it with a square of chocolate.", 1],
+    ["i", "Slice of pizza", [["pizza",140]], "A quarter of a frozen pizza, baked crisp.", 15],
   ].map(([type, name, items, how, min], i) => mkMeal("m" + i, type, name, items, how, min));
   function mkMeal(id, type, name, items, how, min) {
     const n = [0, 0, 0, 0, 0];
@@ -990,7 +1097,7 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
       avoid: tags.avoid.join(","), likes: tags.likes.join(","), meals: radio("meals"), snacks: radio("snacks"), treat: radio("treat"),
       out: { days: [...document.querySelectorAll('input[name="out"]:checked')].map((x) => +x.value), style: radio("outStyle") },
       course: Object.fromEntries(COURSES.map((c) => [c.t, { effort: +$("effort-" + c.t).value, variety: +$("variety-" + c.t).value }])),
-      store: radio("store"), packs: $("packs").checked, freezer: radio("freezer"), start: startDay(),
+      store: radio("store"), packs: $("packs").checked, premade: $("premade").checked, freezer: radio("freezer"), start: startDay(),
     };
   }
   const valid = (s) => s.age >= 15 && s.age <= 90 && s.heightCm >= 120 && s.heightCm <= 230 && s.weightKg >= 30 && s.weightKg <= 300;
@@ -1144,7 +1251,8 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
     const pools = {}, relaxed = [];
     const costco = s.store === "costco";
     const fcap = costco ? FREEZER[s.freezer] ?? FREEZER.std : Infinity;
-    const library = costco ? COSTCO_MEALS.filter((m) => m.items.every(([k]) => COSTCO[k] && !nostock.has(k) && (fcap > 0 || !FROZEN.has(k)))) : MEALS;
+    const library = (costco ? COSTCO_MEALS.filter((m) => m.items.every(([k]) => COSTCO[k] && !nostock.has(k) && (fcap > 0 || !FROZEN.has(k)))) : MEALS)
+      .filter((m) => s.premade || !m.tags.has("premade"));
     for (const type of ["b", "l", "d", "s", ...(treat ? [treat] : [])]) {
       const fit = library.filter((m) => m.type === type && allowed(m, diets, avoid));
       const quick = fit.filter((m) => m.min <= course[type].effort);
@@ -1236,7 +1344,7 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
   }
   function amountText(k, g) {
     const d = ING[k], x = d[8] || {};
-    if (x.unit) { const c = g / x.each; return `${half(c)} ${c > 1 ? x.unit[1] : x.unit[0]} ${k === "egg" ? "" : d[0].toLowerCase().replace(/ \(.*\)/, "")}`.replace(/\s+$/, ""); }
+    if (x.unit) { const c = g / x.each; return `${half(c)} ${c > 1 ? x.unit[1] : x.unit[0]} ${k === "egg" || x.full ? "" : d[0].toLowerCase().replace(/ \(.*\)/, "")}`.replace(/\s+$/, ""); }
     let s = `${d[0].replace(/ \(cooked\)/, ", cooked")}: ${fmt(g)} ${x.ml ? "ml" : "g"}`;
     if (x.tbsp) {
       const tb = g / x.tbsp;
@@ -1255,7 +1363,7 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
   let leftovers = null;
   const skipped = {};
 
-  function inputsKey(s, r) { return JSON.stringify([r.target, r.protein, r.carbs, r.fat, r.keto, s.diets, s.avoid, s.likes, s.meals, s.snacks, s.treat, s.out, s.start, s.course, s.store, s.packs, s.freezer, [...nostock]]); }
+  function inputsKey(s, r) { return JSON.stringify([r.target, r.protein, r.carbs, r.fat, r.keto, s.diets, s.avoid, s.likes, s.meals, s.snacks, s.treat, s.out, s.start, s.course, s.store, s.packs, s.freezer, [...nostock], s.premade]); }
 
   function refreshMenu(s, r, force) {
     ctx = context(s, r);
@@ -1738,6 +1846,7 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
     const v = { radios: {}, diets: read().diets, fields: {} };
     ["sex", "units", "activity", "goal", "meals", "snacks", "treat", "outStyle", "store", "freezer", "start"].forEach((n) => (v.radios[n] = radio(n)));
     v.packs = $("packs").checked;
+    v.premade = $("premade").checked;
     v.out = read().out.days;
     ["age", "heightCm", "heightFt", "heightIn", "weight", ...COURSES.flatMap((c) => ["effort-" + c.t, "variety-" + c.t])].forEach((id) => (v.fields[id] = $(id).value));
     v.tags = tags;
@@ -1758,6 +1867,7 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
     if ((v.diets || []).includes("Dairy-free") && !tags.avoid.some((t) => /dairy/i.test(t))) { tags.avoid.push("dairy"); renderTags("avoid"); }
     (v.diets || []).forEach((d) => { const el = document.querySelector(`input[name="diet"][value="${d}"]`); if (el) el.checked = true; });
     if (v.packs != null) $("packs").checked = v.packs;
+    if (v.premade != null) $("premade").checked = v.premade;
     (v.out || []).forEach((d) => { const el = $("out-" + d); if (el) el.checked = true; });
   }
   function showStore() {
