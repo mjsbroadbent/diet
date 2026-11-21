@@ -417,6 +417,15 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
         </div>
         <label class="check" id="packsRow"><input type="checkbox" id="packs" checked>
           <span>Plan around big packs<small>Favours recipes that reuse what you already bought, so less of each Costco pack goes to waste.</small></span></label>
+        <div class="f" id="freezerRow">Freezer space for this shop
+          <div class="seg" role="radiogroup" aria-label="Freezer space">
+            <label><input type="radio" name="freezer" id="fz-all" value="all"><span>Unlimited</span></label>
+            <label><input type="radio" name="freezer" id="fz-std" value="std" checked><span>Standard</span></label>
+            <label><input type="radio" name="freezer" id="fz-low" value="low"><span>Not much</span></label>
+            <label><input type="radio" name="freezer" id="fz-none" value="none"><span>None</span></label>
+          </div>
+          <p class="hint" id="freezerHint"></p>
+        </div>
         <p class="hint" id="storeHint"></p>
       </fieldset>
     </form>
@@ -690,6 +699,10 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
   const UNIT = { chicken: 580, thigh: 560, turkey: 1000, turkeyslice: 300, beef: 600, steak: 400, pork: 670, bacon: 500, tuna: 130, eggwhite: 500, tofu: 454,
     yogurt: 650, cottage: 750, feta: 600, soymilk: 946, cocofull: 400, chickpeas: 300, spaghetti: 500, bread: 675, tortilla: 600, cantom: 796, cauli: 500,
     pb: 1000, honey: 750, salsa: 1050, marinara: 1250, icebar: 70 };
+  // Freezer: frozen-aisle packs always need it; fresh meat, bread and the like go in to keep past a few days
+  const FROZEN = new Set(["berries", "broccoli", "edamame", "cauli", "stirfry", "corn", "shrimp", "strawberries", "icecream", "icebar"]);
+  const FREEZER = { all: Infinity, std: 10000, low: 5000, none: 0 };
+  const inFreezer = (k, cap) => FROZEN.has(k) || (cap > 0 && COSTCO[k]?.[3] === "z");
   const KEEP = { p: ["Keeps", "Pantry or freezer. Carries over."], z: ["Freeze", "Freeze what you won't use in a few days."], r: ["Keeps a few weeks", "Fridge or a cool cupboard."], x: ["Use this week", "Won't keep. Not carried over."] };
   const buyUnits = (k, g) => g * ((ING[k][8] || {}).dry || 1);
   const money = (v) => "$" + (v >= 100 ? Math.round(v).toLocaleString() : v.toFixed(2));
@@ -949,7 +962,7 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
       avoid: tags.avoid.join(","), likes: tags.likes.join(","), meals: radio("meals"), snacks: radio("snacks"), treat: radio("treat"),
       out: { days: [...document.querySelectorAll('input[name="out"]:checked')].map((x) => +x.value), style: radio("outStyle") },
       course: Object.fromEntries(COURSES.map((c) => [c.t, { effort: +$("effort-" + c.t).value, variety: +$("variety-" + c.t).value }])),
-      store: radio("store"), packs: $("packs").checked,
+      store: radio("store"), packs: $("packs").checked, freezer: radio("freezer"),
     };
   }
   const valid = (s) => s.age >= 15 && s.age <= 90 && s.heightCm >= 120 && s.heightCm <= 230 && s.weightKg >= 30 && s.weightKg <= 300;
@@ -1102,7 +1115,8 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
     const course = { ...s.course, h: TREAT_COURSE, i: TREAT_COURSE, o: { effort: 999, variety: 1 } };
     const pools = {}, relaxed = [];
     const costco = s.store === "costco";
-    const library = costco ? COSTCO_MEALS.filter((m) => m.items.every(([k]) => COSTCO[k] && !nostock.has(k))) : MEALS;
+    const fcap = costco ? FREEZER[s.freezer] ?? FREEZER.std : Infinity;
+    const library = costco ? COSTCO_MEALS.filter((m) => m.items.every(([k]) => COSTCO[k] && !nostock.has(k) && (fcap > 0 || !FROZEN.has(k)))) : MEALS;
     for (const type of ["b", "l", "d", "s", ...(treat ? [treat] : [])]) {
       const fit = library.filter((m) => m.type === type && allowed(m, diets, avoid));
       const quick = fit.filter((m) => m.min <= course[type].effort);
@@ -1113,7 +1127,7 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
     const T = { k: r.target, p: r.protein, c: r.carbs, f: r.fat, keto: r.keto };
     let treatNote = "";
     if (treat && !pools[treat].length) { slots = slots.filter((x) => x !== "Treat"); treatNote = `No ${treat === "h" ? "healthy" : "indulgent"} treats fit your diet and avoid list, so the week has none.`; }
-    return { slots, pools, liked, T, score: makeScorer(T), likes, relaxed, course, treatNote, out: s.out, costco, packs: costco && s.packs, library };
+    return { slots, pools, liked, T, score: makeScorer(T), likes, relaxed, course, treatNote, out: s.out, costco, packs: costco && s.packs, library, fcap };
   }
 
   function buildWeek(ctx, seed) {
@@ -1129,13 +1143,22 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
     const cap = Object.fromEntries(Object.keys(perDay).map((t) => [t, ctx.course[t].variety * perDay[t]]));
     const chosen = { b: new Set(), l: new Set(), d: new Set(), s: new Set(), h: new Set(), i: new Set(), o: new Set() };
     // Big-pack planning: what's already open (or in the pantry) is free to use; opening a new pack costs its price
-    const have = { ...(ctx.packs ? pantry : {}) };
+    const have = { ...(ctx.costco ? pantry : {}) };
+    // Returns [price of new packs, true if they won't fit in the freezer]
     const packCost = (picked, ms) => {
       const need = {};
       picked.forEach((m, i) => m.items.forEach(([k, g]) => (need[k] = (need[k] || 0) + buyUnits(k, g * ms[i]))));
-      let cost = 0;
-      for (const k in need) { const short = need[k] - (have[k] || 0); if (short > 0) cost += Math.ceil(short / COSTCO[k][1]) * COSTCO[k][2]; }
-      return cost;
+      let cost = 0, add = 0;
+      for (const k in need) {
+        const short = need[k] - (have[k] || 0);
+        if (short <= 0) continue;
+        const n = Math.ceil(short / COSTCO[k][1]);
+        cost += n * COSTCO[k][2];
+        if (inFreezer(k, ctx.fcap)) add += n * COSTCO[k][1] - short;
+      }
+      let load = 0;
+      if (add) for (const k in have) if (have[k] > 0 && inFreezer(k, ctx.fcap)) load += have[k];
+      return [cost, add > 0 && load + add > ctx.fcap];
     };
     for (let d = 0; d < 7; d++) {
       let best = null;
@@ -1155,11 +1178,11 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
         }
         const o = optimize(picked, T, score);
         let s = o.s + picked.reduce((a, m) => a + (ctx.course[m.type].variety >= 7 ? 0.05 * (uses[m.id] || 0) : 0) - (liked(m) ? 0.01 : 0), 0);
-        if (ctx.packs) s += 0.0004 * packCost(picked, o.ms);
+        if (ctx.costco) { const [c, over] = packCost(picked, o.ms); if (ctx.packs) s += 0.0004 * c; if (over) s += 1; }
         if (!best || s < best.s) best = { ids: picked.map((m) => m.id), ms: o.ms, s };
       }
       best.ids.forEach((id) => { uses[id] = (uses[id] || 0) + 1; chosen[MEAL[id].type].add(id); });
-      if (ctx.packs) best.ids.forEach((id, i) => MEAL[id].items.forEach(([k, g]) => {
+      if (ctx.costco) best.ids.forEach((id, i) => MEAL[id].items.forEach(([k, g]) => {
         const u = buyUnits(k, g * best.ms[i]), short = u - (have[k] || 0);
         if (short > 0) have[k] = (have[k] || 0) + Math.ceil(short / COSTCO[k][1]) * COSTCO[k][1];
         have[k] -= u;
@@ -1204,7 +1227,7 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
   let leftovers = null;
   const skipped = {};
 
-  function inputsKey(s, r) { return JSON.stringify([r.target, r.protein, r.carbs, r.fat, r.keto, s.diets, s.avoid, s.likes, s.meals, s.snacks, s.treat, s.out, s.course, s.store, s.packs, [...nostock]]); }
+  function inputsKey(s, r) { return JSON.stringify([r.target, r.protein, r.carbs, r.fat, r.keto, s.diets, s.avoid, s.likes, s.meals, s.snacks, s.treat, s.out, s.course, s.store, s.packs, s.freezer, [...nostock]]); }
 
   function refreshMenu(s, r, force) {
     ctx = context(s, r);
@@ -1515,6 +1538,20 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
     const dry = (k) => ((ING[k][8] || {}).dry ? " dry" : "");
     leftovers = rows.map((r) => ({ ...r, left: r.idle ?? (r.inPantry ? (pantry[r.k] || 0) - r.inPantry : 0) + r.packs * r.size - (r.used - r.inPantry) }))
       .filter((r) => r.left > Math.max(20, r.size * 0.02));
+    const fcap = ctx.fcap;
+    if (fcap === 0) leftovers.forEach((r) => { if (r.keep === "z") r.keep = "x"; });
+    const fzLeft = leftovers.filter((r) => inFreezer(r.k, fcap)).reduce((a, r) => a + r.left, 0);
+    // Busiest the freezer gets: walk the week, opening packs as they're needed (same as the planner)
+    const hv = { ...pantry };
+    let fzPeak = 0;
+    week.days.forEach((d, di) => {
+      dayData(d, di).meals.forEach((x) => x.items.forEach(({ k, g }) => {
+        const u = buyUnits(k, g), short = u - (hv[k] || 0);
+        if (short > 0) hv[k] = (hv[k] || 0) + Math.ceil(short / COSTCO[k][1]) * COSTCO[k][1];
+        hv[k] -= u;
+      }));
+      fzPeak = Math.max(fzPeak, Object.keys(hv).filter((k) => hv[k] > 0 && inFreezer(k, fcap)).reduce((a, k) => a + hv[k], 0));
+    });
     const leftVal = leftovers.reduce((a, r) => a + (r.left / r.size) * r.price, 0);
     const carryVal = leftovers.filter((r) => r.keep !== "x").reduce((a, r) => a + (r.left / r.size) * r.price, 0);
 
@@ -1522,7 +1559,8 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
     $("cost").innerHTML = `
       <div><span>This week's shop, in-store</span><b>${money(shop / INSTORE)}</b><span>${money(shop)} on Costco Same-Day</span></div>
       <div><span>Food you'll eat this week</span><b>${money(eaten / INSTORE)}</b><span>about ${money(eaten / INSTORE / 7)} a day</span></div>
-      <div><span>Left over for next week</span><b>${money(carryVal / INSTORE)}</b><span>${leftVal - carryVal > 0.5 ? money((leftVal - carryVal) / INSTORE) + " of fresh food won't keep" : "Mostly pantry and freezer"}</span></div>`;
+      <div><span>Left over for next week</span><b>${money(carryVal / INSTORE)}</b><span>${leftVal - carryVal > 0.5 ? money((leftVal - carryVal) / INSTORE) + " of fresh food won't keep" : "Mostly pantry and freezer"}</span></div>
+      <div><span>Freezer, busiest day</span><b>${(fzPeak / 1000).toFixed(1)} kg</b><span>${fcap === Infinity ? `No limit set · ${(fzLeft / 1000).toFixed(1)} kg left at week's end` : fcap === 0 ? "No freezer, so no frozen packs" : `of ${fcap / 1000} kg${fzPeak > fcap ? ". Over your space: try Shuffle" : ""} · ${(fzLeft / 1000).toFixed(1)} kg left at week's end`}</span></div>`;
     $("groceryNote").textContent = "Costco packs for the week above, at warehouse prices (Same-Day runs about 7.5% higher). Tick items off as you shop.";
 
     const bySec = {};
@@ -1608,7 +1646,7 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
 
   function saveInputs() {
     const v = { radios: {}, diets: read().diets, fields: {} };
-    ["sex", "units", "activity", "goal", "meals", "snacks", "treat", "outStyle", "store"].forEach((n) => (v.radios[n] = radio(n)));
+    ["sex", "units", "activity", "goal", "meals", "snacks", "treat", "outStyle", "store", "freezer"].forEach((n) => (v.radios[n] = radio(n)));
     v.packs = $("packs").checked;
     v.out = read().out.days;
     ["age", "heightCm", "heightFt", "heightIn", "weight", ...COURSES.flatMap((c) => ["effort-" + c.t, "variety-" + c.t])].forEach((id) => (v.fields[id] = $(id).value));
@@ -1635,6 +1673,9 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
   function showStore() {
     const costco = radio("store") === "costco";
     $("packsRow").hidden = !costco;
+    $("freezerRow").hidden = !costco;
+    const fz = radio("freezer");
+    $("freezerHint").textContent = { all: "Chest freezer or plenty of room.", std: "About 10 kg free: a typical fridge freezer with some room.", low: "About 5 kg free: a small or mostly full freezer.", none: "No frozen packs. Fresh meat and bread get used within the week instead of frozen." }[fz] || "";
     $("storeHint").textContent = costco
       ? "Menus use only what Costco carries, in Costco pack sizes. Prices are from Costco Same-Day (Nov 2026) minus about 7.5% for warehouse prices."
       : "Uses the full recipe library with everyday grocery amounts. No prices.";
