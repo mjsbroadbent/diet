@@ -686,6 +686,11 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
   };
   // Library items Costco doesn't carry, and what replaces them (grams × factor)
   const SUB = { blackbeans: ["chickpeas", 1], lentils: ["chickpeas", 1], tempeh: ["tofu", 1.3], corntort: ["tortilla", 0.75], ricenoodle: ["wrice", 3], ricecake: ["bread", 1.5], pasta: ["spaghetti", 1], tamari: ["soysauce", 1], coco: ["cocofull", 0.36], darkchoc: ["darkbites", 1.25] };
+  // The unit you actually open inside a Costco pack (a box, can, tub or tray). Default: the whole pack.
+  const UNIT = { chicken: 580, thigh: 560, turkey: 1000, turkeyslice: 300, beef: 600, steak: 400, pork: 670, bacon: 500, tuna: 130, eggwhite: 500, tofu: 454,
+    yogurt: 650, cottage: 750, feta: 600, soymilk: 946, cocofull: 400, chickpeas: 300, spaghetti: 500, bread: 675, tortilla: 600, cantom: 796, cauli: 500,
+    pb: 1000, honey: 750, salsa: 1050, marinara: 1250, icebar: 70 };
+  const FINISH_MAX = 1100; // g or ml
   const KEEP = { p: ["Keeps", "Pantry or freezer. Carries over."], z: ["Freeze", "Freeze what you won't use in a few days."], r: ["Keeps a few weeks", "Fridge or a cool cupboard."], x: ["Use this week", "Won't keep. Not carried over."] };
   const buyUnits = (k, g) => g * ((ING[k][8] || {}).dry || 1);
   const money = (v) => "$" + (v >= 100 ? Math.round(v).toLocaleString() : v.toFixed(2));
@@ -1207,11 +1212,11 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
     const key = inputsKey(s, r);
     const saved = ls.get("ad-week");
     saved?.days?.forEach((d) => d.ids.forEach((id) => id[0] === "x" && customMeal(+id.slice(1))));
-    if (!force && saved && saved.key === key && saved.seed === seed && saved.days?.every((d) => d.ids.every((id) => MEAL[id]))) week = saved;
+    if (!force && saved && saved.key === key && saved.seed === seed && saved.days?.every((d) => d.ids.every((id) => MEAL[id]))) { week = saved; if (!week.extra) finishUp(); }
     else {
       const b = buildWeek(ctx, seed);
       week = b.error ? { error: b.error } : { key, seed, days: b.days };
-      if (!b.error) ls.set("ad-week", week);
+      if (!b.error) { finishUp(); ls.set("ad-week", week); }
       Object.keys(skipped).forEach((k) => delete skipped[k]);
     }
     renderMenu();
@@ -1241,7 +1246,7 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
           const o = optimize(meals, T, makeScorer(T), d.ids.map((id, i) => (i <= L ? 1 : d.ms[i])));
           d.ms = o.ms.map((x, i) => (i <= L ? d.ms[i] : x));
         }
-        pending += dayData(d).tot[0] - T.k;
+        pending += dayData(d, di).tot[0] - T.k;
         return;
       }
       const left = week.days.slice(di).filter((x) => !(x.log && Object.keys(x.log).length)).length;
@@ -1256,25 +1261,62 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
       ? `About ${fmt(pending)} kcal from logged meals is left over: there are no days after it to absorb it, or they're already trimmed by the 20% limit.`
       : `You're about ${fmt(-pending)} kcal under for the week after logged meals.`;
   }
+  // People finish a box they've nearly used up. If the week uses 80%+ of the last unit opened,
+  // the rest goes into the last meal that uses it, and the rest of that day is trimmed to make room.
+  function finishUp() {
+    week.extra = {};
+    week.finished = [];
+    if (!ctx.costco) return;
+    const all = week.days.map(dayData), tot = {}, last = {};
+    all.forEach((d, di) => d.meals.forEach((x, si) => x.items.forEach(({ k, g }) => { tot[k] = (tot[k] || 0) + g; last[k] = [di, si]; })));
+    const touched = new Set();
+    for (const k in tot) {
+      if (!COSTCO[k]) continue;
+      const unit = UNIT[k] || COSTCO[k][1], u = buyUnits(k, tot[k]), r = u % unit;
+      // Only packages you'd finish in a sitting or a cook: not a 5 kg bag of rice or a jar of honey
+      if (unit > FINISH_MAX || (ING[k][8] || {}).tbsp) continue;
+      if (r < 1 || r / unit < 0.8) continue;
+      const add = Math.round((unit - r) / ((ING[k][8] || {}).dry || 1));
+      if (add < 1) continue;
+      const [di, si] = last[k];
+      (week.extra[di + ":" + si] ||= {})[k] = add;
+      week.finished.push(k);
+      touched.add(di);
+    }
+    touched.forEach((di) => {
+      const d = week.days[di];
+      if (d.log && Object.keys(d.log).length) return;
+      const fixed = new Set(Object.keys(week.extra).filter((key) => +key.split(":")[0] === di).map((key) => +key.split(":")[1]));
+      const dd = dayData(d, di), t = dayT(d);
+      const meals = d.ids.map((id, i) => (fixed.has(i) ? { ...MEAL[id], type: "o", n: dd.meals[i].n } : MEAL[id]));
+      const o = optimize(meals, t, makeScorer(t), d.ids.map((id, i) => (fixed.has(i) ? 1 : d.ms[i])));
+      d.ms = o.ms.map((x, i) => (fixed.has(i) ? d.ms[i] : x));
+    });
+  }
   function logMeal(di, si, kind, kcal) {
     const d = week.days[di];
     const m = kind === "x" ? customMeal(Math.round(kcal / 10) * 10) : OUT[kind];
     (d.log ||= {})[si] ??= d.ids[si];
     d.ids[si] = m.id;
-    rebalance(); ls.set("ad-week", week); renderMenu();
+    rebalance(); finishUp(); ls.set("ad-week", week); renderMenu();
   }
   function undoLog(di, si) {
     const d = week.days[di];
     d.ids[si] = d.log[si]; delete d.log[si];
     if (!Object.keys(d.log).length) { const t = dayT(d); d.ms = optimize(d.ids.map((id) => MEAL[id]), t, makeScorer(t)).ms; }
-    rebalance(); ls.set("ad-week", week); renderMenu();
+    rebalance(); finishUp(); ls.set("ad-week", week); renderMenu();
   }
 
-  function dayData(day) {
+  function dayData(day, di) {
     const meals = day.ids.map((id, i) => {
       const m = MEAL[id];
       if (m.out) return { m, items: [], n: m.n.slice(), mult: 1 };
       const items = portion(m, day.ms[i]);
+      const extra = week?.extra?.[di + ":" + i];
+      if (extra) for (const k in extra) {
+        const it = items.find((x) => x.k === k);
+        if (it) { it.g += extra[k]; it.fin = extra[k]; } else items.push({ k, g: extra[k], fin: extra[k] });
+      }
       return { m, items, n: nutr(items), mult: day.ms[i] };
     });
     const tot = [0, 0, 0, 0, 0];
@@ -1309,6 +1351,7 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
     const unmatched = ctx.likes.filter((t) => !ctx.library.some((m) => m.text.includes(t)));
     if (unmatched.length) notes.push(`No built-in recipes use ${unmatched.join(", ")} yet.`);
     if (week.note) notes.push(week.note);
+    if (week.finished?.length) notes.push(`You'd nearly finish the ${week.finished.map((k) => ING[k][0].toLowerCase().replace(/ \(.*\)/, "").split(",")[0]).join(", ").replace(/, ([^,]*)$/, " and $1")} this week, so the last meal using it finishes the package and those calories are counted.`);
     warn.hidden = !notes.length; warn.textContent = notes.join(" ");
 
     days.innerHTML = "";
@@ -1337,7 +1380,7 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
           ${wd.log?.[i] ? `<button type="button" class="swap" data-undo>Undo</button>` : x.m.out ? "" : `<button type="button" class="swap" aria-label="Swap ${ctx.slots[i]} on ${DAY_NAMES[di]}">Swap</button>`}
           <div class="mt">${x.m.out ? "about " : ""}${fmt(x.n[0])} kcal · P ${fmt(x.n[1])} · C ${fmt(T.keto ? x.n[2] - x.n[4] : x.n[2])} · F ${fmt(x.n[3])}${x.m.out ? " · loose estimate" : ` · ${x.m.min} min${portionNote}`}</div>
           ${x.m.out ? `<p class="hint">${x.m.how}</p>` : `<details><summary>Ingredients and method</summary>
-            <ul>${x.items.map(({ k, g }) => `<li>${amountText(k, g)}</li>`).join("")}</ul>
+            <ul>${x.items.map(({ k, g, fin }) => `<li>${amountText(k, g)}${fin ? ` <span class="logged" title="Includes ${fmt(fin)} ${(ING[k][8] || {}).ml ? "ml" : "g"} to finish the ${UNIT[k] ? "package" : "pack"}">finishes it</span>` : ""}</li>`).join("")}</ul>
             <p>${x.m.how}</p></details>`}`;
         if (wd.log?.[i]) mm.querySelector("[data-undo]").addEventListener("click", () => undoLog(di, i));
         else if (!x.m.out) mm.querySelector(".swap").addEventListener("click", () => swap(di, i));
@@ -1400,6 +1443,7 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
         d.ms = optimize(d.ids.map((id) => MEAL[id]), DT, makeScorer(DT)).ms;
       });
     }
+    finishUp();
     ls.set("ad-week", week);
     renderMenu();
   }
