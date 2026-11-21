@@ -81,6 +81,20 @@ input:focus-visible, select:focus-visible, button:focus-visible, .seg label:focu
 .chip span { display: inline-block; padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px; font-size: 13.5px; background: var(--surface); color: var(--ink); }
 .chip input:checked + span { background: var(--ink); color: var(--surface); border-color: var(--ink); }
 
+.courses { display: grid; gap: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+.course { display: grid; grid-template-columns: 84px minmax(0, 1fr) minmax(0, 1fr); gap: 8px; align-items: center; }
+.course.head { font-family: var(--display); font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.course b { font-weight: 600; font-size: 14px; }
+.course select { font-size: 14px; padding: 7px 8px; }
+@media (max-width: 480px) { .course { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .course b, .course.head span:first-child { grid-column: 1 / -1; } .course.head span:first-child { display: none; } }
+
+.tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.tags:empty { display: none; }
+.tag { display: inline-flex; align-items: center; gap: 4px; padding: 3px 4px 3px 10px; border-radius: 999px; font-size: 13px; font-weight: 500; color: var(--ink); background: var(--accent-soft); border: 1px solid var(--line); }
+#avoidTags .tag { background: var(--bad-soft); color: var(--bad); }
+.tag button { font: inherit; font-size: 15px; line-height: 1; width: 20px; height: 20px; border: 0; border-radius: 50%; background: transparent; color: inherit; cursor: pointer; }
+.tag button:hover { background: rgba(0, 0, 0, 0.08); }
+
 /* Label */
 aside { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 16px); display: grid; gap: 12px; min-width: 0; }
 @media (max-width: 820px) { aside { position: static; } }
@@ -199,21 +213,34 @@ button.btn:hover { filter: brightness(1.08); }
         <legend>Dietary preferences</legend>
         <div class="chips" id="diets"></div>
         <label class="f">Allergies or foods to avoid
-          <input type="text" id="avoid" placeholder="e.g. peanuts, mushrooms, shellfish">
+          <input type="text" id="avoid" placeholder="Type a food and press Enter, e.g. peanuts">
+          <div class="tags" id="avoidTags"></div>
         </label>
       </fieldset>
 
       <fieldset>
         <legend>Menu</legend>
-        <div class="f">Meals per day
-          <div class="seg" role="radiogroup" aria-label="Meals per day" style="justify-self:start">
-            <label><input type="radio" name="mpd" id="mpd-3" value="3"><span>3 meals</span></label>
-            <label><input type="radio" name="mpd" id="mpd-4" value="4" checked><span>3 + snack</span></label>
-            <label><input type="radio" name="mpd" id="mpd-5" value="5"><span>3 + 2 snacks</span></label>
+        <div class="seg-row">
+          <div class="f">Meals per day
+            <div class="seg" role="radiogroup" aria-label="Meals per day">
+              <label><input type="radio" name="meals" id="meals-1" value="1"><span>1</span></label>
+              <label><input type="radio" name="meals" id="meals-2" value="2"><span>2</span></label>
+              <label><input type="radio" name="meals" id="meals-3" value="3" checked><span>3</span></label>
+            </div>
+          </div>
+          <div class="f">Snacks per day
+            <div class="seg" role="radiogroup" aria-label="Snacks per day">
+              <label><input type="radio" name="snacks" id="snacks-0" value="0"><span>0</span></label>
+              <label><input type="radio" name="snacks" id="snacks-1" value="1" checked><span>1</span></label>
+              <label><input type="radio" name="snacks" id="snacks-2" value="2"><span>2</span></label>
+            </div>
           </div>
         </div>
+        <p class="hint" id="slotHint"></p>
+        <div class="courses" id="courses"></div>
         <label class="f">Foods you'd like to see more of (optional)
-          <input type="text" id="likes" placeholder="e.g. salmon, eggs, sweet potato">
+          <input type="text" id="likes" placeholder="Type a food and press Enter, e.g. salmon">
+          <div class="tags" id="likesTags"></div>
           <p class="hint">Meals containing these get picked more often.</p>
         </label>
       </fieldset>
@@ -287,6 +314,7 @@ button.btn:hover { filter: brightness(1.08); }
   const ING = {
     chicken:     ["Chicken breast", 120, 22.5, 0, 2.6, 0, S.M, "poultry"],
     thigh:       ["Chicken thighs, skinless", 145, 19, 0, 7.5, 0, S.M, "poultry"],
+    rchicken:    ["Rotisserie chicken (meat only)", 167, 25, 0, 7, 0, S.M, "poultry"],
     turkey:      ["Ground turkey (93% lean)", 150, 19, 0, 8, 0, S.M, "poultry"],
     turkeyslice: ["Sliced turkey breast", 104, 17, 4, 2, 0, S.M, "poultry"],
     beef:        ["Lean ground beef (90%)", 176, 20, 0, 10, 0, S.M, "meat"],
@@ -368,70 +396,77 @@ button.btn:hover { filter: brightness(1.08); }
   // Recipes at a base portion. Portions are scaled per day to hit your targets.
   const MEALS = [
     // Breakfast
-    ["b", "Greek yogurt berry bowl", [["yogurt",250],["berries",100],["almonds",15],["chia",10],["honey",10]], "Stir chia into the yogurt, then top with berries, chopped almonds and a drizzle of honey."],
-    ["b", "Peanut butter overnight oats", [["oats",60],["milk",200],["chia",10],["banana",60],["pb",16]], "Mix oats, milk and chia in a jar the night before. Top with sliced banana and peanut butter."],
-    ["b", "Vegan protein overnight oats", [["oats",60],["soymilk",220],["pea",20],["chia",10],["berries",100],["maple",10]], "Shake oats, soy milk, protein powder and chia in a jar and chill overnight. Top with berries and maple syrup."],
-    ["b", "Veggie scramble on toast", [["egg",150],["spinach",40],["pepper",75],["feta",20],["bread",40],["oil",5]], "Sauté diced pepper and spinach in oil, add beaten eggs and scramble. Finish with feta and serve with toast."],
-    ["b", "Tofu scramble on toast", [["tofu",200],["spinach",40],["onion",40],["tomato",60],["oil",7],["bread",40]], "Crumble tofu into a hot pan with oil and onion. Season with turmeric, salt and pepper, add spinach and tomato. Serve on toast."],
-    ["b", "Berry protein smoothie", [["banana",120],["berries",100],["whey",30],["milk",250],["pb",16]], "Blend everything until smooth."],
-    ["b", "Vegan berry smoothie", [["banana",120],["berries",100],["pea",30],["soymilk",300],["ab",16]], "Blend everything until smooth."],
-    ["b", "Eggs, bacon and avocado", [["egg",150],["bacon",25],["avocado",75],["spinach",40],["oil",5]], "Fry the bacon, cook the eggs your way, wilt spinach in the pan, and serve with sliced avocado."],
-    ["b", "Cottage cheese, berries and walnuts", [["cottage",200],["berries",100],["walnuts",15]], "Top cottage cheese with berries and chopped walnuts."],
-    ["b", "Breakfast burrito", [["tortilla",60],["egg",100],["blackbeans",60],["cheddar",20],["salsa",40]], "Scramble the eggs and warm the beans. Fill the tortilla with eggs, beans, cheese and salsa, roll, and toast seam-side down."],
-    ["b", "Mushroom mozzarella omelette", [["eggwhite",150],["egg",100],["mushroom",80],["mozz",30],["spinach",30],["oil",5]], "Sauté mushrooms and spinach in oil, pour in whisked eggs and whites, add mozzarella and fold."],
-    ["b", "Peanut butter banana toast", [["bread",80],["pb",24],["banana",120]], "Toast the bread, spread with peanut butter and top with sliced banana."],
-    ["b", "Coconut chia pudding", [["chia",30],["coco",200],["almonds",15],["berries",40]], "Stir chia into coconut milk and chill overnight. Top with almonds and berries."],
+    ["b", "Greek yogurt berry bowl", [["yogurt",250],["berries",100],["almonds",15],["chia",10],["honey",10]], "Stir chia into the yogurt, then top with berries, chopped almonds and a drizzle of honey.", 5],
+    ["b", "Peanut butter overnight oats", [["oats",60],["milk",200],["chia",10],["banana",60],["pb",16]], "Mix oats, milk and chia in a jar the night before. Top with sliced banana and peanut butter.", 5],
+    ["b", "Vegan protein overnight oats", [["oats",60],["soymilk",220],["pea",20],["chia",10],["berries",100],["maple",10]], "Shake oats, soy milk, protein powder and chia in a jar and chill overnight. Top with berries and maple syrup.", 5],
+    ["b", "Veggie scramble on toast", [["egg",150],["spinach",40],["pepper",75],["feta",20],["bread",40],["oil",5]], "Sauté diced pepper and spinach in oil, add beaten eggs and scramble. Finish with feta and serve with toast.", 15],
+    ["b", "Tofu scramble on toast", [["tofu",200],["spinach",40],["onion",40],["tomato",60],["oil",7],["bread",40]], "Crumble tofu into a hot pan with oil and onion. Season with turmeric, salt and pepper, add spinach and tomato. Serve on toast.", 15],
+    ["b", "Berry protein smoothie", [["banana",120],["berries",100],["whey",30],["milk",250],["pb",16]], "Blend everything until smooth.", 5],
+    ["b", "Vegan berry smoothie", [["banana",120],["berries",100],["pea",30],["soymilk",300],["ab",16]], "Blend everything until smooth.", 5],
+    ["b", "Eggs, bacon and avocado", [["egg",150],["bacon",25],["avocado",75],["spinach",40],["oil",5]], "Fry the bacon, cook the eggs your way, wilt spinach in the pan, and serve with sliced avocado.", 15],
+    ["b", "Cottage cheese, berries and walnuts", [["cottage",200],["berries",100],["walnuts",15]], "Top cottage cheese with berries and chopped walnuts.", 3],
+    ["b", "Breakfast burrito", [["tortilla",60],["egg",100],["blackbeans",60],["cheddar",20],["salsa",40]], "Scramble the eggs and warm the beans. Fill the tortilla with eggs, beans, cheese and salsa, roll, and toast seam-side down.", 15],
+    ["b", "Mushroom mozzarella omelette", [["eggwhite",150],["egg",100],["mushroom",80],["mozz",30],["spinach",30],["oil",5]], "Sauté mushrooms and spinach in oil, pour in whisked eggs and whites, add mozzarella and fold.", 15],
+    ["b", "Peanut butter banana toast", [["bread",80],["pb",24],["banana",120]], "Toast the bread, spread with peanut butter and top with sliced banana.", 5],
+    ["b", "Coconut chia pudding", [["chia",30],["coco",200],["almonds",15],["berries",40]], "Stir chia into coconut milk and chill overnight. Top with almonds and berries.", 5],
     // Lunch
-    ["l", "Chicken quinoa bowl", [["chicken",150],["quinoa",150],["broccoli",100],["oil",10],["tamari",10]], "Season and pan-sear the chicken in oil, then slice. Serve over quinoa with steamed broccoli and a splash of tamari."],
-    ["l", "Turkey hummus wrap", [["tortilla",60],["turkeyslice",100],["hummus",30],["greens",30],["tomato",60],["cheddar",20]], "Spread hummus on the tortilla, layer turkey, cheese, greens and tomato, and roll up."],
-    ["l", "Mediterranean tuna salad", [["tuna",120],["greens",80],["cherry",100],["cucumber",80],["chickpeas",80],["oil",10],["feta",20]], "Toss everything with the olive oil, a squeeze of lemon, salt and pepper."],
-    ["l", "Lentil vegetable soup", [["lentils",250],["carrot",60],["onion",50],["cantom",120],["spinach",30],["oil",7],["bread",40]], "Soften onion and carrot in oil, add lentils, tomatoes and stock, simmer 15 minutes, then stir in spinach. Serve with bread. Keeps well for leftovers."],
-    ["l", "Chickpea Buddha bowl", [["chickpeas",150],["quinoa",120],["sweetpot",120],["spinach",40],["hummus",30]], "Roast cubed sweet potato and chickpeas at 220°C / 425°F for 25 minutes. Serve over quinoa and spinach with hummus."],
-    ["l", "Black bean burrito bowl", [["blackbeans",150],["brice",150],["corn",50],["salsa",60],["avocado",50],["greens",30]], "Warm the beans and corn. Build a bowl with rice, greens, beans, corn, salsa and sliced avocado."],
-    ["l", "Chicken Caesar-style salad", [["chicken",150],["greens",120],["parm",20],["oil",15],["avocado",50]], "Grill or pan-sear the chicken. Toss greens with olive oil, lemon and parmesan, and top with chicken and avocado."],
-    ["l", "Salmon avocado salad", [["salmon",130],["greens",100],["cucumber",80],["avocado",60],["oil",10]], "Bake salmon at 200°C / 400°F for 12 minutes, flake it over greens, cucumber and avocado, and dress with oil and lemon."],
-    ["l", "Egg salad sandwich", [["egg",100],["yogurt",30],["bread",80],["greens",20],["tomato",60]], "Chop hard-boiled eggs and mix with yogurt, mustard, salt and pepper. Sandwich with greens and tomato."],
-    ["l", "Peanut tofu noodles", [["tofu",180],["ricenoodle",70],["stirfry",150],["tamari",15],["pb",16]], "Cook the noodles. Pan-fry cubed tofu, add vegetables, then toss everything with peanut butter thinned with tamari and hot water."],
-    ["l", "Beef and bean chili", [["beef",120],["blackbeans",100],["cantom",150],["onion",50],["pepper",60],["cheddar",15]], "Brown the beef with onion and pepper, add beans, tomatoes and chili spices, and simmer 20 minutes. Top with cheddar. Batch-cooks well."],
-    ["l", "Shrimp quinoa salad", [["shrimp",150],["quinoa",120],["pepper",75],["cucumber",60],["feta",25],["oil",10]], "Sauté the shrimp 2 to 3 minutes a side. Toss with quinoa, diced pepper, cucumber, feta, oil and lemon."],
-    ["l", "Tempeh rice bowl", [["tempeh",120],["brice",150],["broccoli",100],["tamari",10],["pepitas",10]], "Slice and pan-fry the tempeh with tamari. Serve over rice with steamed broccoli and pumpkin seeds."],
-    ["l", "Cobb salad", [["chicken",120],["egg",50],["bacon",12.5],["avocado",50],["greens",100],["cheddar",15],["oil",10]], "Top greens with sliced chicken, chopped egg, crumbled bacon, avocado and cheddar. Dress with oil and vinegar."],
-    ["l", "Tofu avocado salad", [["tofu",200],["greens",100],["avocado",75],["cucumber",80],["pepitas",15],["oil",10]], "Pan-fry cubed tofu until crisp. Toss with greens, cucumber, avocado and pumpkin seeds, and dress with oil and lemon."],
+    ["l", "Chicken quinoa bowl", [["chicken",150],["quinoa",150],["broccoli",100],["oil",10],["tamari",10]], "Season and pan-sear the chicken in oil, then slice. Serve over quinoa with steamed broccoli and a splash of tamari.", 25],
+    ["l", "Turkey hummus wrap", [["tortilla",60],["turkeyslice",100],["hummus",30],["greens",30],["tomato",60],["cheddar",20]], "Spread hummus on the tortilla, layer turkey, cheese, greens and tomato, and roll up.", 5],
+    ["l", "Mediterranean tuna salad", [["tuna",120],["greens",80],["cherry",100],["cucumber",80],["chickpeas",80],["oil",10],["feta",20]], "Toss everything with the olive oil, a squeeze of lemon, salt and pepper.", 10],
+    ["l", "Lentil vegetable soup", [["lentils",250],["carrot",60],["onion",50],["cantom",120],["spinach",30],["oil",7],["bread",40]], "Soften onion and carrot in oil, add lentils, tomatoes and stock, simmer 15 minutes, then stir in spinach. Serve with bread. Keeps well for leftovers.", 30],
+    ["l", "Chickpea Buddha bowl", [["chickpeas",150],["quinoa",120],["sweetpot",120],["spinach",40],["hummus",30]], "Roast cubed sweet potato and chickpeas at 220°C / 425°F for 25 minutes. Serve over quinoa and spinach with hummus.", 35],
+    ["l", "Black bean burrito bowl", [["blackbeans",150],["brice",150],["corn",50],["salsa",60],["avocado",50],["greens",30]], "Warm the beans and corn. Build a bowl with rice, greens, beans, corn, salsa and sliced avocado.", 10],
+    ["l", "Chicken Caesar-style salad", [["chicken",150],["greens",120],["parm",20],["oil",15],["avocado",50]], "Grill or pan-sear the chicken. Toss greens with olive oil, lemon and parmesan, and top with chicken and avocado.", 20],
+    ["l", "Salmon avocado salad", [["salmon",130],["greens",100],["cucumber",80],["avocado",60],["oil",10]], "Bake salmon at 200°C / 400°F for 12 minutes, flake it over greens, cucumber and avocado, and dress with oil and lemon.", 20],
+    ["l", "Egg salad sandwich", [["egg",100],["yogurt",30],["bread",80],["greens",20],["tomato",60]], "Chop hard-boiled eggs and mix with yogurt, mustard, salt and pepper. Sandwich with greens and tomato.", 15],
+    ["l", "Peanut tofu noodles", [["tofu",180],["ricenoodle",70],["stirfry",150],["tamari",15],["pb",16]], "Cook the noodles. Pan-fry cubed tofu, add vegetables, then toss everything with peanut butter thinned with tamari and hot water.", 20],
+    ["l", "Beef and bean chili", [["beef",120],["blackbeans",100],["cantom",150],["onion",50],["pepper",60],["cheddar",15]], "Brown the beef with onion and pepper, add beans, tomatoes and chili spices, and simmer 20 minutes. Top with cheddar. Batch-cooks well.", 35],
+    ["l", "Shrimp quinoa salad", [["shrimp",150],["quinoa",120],["pepper",75],["cucumber",60],["feta",25],["oil",10]], "Sauté the shrimp 2 to 3 minutes a side. Toss with quinoa, diced pepper, cucumber, feta, oil and lemon.", 20],
+    ["l", "Tempeh rice bowl", [["tempeh",120],["brice",150],["broccoli",100],["tamari",10],["pepitas",10]], "Slice and pan-fry the tempeh with tamari. Serve over rice with steamed broccoli and pumpkin seeds.", 20],
+    ["l", "Cobb salad", [["chicken",120],["egg",50],["bacon",12.5],["avocado",50],["greens",100],["cheddar",15],["oil",10]], "Top greens with sliced chicken, chopped egg, crumbled bacon, avocado and cheddar. Dress with oil and vinegar.", 20],
+    ["l", "Tofu avocado salad", [["tofu",200],["greens",100],["avocado",75],["cucumber",80],["pepitas",15],["oil",10]], "Pan-fry cubed tofu until crisp. Toss with greens, cucumber, avocado and pumpkin seeds, and dress with oil and lemon.", 15],
     // Dinner
-    ["d", "Salmon, sweet potato and green beans", [["salmon",150],["sweetpot",200],["greenbeans",120],["oil",5]], "Roast sweet potato wedges at 220°C / 425°F for 25 minutes, adding the salmon and green beans for the last 12."],
-    ["d", "Chicken vegetable stir-fry", [["chicken",160],["wrice",180],["stirfry",180],["tamari",15],["oil",10]], "Stir-fry sliced chicken in oil until cooked, add vegetables and tamari, and serve over rice."],
-    ["d", "Turkey bolognese", [["turkey",130],["pasta",80],["marinara",150],["onion",40],["spinach",30],["parm",10]], "Brown the turkey with onion, add marinara and simmer 10 minutes, stir in spinach. Toss with cooked pasta and top with parmesan."],
-    ["d", "Beef and broccoli", [["steak",150],["broccoli",150],["brice",150],["tamari",15],["oil",7]], "Sear thin strips of steak in oil, add broccoli and tamari with a splash of water, and cook until tender. Serve over rice."],
-    ["d", "Sheet-pan chicken and potatoes", [["thigh",170],["potato",250],["carrot",80],["oil",10]], "Toss chicken, potato chunks and carrots with oil and herbs, then roast at 220°C / 425°F for 35 minutes."],
-    ["d", "Lemon cod with quinoa and asparagus", [["cod",180],["quinoa",160],["asparagus",120],["oil",10]], "Roast cod and asparagus with oil, lemon and garlic at 200°C / 400°F for 12 minutes. Serve with quinoa."],
-    ["d", "Chickpea spinach curry", [["chickpeas",180],["coco",120],["cantom",120],["spinach",60],["onion",50],["brice",150]], "Soften onion with curry powder, add chickpeas, tomatoes and coconut milk, simmer 15 minutes, and stir in spinach. Serve over rice."],
-    ["d", "Black bean tacos", [["corntort",78],["blackbeans",150],["avocado",50],["salsa",60],["greens",30],["corn",40]], "Warm the beans with cumin and the corn. Fill warm tortillas with beans, corn, avocado, greens and salsa."],
-    ["d", "Tofu coconut curry", [["tofu",200],["coco",100],["stirfry",150],["wrice",150]], "Brown cubed tofu, add vegetables, curry paste and coconut milk, and simmer 10 minutes. Serve over rice."],
-    ["d", "Shrimp tacos", [["shrimp",160],["corntort",78],["avocado",50],["greens",30],["salsa",40]], "Season shrimp with chili and lime and sear 2 minutes a side. Serve in warm tortillas with greens, avocado and salsa."],
-    ["d", "Pork tenderloin with rice and green beans", [["pork",160],["wrice",150],["greenbeans",120],["oil",7]], "Sear the pork, then roast at 200°C / 400°F to 63°C / 145°F inside, about 15 minutes. Rest, slice, and serve with rice and green beans."],
-    ["d", "Steak with cauliflower mash", [["steak",170],["cauli",200],["asparagus",120],["oil",15]], "Sear the steak to your liking and rest it. Steam the cauliflower and mash with oil and garlic. Roast or pan-fry the asparagus."],
-    ["d", "Garlic salmon with zucchini", [["salmon",170],["zucchini",200],["spinach",50],["oil",10]], "Bake salmon with garlic at 200°C / 400°F for 12 minutes. Sauté sliced zucchini and spinach in oil."],
-    ["d", "Cheesy chicken and broccoli bake", [["thigh",170],["broccoli",150],["cheddar",25],["oil",10]], "Roast chicken and broccoli with oil at 220°C / 425°F for 25 minutes, top with cheddar, and bake 5 more minutes."],
-    ["d", "Lentil mushroom bolognese", [["lentils",180],["pasta",75],["marinara",150],["mushroom",80],["oil",5]], "Brown chopped mushrooms in oil, add lentils and marinara, and simmer 10 minutes. Toss with cooked pasta."],
-    ["d", "Pesto chicken pasta", [["chicken",140],["pasta",75],["pesto",25],["cherry",100],["spinach",30]], "Cook pasta and pan-sear sliced chicken. Toss with pesto, halved tomatoes and spinach until wilted."],
-    ["d", "Tofu zucchini stir-fry", [["tofu",220],["zucchini",150],["mushroom",100],["tamari",15],["oil",10],["pepitas",10]], "Crisp cubed tofu in oil, add zucchini and mushrooms, finish with tamari, and top with pumpkin seeds."],
-    ["d", "Turkey stuffed peppers", [["turkey",130],["pepper",300],["brice",100],["marinara",80],["mozz",25]], "Brown the turkey, mix with rice and marinara, and stuff halved peppers. Top with mozzarella and bake at 200°C / 400°F for 25 minutes."],
-    ["d", "Veggie egg fried rice", [["egg",100],["brice",180],["stirfry",150],["edamame",60],["tamari",15],["oil",10]], "Stir-fry vegetables and edamame in oil, push aside and scramble the eggs, then add cold rice and tamari and toss until hot."],
+    ["d", "Salmon, sweet potato and green beans", [["salmon",150],["sweetpot",200],["greenbeans",120],["oil",5]], "Roast sweet potato wedges at 220°C / 425°F for 25 minutes, adding the salmon and green beans for the last 12.", 35],
+    ["d", "Chicken vegetable stir-fry", [["chicken",160],["wrice",180],["stirfry",180],["tamari",15],["oil",10]], "Stir-fry sliced chicken in oil until cooked, add vegetables and tamari, and serve over rice.", 20],
+    ["d", "Turkey bolognese", [["turkey",130],["pasta",80],["marinara",150],["onion",40],["spinach",30],["parm",10]], "Brown the turkey with onion, add marinara and simmer 10 minutes, stir in spinach. Toss with cooked pasta and top with parmesan.", 25],
+    ["d", "Beef and broccoli", [["steak",150],["broccoli",150],["brice",150],["tamari",15],["oil",7]], "Sear thin strips of steak in oil, add broccoli and tamari with a splash of water, and cook until tender. Serve over rice.", 20],
+    ["d", "Sheet-pan chicken and potatoes", [["thigh",170],["potato",250],["carrot",80],["oil",10]], "Toss chicken, potato chunks and carrots with oil and herbs, then roast at 220°C / 425°F for 35 minutes.", 45],
+    ["d", "Lemon cod with quinoa and asparagus", [["cod",180],["quinoa",160],["asparagus",120],["oil",10]], "Roast cod and asparagus with oil, lemon and garlic at 200°C / 400°F for 12 minutes. Serve with quinoa.", 25],
+    ["d", "Chickpea spinach curry", [["chickpeas",180],["coco",120],["cantom",120],["spinach",60],["onion",50],["brice",150]], "Soften onion with curry powder, add chickpeas, tomatoes and coconut milk, simmer 15 minutes, and stir in spinach. Serve over rice.", 25],
+    ["d", "Black bean tacos", [["corntort",78],["blackbeans",150],["avocado",50],["salsa",60],["greens",30],["corn",40]], "Warm the beans with cumin and the corn. Fill warm tortillas with beans, corn, avocado, greens and salsa.", 15],
+    ["d", "Tofu coconut curry", [["tofu",200],["coco",100],["stirfry",150],["wrice",150]], "Brown cubed tofu, add vegetables, curry paste and coconut milk, and simmer 10 minutes. Serve over rice.", 25],
+    ["d", "Shrimp tacos", [["shrimp",160],["corntort",78],["avocado",50],["greens",30],["salsa",40]], "Season shrimp with chili and lime and sear 2 minutes a side. Serve in warm tortillas with greens, avocado and salsa.", 15],
+    ["d", "Pork tenderloin with rice and green beans", [["pork",160],["wrice",150],["greenbeans",120],["oil",7]], "Sear the pork, then roast at 200°C / 400°F to 63°C / 145°F inside, about 15 minutes. Rest, slice, and serve with rice and green beans.", 30],
+    ["d", "Steak with cauliflower mash", [["steak",170],["cauli",200],["asparagus",120],["oil",15]], "Sear the steak to your liking and rest it. Steam the cauliflower and mash with oil and garlic. Roast or pan-fry the asparagus.", 25],
+    ["d", "Garlic salmon with zucchini", [["salmon",170],["zucchini",200],["spinach",50],["oil",10]], "Bake salmon with garlic at 200°C / 400°F for 12 minutes. Sauté sliced zucchini and spinach in oil.", 20],
+    ["d", "Cheesy chicken and broccoli bake", [["thigh",170],["broccoli",150],["cheddar",25],["oil",10]], "Roast chicken and broccoli with oil at 220°C / 425°F for 25 minutes, top with cheddar, and bake 5 more minutes.", 35],
+    ["d", "Lentil mushroom bolognese", [["lentils",180],["pasta",75],["marinara",150],["mushroom",80],["oil",5]], "Brown chopped mushrooms in oil, add lentils and marinara, and simmer 10 minutes. Toss with cooked pasta.", 20],
+    ["d", "Pesto chicken pasta", [["chicken",140],["pasta",75],["pesto",25],["cherry",100],["spinach",30]], "Cook pasta and pan-sear sliced chicken. Toss with pesto, halved tomatoes and spinach until wilted.", 20],
+    ["d", "Tofu zucchini stir-fry", [["tofu",220],["zucchini",150],["mushroom",100],["tamari",15],["oil",10],["pepitas",10]], "Crisp cubed tofu in oil, add zucchini and mushrooms, finish with tamari, and top with pumpkin seeds.", 20],
+    ["d", "Turkey stuffed peppers", [["turkey",130],["pepper",300],["brice",100],["marinara",80],["mozz",25]], "Brown the turkey, mix with rice and marinara, and stuff halved peppers. Top with mozzarella and bake at 200°C / 400°F for 25 minutes.", 45],
+    ["d", "Veggie egg fried rice", [["egg",100],["brice",180],["stirfry",150],["edamame",60],["tamari",15],["oil",10]], "Stir-fry vegetables and edamame in oil, push aside and scramble the eggs, then add cold rice and tamari and toss until hot.", 15],
+    ["l", "Tuna avocado bowl", [["tuna",140],["avocado",75],["greens",80],["cucumber",80],["oil",10]], "Pile greens and cucumber in a bowl, top with tuna and sliced avocado, and dress with oil and lemon.", 5],
+    ["l", "Chickpea hummus wrap", [["tortilla",60],["chickpeas",120],["hummus",40],["spinach",30],["pepper",75]], "Lightly mash the chickpeas with a fork, spread hummus on the tortilla, add chickpeas, spinach and sliced pepper, and roll.", 10],
+    ["d", "Rotisserie chicken rice plate", [["rchicken",150],["wrice",160],["greens",80],["cherry",80],["oil",10]], "Pull the chicken off a store-bought rotisserie chicken, heat a microwave rice pouch, and serve with a dressed salad.", 10],
+    ["d", "Black bean quesadilla", [["tortilla",120],["blackbeans",100],["cheddar",40],["salsa",50]], "Fill tortillas with mashed beans and cheese, toast in a dry pan 2 to 3 minutes a side, and serve with salsa.", 10],
+    ["d", "Tuna rice bowl", [["tuna",120],["wrice",180],["edamame",80],["cucumber",80],["avocado",50],["tamari",10]], "Heat microwave rice and edamame, then top with tuna, cucumber, avocado and tamari.", 10],
+    ["d", "Lentil rice bowl", [["lentils",200],["wrice",150],["spinach",40],["salsa",60],["avocado",50]], "Heat canned lentils and microwave rice, stir in spinach to wilt, and top with salsa and avocado.", 10],
+    ["d", "Rotisserie chicken avocado plate", [["rchicken",170],["avocado",75],["greens",80],["cheddar",20],["oil",10]], "Pull the chicken off a store-bought rotisserie chicken and serve over greens with avocado, cheddar and oil.", 5],
     // Snacks
-    ["s", "Apple with peanut butter", [["apple",180],["pb",20]], "Slice the apple and dip."],
-    ["s", "Greek yogurt and berries", [["yogurt",170],["berries",75]], "Top yogurt with berries."],
-    ["s", "Hummus and veggie sticks", [["hummus",60],["carrot",80],["cucumber",80],["pepper",50]], "Cut vegetables into sticks and dip."],
-    ["s", "Almonds", [["almonds",30]], "A small handful."],
-    ["s", "Cottage cheese and tomatoes", [["cottage",150],["cherry",60]], "Top cottage cheese with halved tomatoes and black pepper."],
-    ["s", "Protein shake", [["whey",30],["milk",250]], "Shake or blend."],
-    ["s", "Plant protein shake", [["pea",30],["soymilk",250]], "Shake or blend."],
-    ["s", "Hard-boiled eggs", [["egg",100]], "Boil 9 to 10 minutes, cool in cold water, and peel."],
-    ["s", "Rice cakes with almond butter", [["ricecake",18],["ab",16],["banana",60]], "Spread almond butter on the rice cakes and top with banana slices."],
-    ["s", "Edamame", [["edamame",150]], "Steam or microwave, and sprinkle with salt."],
-    ["s", "Cheddar and walnuts", [["cheddar",30],["walnuts",15]], "Cube the cheese and pair with walnuts."],
-    ["s", "Tuna rice cakes", [["tuna",80],["ricecake",18],["yogurt",20]], "Mix tuna with yogurt and pepper, and pile onto rice cakes."],
-    ["s", "Banana", [["banana",120]], "Grab and go."],
-  ].map(([type, name, items, how], i) => {
+    ["s", "Apple with peanut butter", [["apple",180],["pb",20]], "Slice the apple and dip.", 2],
+    ["s", "Greek yogurt and berries", [["yogurt",170],["berries",75]], "Top yogurt with berries.", 2],
+    ["s", "Hummus and veggie sticks", [["hummus",60],["carrot",80],["cucumber",80],["pepper",50]], "Cut vegetables into sticks and dip.", 5],
+    ["s", "Almonds", [["almonds",30]], "A small handful.", 1],
+    ["s", "Cottage cheese and tomatoes", [["cottage",150],["cherry",60]], "Top cottage cheese with halved tomatoes and black pepper.", 2],
+    ["s", "Protein shake", [["whey",30],["milk",250]], "Shake or blend.", 2],
+    ["s", "Plant protein shake", [["pea",30],["soymilk",250]], "Shake or blend.", 2],
+    ["s", "Hard-boiled eggs", [["egg",100]], "Boil 9 to 10 minutes, cool in cold water, and peel.", 12],
+    ["s", "Rice cakes with almond butter", [["ricecake",18],["ab",16],["banana",60]], "Spread almond butter on the rice cakes and top with banana slices.", 3],
+    ["s", "Edamame", [["edamame",150]], "Steam or microwave, and sprinkle with salt.", 5],
+    ["s", "Cheddar and walnuts", [["cheddar",30],["walnuts",15]], "Cube the cheese and pair with walnuts.", 2],
+    ["s", "Tuna rice cakes", [["tuna",80],["ricecake",18],["yogurt",20]], "Mix tuna with yogurt and pepper, and pile onto rice cakes.", 5],
+    ["s", "Banana", [["banana",120]], "Grab and go.", 1],
+  ].map(([type, name, items, how, min], i) => {
     const n = [0, 0, 0, 0, 0];
     const tags = new Set();
     items.forEach(([k, g]) => {
@@ -441,15 +476,24 @@ button.btn:hover { filter: brightness(1.08); }
       d[7].split(" ").filter(Boolean).forEach((t) => tags.add(t));
     });
     const text = (name + " " + items.map(([k]) => ING[k][0]).join(" ")).toLowerCase();
-    return { id: "m" + i, type, name, items, how, n, tags, text };
+    return { id: "m" + i, type, name, items, how, min, n, tags, text };
   });
   const MEAL = Object.fromEntries(MEALS.map((m) => [m.id, m]));
 
-  const SLOTS = {
-    3: ["Breakfast", "Lunch", "Dinner"],
-    4: ["Breakfast", "Lunch", "Dinner", "Snack"],
-    5: ["Breakfast", "Snack", "Lunch", "Snack", "Dinner"],
+  // Day layout for each number of meals and snacks
+  const LAYOUT = {
+    "1-0": ["Dinner"], "1-1": ["Snack", "Dinner"], "1-2": ["Snack", "Dinner", "Snack"],
+    "2-0": ["Lunch", "Dinner"], "2-1": ["Lunch", "Snack", "Dinner"], "2-2": ["Snack", "Lunch", "Snack", "Dinner"],
+    "3-0": ["Breakfast", "Lunch", "Dinner"], "3-1": ["Breakfast", "Lunch", "Snack", "Dinner"], "3-2": ["Breakfast", "Snack", "Lunch", "Snack", "Dinner"],
   };
+  const COURSES = [
+    { t: "b", name: "Breakfast", effort: "10", variety: "3" },
+    { t: "l", name: "Lunch", effort: "25", variety: "3" },
+    { t: "d", name: "Dinner", effort: "999", variety: "7" },
+    { t: "s", name: "Snacks", effort: "10", variety: "3" },
+  ];
+  const EFFORT = [["10", "Quick (10 min or less)"], ["25", "Some cooking (25 min or less)"], ["999", "Any, including 30 to 45 min"]];
+  const VARIETY = [["1", "Same every day"], ["3", "Rotate 2 or 3 recipes"], ["7", "Different every day"]];
   const SLOT_TYPE = { Breakfast: "b", Lunch: "l", Dinner: "d", Snack: "s" };
   const DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
   const STEPS = { b: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.25, 2.5], l: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.25, 2.5], d: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.25, 2.5], s: [0.5, 0.75, 1, 1.25, 1.5, 2] };
@@ -487,7 +531,49 @@ button.btn:hover { filter: brightness(1.08); }
   $("diets").innerHTML = DIETS.map((d) => `
     <label class="chip"><input type="checkbox" name="diet" id="diet-${d.toLowerCase()}" value="${d}"><span>${d}</span></label>`).join("");
 
+  $("courses").innerHTML = `<div class="course head"><span>Course</span><span>Effort</span><span>Variety</span></div>` +
+    COURSES.map((c) => `<div class="course" id="row-${c.t}"><b>${c.name}</b>
+      <select id="effort-${c.t}" aria-label="${c.name} effort">${EFFORT.map(([v, l]) => `<option value="${v}" ${v === c.effort ? "selected" : ""}>${l}</option>`).join("")}</select>
+      <select id="variety-${c.t}" aria-label="${c.name} variety">${VARIETY.map(([v, l]) => `<option value="${v}" ${v === c.variety ? "selected" : ""}>${l}</option>`).join("")}</select></div>`).join("");
+  function showCourses() {
+    const slots = LAYOUT[radio("meals") + "-" + radio("snacks")];
+    COURSES.forEach((c) => ($("row-" + c.t).hidden = !slots.some((sl) => SLOT_TYPE[sl] === c.t)));
+    $("slotHint").textContent = "Each day: " + slots.join(", ").toLowerCase().replace(/^./, (x) => x.toUpperCase()) + ".";
+  }
+
   let isExample = true;
+
+  // Tag inputs: Enter (or comma) turns the typed food into a removable tag
+  const tags = { avoid: [], likes: [] };
+  function renderTags(key) {
+    const box = $(key + "Tags");
+    box.innerHTML = "";
+    tags[key].forEach((t, i) => {
+      const el = document.createElement("span");
+      el.className = "tag";
+      el.textContent = t;
+      const x = document.createElement("button");
+      x.type = "button"; x.textContent = "×"; x.setAttribute("aria-label", "Remove " + t);
+      x.addEventListener("click", () => { tags[key].splice(i, 1); tagsChanged(key); });
+      el.append(x);
+      box.append(el);
+    });
+  }
+  function tagsChanged(key) { renderTags(key); isExample = false; update(false); saveInputs(); }
+  function addTags(key) {
+    const input = $(key);
+    const added = input.value.split(",").map((t) => t.trim()).filter(Boolean).filter((t) => !tags[key].some((x) => x.toLowerCase() === t.toLowerCase()));
+    input.value = "";
+    if (added.length) { tags[key].push(...added); tagsChanged(key); }
+  }
+  ["avoid", "likes"].forEach((key) => {
+    const input = $(key);
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === ",") { e.preventDefault(); addTags(key); }
+      else if (e.key === "Backspace" && !input.value && tags[key].length) { tags[key].pop(); tagsChanged(key); }
+    });
+    input.addEventListener("blur", () => addTags(key));
+  });
 
   function read() {
     const units = radio("units");
@@ -504,7 +590,8 @@ button.btn:hover { filter: brightness(1.08); }
       units, sex: radio("sex"), age: parseFloat($("age").value), heightCm, weightKg,
       activity: parseFloat(radio("activity")), goal: radio("goal"),
       diets: [...document.querySelectorAll('input[name="diet"]:checked')].map((x) => x.value),
-      avoid: $("avoid").value.trim(), likes: $("likes").value.trim(), mpd: radio("mpd"),
+      avoid: tags.avoid.join(","), likes: tags.likes.join(","), meals: radio("meals"), snacks: radio("snacks"),
+      course: Object.fromEntries(COURSES.map((c) => [c.t, { effort: +$("effort-" + c.t).value, variety: +$("variety-" + c.t).value }])),
     };
   }
   const valid = (s) => s.age >= 15 && s.age <= 90 && s.heightCm >= 120 && s.heightCm <= 230 && s.weightKg >= 30 && s.weightKg <= 300;
@@ -651,12 +738,17 @@ button.btn:hover { filter: brightness(1.08); }
 
   function context(s, r) {
     const diets = s.diets, avoid = terms(s.avoid), likes = terms(s.likes);
-    const slots = SLOTS[s.mpd];
-    const pools = {};
-    for (const type of ["b", "l", "d", "s"]) pools[type] = MEALS.filter((m) => m.type === type && allowed(m, diets, avoid));
+    const slots = LAYOUT[s.meals + "-" + s.snacks];
+    const pools = {}, relaxed = [];
+    for (const type of ["b", "l", "d", "s"]) {
+      const fit = MEALS.filter((m) => m.type === type && allowed(m, diets, avoid));
+      const quick = fit.filter((m) => m.min <= s.course[type].effort);
+      if (quick.length || !fit.length) pools[type] = quick;
+      else { pools[type] = [...fit].sort((a, b) => a.min - b.min).slice(0, 3); relaxed.push(type); }
+    }
     const liked = (m) => likes.some((t) => m.text.includes(t));
     const T = { k: r.target, p: r.protein, c: r.carbs, f: r.fat, keto: r.keto };
-    return { slots, pools, liked, T, score: makeScorer(T), likes };
+    return { slots, pools, liked, T, score: makeScorer(T), likes, relaxed, course: s.course };
   }
 
   function buildWeek(ctx, seed) {
@@ -666,24 +758,31 @@ button.btn:hover { filter: brightness(1.08); }
     if (empty.length) return { error: `No ${empty.map((x) => x.toLowerCase()).join(" or ")} recipes fit your diet and avoid list. Loosen a filter to build a menu.` };
     const uses = {};
     const days = [];
+    // Variety: how many different recipes each course may use across the week
+    const perDay = {};
+    slots.forEach((sl) => (perDay[SLOT_TYPE[sl]] = (perDay[SLOT_TYPE[sl]] || 0) + 1));
+    const cap = Object.fromEntries(Object.keys(perDay).map((t) => [t, ctx.course[t].variety * perDay[t]]));
+    const chosen = { b: new Set(), l: new Set(), d: new Set(), s: new Set() };
     for (let d = 0; d < 7; d++) {
       let best = null;
       for (let t = 0; t < 220; t++) {
         const picked = [];
         for (const sl of slots) {
-          const pool = pools[SLOT_TYPE[sl]];
-          const avail = pool.length > picked.filter((m) => m.type === SLOT_TYPE[sl]).length ? pool.filter((m) => !picked.includes(m)) : pool;
-          const cap = Math.ceil(7 / avail.length) + 1;
-          const w = avail.map((m) => (liked(m) ? 3 : 1) * ((uses[m.id] || 0) >= cap ? 0.02 : 1 / (1 + 1.5 * (uses[m.id] || 0))));
+          const type = SLOT_TYPE[sl];
+          let pool = pools[type];
+          if (chosen[type].size >= cap[type]) pool = pool.filter((m) => chosen[type].has(m.id));
+          const avail = pool.length > picked.filter((m) => m.type === type).length ? pool.filter((m) => !picked.includes(m)) : pool;
+          const daily = ctx.course[type].variety >= 7;
+          const w = avail.map((m) => (liked(m) ? 3 : 1) * (daily ? ((uses[m.id] || 0) >= Math.ceil(7 / avail.length) + 1 ? 0.02 : 1 / (1 + 1.5 * (uses[m.id] || 0))) : chosen[type].has(m.id) ? 3 : 1));
           let x = rand() * w.reduce((a, b) => a + b, 0), i = 0;
           while (i < w.length - 1 && (x -= w[i]) > 0) i++;
           picked.push(avail[i]);
         }
         const o = optimize(picked, T, score);
-        const s = o.s + picked.reduce((a, m) => a + 0.05 * (uses[m.id] || 0) - (liked(m) ? 0.01 : 0), 0);
+        const s = o.s + picked.reduce((a, m) => a + (ctx.course[m.type].variety >= 7 ? 0.05 * (uses[m.id] || 0) : 0) - (liked(m) ? 0.01 : 0), 0);
         if (!best || s < best.s) best = { ids: picked.map((m) => m.id), ms: o.ms, s };
       }
-      best.ids.forEach((id) => (uses[id] = (uses[id] || 0) + 1));
+      best.ids.forEach((id) => { uses[id] = (uses[id] || 0) + 1; chosen[MEAL[id].type].add(id); });
       days.push({ ids: best.ids, ms: best.ms });
     }
     return { days };
@@ -720,7 +819,7 @@ button.btn:hover { filter: brightness(1.08); }
   let ctx = null, week = null, seed = ls.get("ad-seed") || 1 + Math.floor(Math.random() * 1e9);
   const skipped = {};
 
-  function inputsKey(s, r) { return JSON.stringify([r.target, r.protein, r.carbs, r.fat, r.keto, s.diets, s.avoid, s.likes, s.mpd]); }
+  function inputsKey(s, r) { return JSON.stringify([r.target, r.protein, r.carbs, r.fat, r.keto, s.diets, s.avoid, s.likes, s.meals, s.snacks, s.course]); }
 
   function refreshMenu(s, r, force) {
     ctx = context(s, r);
@@ -763,9 +862,11 @@ button.btn:hover { filter: brightness(1.08); }
     $("menuSummary").textContent = `Daily average ${fmt(avg[0])} kcal · ${fmt(avg[1])} g protein · ${fmt(carbOf(avg))} g ${T.keto ? "net carbs" : "carbs"} · ${fmt(avg[3])} g fat. Target ${fmt(T.k)} kcal.`;
 
     const offDays = all.filter((d) => Math.abs(d.tot[0] - T.k) / T.k > 0.1).length;
-    const thin = Object.entries(ctx.pools).filter(([t, p]) => ctx.slots.some((sl) => SLOT_TYPE[sl] === t) && p.length < 4).map(([t]) => ({ b: "breakfast", l: "lunch", d: "dinner", s: "snack" })[t]);
+    const thin = Object.entries(ctx.pools).filter(([t, p]) => ctx.slots.some((sl) => SLOT_TYPE[sl] === t) && p.length < 4 && ctx.course[t].variety >= 7).map(([t]) => ({ b: "breakfast", l: "lunch", d: "dinner", s: "snack" })[t]);
     const notes = [];
     if (thin.length) notes.push(`Only a few ${thin.join(", ")} recipes fit your filters, so some meals repeat.`);
+    const CN = { b: "breakfast", l: "lunch", d: "dinner", s: "snack" };
+    if (ctx.relaxed.length) notes.push(`No ${ctx.relaxed.map((t) => CN[t]).join(" or ")} recipes fit your effort setting and diet together, so the quickest ones that fit your diet are used.`);
     if (offDays) notes.push(`${offDays} day${offDays > 1 ? "s are" : " is"} more than 10% off your calorie target. Try Shuffle or a different number of meals.`);
     const unmatched = ctx.likes.filter((t) => !MEALS.some((m) => m.text.includes(t)));
     if (unmatched.length) notes.push(`No built-in recipes use ${unmatched.join(", ")} yet.`);
@@ -793,7 +894,7 @@ button.btn:hover { filter: brightness(1.08); }
           <div class="slot">${ctx.slots[i]}</div>
           <div class="nm">${x.m.name}${ctx.liked(x.m) ? ' <span class="liked" title="Matches a food you asked for">★</span>' : ""}</div>
           <button type="button" class="swap" aria-label="Swap ${ctx.slots[i]} on ${DAY_NAMES[di]}">Swap</button>
-          <div class="mt">${fmt(x.n[0])} kcal · P ${fmt(x.n[1])} · C ${fmt(T.keto ? x.n[2] - x.n[4] : x.n[2])} · F ${fmt(x.n[3])}${portionNote}</div>
+          <div class="mt">${fmt(x.n[0])} kcal · P ${fmt(x.n[1])} · C ${fmt(T.keto ? x.n[2] - x.n[4] : x.n[2])} · F ${fmt(x.n[3])} · ${x.m.min} min${portionNote}</div>
           <details><summary>Ingredients and method</summary>
             <ul>${x.items.map(({ k, g }) => `<li>${amountText(k, g)}</li>`).join("")}</ul>
             <p>${x.m.how}</p></details>`;
@@ -826,6 +927,14 @@ button.btn:hover { filter: brightness(1.08); }
     }
     day.ids[si] = best.m.id;
     day.ms = best.ms;
+    // "Same every day" courses change on every day at once
+    if (ctx.course[cur.type].variety === 1) {
+      week.days.forEach((d, j) => {
+        if (j === di || d.ids[si] !== cur.id) return;
+        d.ids[si] = best.m.id;
+        d.ms = optimize(d.ids.map((id) => MEAL[id]), ctx.T, ctx.score).ms;
+      });
+    }
     ls.set("ad-week", week);
     renderMenu();
   }
@@ -884,14 +993,20 @@ button.btn:hover { filter: brightness(1.08); }
 
   function saveInputs() {
     const v = { radios: {}, diets: read().diets, fields: {} };
-    ["sex", "units", "activity", "goal", "mpd"].forEach((n) => (v.radios[n] = radio(n)));
-    ["age", "heightCm", "heightFt", "heightIn", "weight", "avoid", "likes"].forEach((id) => (v.fields[id] = $(id).value));
+    ["sex", "units", "activity", "goal", "meals", "snacks"].forEach((n) => (v.radios[n] = radio(n)));
+    ["age", "heightCm", "heightFt", "heightIn", "weight", ...COURSES.flatMap((c) => ["effort-" + c.t, "variety-" + c.t])].forEach((id) => (v.fields[id] = $(id).value));
+    v.tags = tags;
     ls.set("ad-inputs", v);
   }
   function restoreInputs() {
     const v = ls.get("ad-inputs");
     if (!v) return;
     isExample = false;
+    ["avoid", "likes"].forEach((k) => {
+      const t = v.tags?.[k] || (v.fields?.[k] ? v.fields[k].split(",").map((x) => x.trim()).filter(Boolean) : []);
+      tags[k] = t; renderTags(k);
+    });
+    if (v.fields) { delete v.fields.avoid; delete v.fields.likes; }
     Object.entries(v.fields || {}).forEach(([id, val]) => { if ($(id) && val != null) $(id).value = val; });
     Object.entries(v.radios || {}).forEach(([n, val]) => { const el = document.querySelector(`input[name="${n}"][value="${val}"]`); if (el) el.checked = true; });
     (v.diets || []).forEach((d) => { const el = document.querySelector(`input[name="diet"][value="${d}"]`); if (el) el.checked = true; });
@@ -914,8 +1029,10 @@ button.btn:hover { filter: brightness(1.08); }
 
   $("form").addEventListener("submit", (e) => e.preventDefault());
   $("form").addEventListener("input", (e) => {
+    if (e.target.id === "avoid" || e.target.id === "likes") return;
     if (e.target.name === "units") setUnits(e.target.value, true);
     isExample = false;
+    showCourses();
     update(false);
     saveInputs();
   });
@@ -930,6 +1047,7 @@ button.btn:hover { filter: brightness(1.08); }
   ls.set("ad-seed", seed);
   restoreInputs();
   setUnits(radio("units"), false);
+  showCourses();
   update(true);
 })();
 </script>
