@@ -212,6 +212,15 @@ button.btn:hover { filter: brightness(1.08); }
 .day-tools button:hover { border-color: var(--accent); }
 .day.passed { opacity: 0.72; }
 .day.passed .day-tools button[data-pass] { background: var(--ink); color: var(--surface); }
+.day-tools button { display: grid; justify-items: center; gap: 2px; line-height: 1.15; }
+.day-tools .emo { font-size: 20px; line-height: 1; }
+.day-tools .treat-h { background: var(--ok-soft); color: var(--ok); }
+.day-tools .treat-i { background: var(--bad-soft); color: var(--bad); }
+@media (prefers-reduced-motion: no-preference) {
+  .day-tools button:hover .emo { animation: bop .5s ease-in-out; }
+  .day-tools button:active { transform: scale(.96); }
+  @keyframes bop { 0%, 100% { transform: translateY(0) rotate(0); } 35% { transform: translateY(-4px) rotate(-12deg); } 70% { transform: translateY(0) rotate(8deg); } }
+}
 .swap { min-width: 62px; text-align: center; }
 .log { border-top: 1px dashed var(--line); padding-top: 8px; font-size: 13px; }
 .log summary { cursor: pointer; color: var(--muted); font-weight: 700; font-size: 12.5px; }
@@ -290,8 +299,10 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
 .tag { border: 2px solid var(--ink); font-weight: 700; background: var(--accent-soft); }
 #likesTags .tag { background: #E3ECFF; color: var(--blue); border-color: var(--blue); }
 #avoidTags .tag { border-color: var(--bad); }
-.day-tools button { border: 2px solid var(--ink); border-radius: 10px; }
-.day-tools button:hover { background: var(--bg); }
+.day-tools button { border: 2px solid var(--ink); border-radius: 12px; box-shadow: 2px 2px 0 var(--ink); font-weight: 800; }
+.day-tools .treat-h { background: #DDF5D9; color: #1E6B2E; }
+.day-tools .treat-i { background: #FFD9E6; color: #A3164D; }
+.day-tools button:hover { filter: brightness(1.04); }
 </style>
 <script>
   (function () { var k; try { k = JSON.parse(localStorage.getItem("ad-skin")); } catch (e) {} k = k === "light" || k === "dark" ? k : "cereal";
@@ -404,6 +415,9 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
           </div>
         </div>
         <p class="hint" id="slotHint"></p>
+        <div class="f">Week starts on
+          <div class="seg" role="radiogroup" aria-label="Week starts on" id="startSeg"></div>
+        </div>
         <div class="f">Eating out (replaces dinner)
           <div class="chips" id="outDays"></div>
           <div class="seg" role="radiogroup" aria-label="Eating out style" id="outStyleSeg">
@@ -898,6 +912,9 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
   $("diets").innerHTML = DIETS.map((d) => `
     <label class="chip"><input type="checkbox" name="diet" id="diet-${d.toLowerCase()}" value="${d}"><span>${d}</span></label>`).join("");
 
+  $("startSeg").innerHTML = DAY_NAMES.map((d, i) => `<label><input type="radio" name="start" id="start-${i}" value="${i}" ${i === 0 ? "checked" : ""}><span>${d.slice(0, 3)}</span></label>`).join("");
+  const startDay = () => +(radio("start") || 0);
+  const dayName = (di) => DAY_NAMES[(startDay() + di) % 7];
   $("outDays").innerHTML = DAY_NAMES.map((d, i) => `
     <label class="chip"><input type="checkbox" name="out" id="out-${i}" value="${i}"><span>${d.slice(0, 3)}</span></label>`).join("");
   function showOut() {
@@ -973,7 +990,7 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
       avoid: tags.avoid.join(","), likes: tags.likes.join(","), meals: radio("meals"), snacks: radio("snacks"), treat: radio("treat"),
       out: { days: [...document.querySelectorAll('input[name="out"]:checked')].map((x) => +x.value), style: radio("outStyle") },
       course: Object.fromEntries(COURSES.map((c) => [c.t, { effort: +$("effort-" + c.t).value, variety: +$("variety-" + c.t).value }])),
-      store: radio("store"), packs: $("packs").checked, freezer: radio("freezer"),
+      store: radio("store"), packs: $("packs").checked, freezer: radio("freezer"), start: startDay(),
     };
   }
   const valid = (s) => s.age >= 15 && s.age <= 90 && s.heightCm >= 120 && s.heightCm <= 230 && s.weightKg >= 30 && s.weightKg <= 300;
@@ -1138,7 +1155,7 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
     const T = { k: r.target, p: r.protein, c: r.carbs, f: r.fat, keto: r.keto };
     let treatNote = "";
     if (treat && !pools[treat].length) { slots = slots.filter((x) => x !== "Treat"); treatNote = `No ${treat === "h" ? "healthy" : "indulgent"} treats fit your diet and avoid list, so the week has none.`; }
-    return { slots, pools, liked, T, score: makeScorer(T), likes, relaxed, course, treatNote, out: s.out, treatPools: { h: library.filter((m) => m.type === "h" && allowed(m, diets, avoid)), i: library.filter((m) => m.type === "i" && allowed(m, diets, avoid)) }, costco, packs: costco && s.packs, library, fcap };
+    return { slots, pools, liked, T, score: makeScorer(T), likes, relaxed, course, treatNote, out: s.out, start: s.start, treatPools: { h: library.filter((m) => m.type === "h" && allowed(m, diets, avoid)), i: library.filter((m) => m.type === "i" && allowed(m, diets, avoid)) }, costco, packs: costco && s.packs, library, fcap };
   }
 
   function buildWeek(ctx, seed) {
@@ -1176,7 +1193,7 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
       for (let t = 0; t < 220; t++) {
         const picked = [];
         for (const sl of slots) {
-          if (sl === "Dinner" && ctx.out.days.includes(d)) { picked.push(OUT[ctx.out.style]); continue; }
+          if (sl === "Dinner" && ctx.out.days.includes((ctx.start + d) % 7)) { picked.push(OUT[ctx.out.style]); continue; }
           const type = SLOT_TYPE[sl];
           let pool = pools[type];
           if (chosen[type].size >= cap[type]) pool = pool.filter((m) => chosen[type].has(m.id));
@@ -1238,7 +1255,7 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
   let leftovers = null;
   const skipped = {};
 
-  function inputsKey(s, r) { return JSON.stringify([r.target, r.protein, r.carbs, r.fat, r.keto, s.diets, s.avoid, s.likes, s.meals, s.snacks, s.treat, s.out, s.course, s.store, s.packs, s.freezer, [...nostock]]); }
+  function inputsKey(s, r) { return JSON.stringify([r.target, r.protein, r.carbs, r.fat, r.keto, s.diets, s.avoid, s.likes, s.meals, s.snacks, s.treat, s.out, s.start, s.course, s.store, s.packs, s.freezer, [...nostock]]); }
 
   function refreshMenu(s, r, force) {
     ctx = context(s, r);
@@ -1453,7 +1470,7 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
       el.className = "day" + (wd.passed ? " passed" : "");
       const SL = slotsOf(wd);
       el.innerHTML = `
-        <div class="day-h"><h3>${DAY_NAMES[di]}${wd.passed ? ' <span class="logged">Done</span>' : ""}</h3><span class="pill ${cls}" title="${dev >= 0 ? "+" : ""}${Math.round(dev * 100)}% vs target">${fmt(d.tot[0])} kcal</span></div>
+        <div class="day-h"><h3>${dayName(di)}${wd.passed ? ' <span class="logged">Done</span>' : ""}</h3><span class="pill ${cls}" title="${dev >= 0 ? "+" : ""}${Math.round(dev * 100)}% vs target">${fmt(d.tot[0])} kcal</span></div>
         ${wd.tk != null ? `<p class="tk">Target ${wd.tk < T.k ? "trimmed" : "raised"} to ${fmt(wd.tk)} kcal to balance the rest of the week.</p>` : ""}
         <div class="macros">
           <span${d.tot[1] < DT.p * 0.85 ? ' class="off"' : ""}><b>P</b> ${fmt(d.tot[1])}/${DT.p} g</span>
@@ -1467,7 +1484,7 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
         mm.innerHTML = `
           <div class="slot">${SL[i]}</div>
           <div class="nm">${x.m.name}${ctx.liked(x.m) ? ' <span class="liked" title="Matches a food you asked for">★</span>' : ""}${wd.log?.[i] ? '<span class="logged">Logged</span>' : ""}</div>
-          ${wd.log?.[i] ? `<button type="button" class="swap" data-undo>Undo</button>` : wd.addedTreats?.includes(i) ? `<button type="button" class="swap" data-rm aria-label="Remove treat on ${DAY_NAMES[di]}">Remove</button>` : x.m.out || wd.passed ? "" : `<button type="button" class="swap" aria-label="Swap ${SL[i]} on ${DAY_NAMES[di]}">Swap</button>`}
+          ${wd.log?.[i] ? `<button type="button" class="swap" data-undo>Undo</button>` : wd.addedTreats?.includes(i) ? `<button type="button" class="swap" data-rm aria-label="Remove treat on ${dayName(di)}">Remove</button>` : x.m.out || wd.passed ? "" : `<button type="button" class="swap" aria-label="Swap ${SL[i]} on ${dayName(di)}">Swap</button>`}
           <div class="mt">${x.m.out ? "about " : ""}${fmt(x.n[0])} kcal · P ${fmt(x.n[1])} · C ${fmt(T.keto ? x.n[2] - x.n[4] : x.n[2])} · F ${fmt(x.n[3])}${x.m.out ? " · loose estimate" : ` · ${x.m.min} min${portionNote}`}</div>
           ${x.m.out ? `<p class="hint">${x.m.how}</p>` : `<details><summary>Ingredients and method</summary>
             <ul>${x.items.map(({ k, g, fin }) => `<li>${amountText(k, g)}${fin ? ` <span class="logged" title="Includes ${fmt(fin)} ${(ING[k][8] || {}).ml ? "ml" : "g"} so nothing is left in the package">+${fmt(fin)} ${(ING[k][8] || {}).ml ? "ml" : "g"} to use it up</span>` : ""}</li>`).join("")}</ul>
@@ -1500,8 +1517,9 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
       }
       const tools = document.createElement("div");
       tools.className = "day-tools";
-      tools.innerHTML = `<button type="button" data-treat="h">+ Healthy treat</button><button type="button" data-treat="i">+ Indulgent treat</button>
-        <button type="button" data-pass title="Freeze this day as eaten, so the rest of the week balances around it">${wd.passed ? "Undo done" : "Mark day done"}</button>`;
+      tools.innerHTML = `<button type="button" class="treat-h" data-treat="h" title="Dark chocolate or fruit"><span class="emo" aria-hidden="true">🍓</span>Good treat</button>
+        <button type="button" class="treat-i" data-treat="i" title="Ice cream, cookies or chips"><span class="emo" aria-hidden="true">🍦</span>Cheat treat</button>
+        <button type="button" data-pass title="Freeze this day as eaten, so the rest of the week balances around it"><span class="emo" aria-hidden="true">${wd.passed ? "↩️" : "✅"}</span>${wd.passed ? "Undo done" : "Day done"}</button>`;
       tools.querySelectorAll("[data-treat]").forEach((b) => b.addEventListener("click", () => addTreat(di, b.dataset.treat)));
       tools.querySelector("[data-pass]").addEventListener("click", () => togglePassed(di));
       el.append(tools);
@@ -1718,7 +1736,7 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
 
   function saveInputs() {
     const v = { radios: {}, diets: read().diets, fields: {} };
-    ["sex", "units", "activity", "goal", "meals", "snacks", "treat", "outStyle", "store", "freezer"].forEach((n) => (v.radios[n] = radio(n)));
+    ["sex", "units", "activity", "goal", "meals", "snacks", "treat", "outStyle", "store", "freezer", "start"].forEach((n) => (v.radios[n] = radio(n)));
     v.packs = $("packs").checked;
     v.out = read().out.days;
     ["age", "heightCm", "heightFt", "heightIn", "weight", ...COURSES.flatMap((c) => ["effort-" + c.t, "variety-" + c.t])].forEach((id) => (v.fields[id] = $(id).value));
