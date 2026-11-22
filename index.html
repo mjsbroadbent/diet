@@ -1841,7 +1841,7 @@ button.btn { border-radius: 0; }
     ["i", "Ice cream with strawberries", [["icecream",100],["strawberries",75]], "Top a scoop of ice cream with thawed strawberries.", 2],
     ["i", "Ice cream bar", [["icebar",70]], "Straight from the freezer.", 1],
     ["i", "Chocolate chunk cookies", [["cookie",90]], "Two cookies, warmed for 10 seconds if you like.", 1],
-    ["i", "Kettle chips", [["chips",45]], "Pour one bowl, then put the bag away.", 1],
+    ["j", "Kettle chips", [["chips",45]], "Pour one bowl, then put the bag away.", 1],
     ["i", "Cookie and ice cream", [["cookie",45],["icecream",70]], "Crumble a cookie over a small scoop of ice cream.", 1],
     // Round 2: premade, frozen and new Costco finds
     ["b", "Egg white frittatas with an English muffin", [["frittata",171],["emuffin",57],["berries",100]], "Microwave three frozen frittatas for about 90 seconds. Toast the English muffin and have the berries on the side.", 3],
@@ -1892,7 +1892,7 @@ button.btn { border-radius: 0; }
     ["s", "Yogurt with granola", [["yogurt",150],["granola",25]], "Sprinkle granola over the yogurt.", 2],
     ["h", "Mango soft serve", [["mango",150],["yogurt",50]], "Blend frozen mango with the yogurt until it looks like soft serve. Eat right away.", 3],
     ["h", "Mango and dark chocolate", [["mango",120],["darkchoc",10]], "Let the mango thaw 10 minutes and have it with a square of chocolate.", 1],
-    ["i", "Slice of pizza", [["pizza",140]], "A quarter of a frozen pizza, baked crisp.", 15],
+    ["j", "Slice of pizza", [["pizza",140]], "A quarter of a frozen pizza, baked crisp.", 15],
     // Round 4 (Nov 22 2026)
     ["b", "MUSH oats with berries", [["mush",172],["berries",80]], "Grab a cup from the fridge and stir in a handful of thawed berries.", 1, 2],
     ["b", "Breakfast sandwich and an apple", [["bsand",137],["apple",180]], "Microwave the sandwich per the label, about a minute. Have an apple on the side.", 3, 2],
@@ -1924,7 +1924,7 @@ button.btn { border-radius: 0; }
     ["s", "Celery with peanut butter", [["celery",120],["pb",24]], "Spread peanut butter along the celery sticks.", 2],
     ["s", "Hummus and celery", [["hummus",60],["celery",120]], "Dip and go.", 1],
     ["s", "MUSH oats cup", [["mush",172]], "Straight from the fridge.", 1, 1],
-    ["i", "Two chicken taquitos", [["taquito",114]], "Baked crisp, about 15 minutes.", 15],
+    ["j", "Two chicken taquitos", [["taquito",114]], "Baked crisp, about 15 minutes.", 15],
     // Round 5 (Nov 22 2026)
     ["b", "Ricotta toast with blueberries", [["bread",80],["ricotta",80],["blueberries",80],["honey",8]], "Toast the bread, spread thickly with ricotta, and top with blueberries and a drizzle of honey.", 5],
     ["b", "Ham and egg English muffin", [["emuffin",57],["ham",50],["egg",50],["cheddar",15]], "Toast the muffin, fry an egg, warm the ham, and stack with the cheddar.", 6],
@@ -1956,8 +1956,8 @@ button.btn { border-radius: 0; }
     ["h", "Pineapple and dark chocolate bites", [["pineapple",150],["darkbites",15]], "Fresh pineapple with a few chocolate bites.", 1],
     ["h", "Raspberries and yogurt", [["raspberries",120],["yogurt",80],["honey",5]], "Raspberries over yogurt with a little honey.", 2],
     ["h", "Frozen grapes", [["grapes",150]], "Freeze a bunch of grapes the night before for a sorbet-like snack.", 1],
-    ["i", "Pita chips and tzatziki", [["pitachips",45],["tzatziki",45]], "A bowl of pita chips with tzatziki to dip.", 1],
-    ["i", "Pork dumplings with sweet chili", [["dumpling",150],["sweetchili",20]], "Pan-fry the dumplings from frozen with a splash of water under a lid, about 8 minutes. Dip in sweet chili.", 10],
+    ["j", "Pita chips and tzatziki", [["pitachips",45],["tzatziki",45]], "A bowl of pita chips with tzatziki to dip.", 1],
+    ["j", "Pork dumplings with sweet chili", [["dumpling",150],["sweetchili",20]], "Pan-fry the dumplings from frozen with a splash of water under a lid, about 8 minutes. Dip in sweet chili.", 10],
     // Round 6: plant-based and keto (Nov 22 2026)
     ["b", "Tofu scramble wrap", [["tofu",150],["tortilla",60],["spinach",30],["salsa",30]], "Crumble the tofu into a hot pan with turmeric, salt and pepper, add spinach for a minute, and roll up with salsa.", 10],
     ["b", "Oat milk overnight oats with peanut butter", [["oats",60],["oatmilk",200],["chia",10],["pb",16],["berries",80]], "Mix oats, oat milk and chia in a jar the night before. Top with berries and peanut butter.", 5],
@@ -1982,6 +1982,14 @@ button.btn { border-radius: 0; }
     ["s", "Naan with tzatziki and cucumber", [["naan",45],["tzatziki",45],["cucumber",60]], "Warm a piece of naan and dip it with cucumber in tzatziki.", 3],
     ["s", "Pineapple and Greek yogurt", [["pineapple",120],["yogurt",150]], "Spoon Greek yogurt into a bowl and top with pineapple chunks.", 2],
     ["s", "Spinach and mushroom egg cup", [["egg",100],["spinach",30],["mushroom",50]], "Sauté mushrooms and spinach 3 minutes, pour in 2 beaten eggs and cook until set.", 6],
+    // Dirty snacks (Nov 22 2026): type "j", the salty indulgence. Treats ("h", "i") are sweet.
+    ["j", "Loaded potato wedges", [["wedges",150],["queso",30]], "Bake the wedges from frozen until crisp, then drizzle with warm queso.", 25],
+    ["j", "Crispy chicken strips with ranch", [["bchstrips",105],["ranch",20]], "Bake 3 strips from frozen at 220°C / 425°F for 18 minutes and dip in ranch.", 20],
+    ["j", "Pretzel crisps and queso", [["pretzel",30],["queso",40]], "Warm the queso for 30 seconds and dip.", 2],
+    ["j", "Bulgogi mandu with chili crunch", [["mandu",120],["chilicrunch",5]], "Pan-fry the mandu from frozen until golden and spoon chili crunch over them.", 10],
+    ["j", "Kettle chips and ranch dip", [["chips",40],["ranch",20]], "One bowl of chips with ranch to dip, then put the bag away.", 1],
+    ["j", "Pita chip nachos", [["pitachips",40],["texmex",30],["salsa",40]], "Spread pita chips on a plate, top with cheese, microwave 45 seconds and add salsa.", 3],
+    ["j", "Gyoza with sweet chili", [["gyoza",120],["sweetchili",15]], "Pan-fry the gyoza from frozen and dip in sweet chili sauce.", 10],
   ].map(([type, name, items, how, min, max], i) => mkMeal("m" + i, type, name, items, how, min, max));
   // max: the biggest portion multiplier that still makes sense (no one drinks three shakes for breakfast)
   function mkMeal(id, type, name, items, how, min, max) {
@@ -2316,10 +2324,10 @@ button.btn { border-radius: 0; }
       quesadilla: 5, blt: 5, ricottapizza: 3, hawaiian: 4, sausagepizza: 5, beyond: 2, sritofu: 1, roastveg: 2, nugget: 2, caprese: 3, eggcheese: 4 },
     // Hand-written recipes by number (MEALS index; the Costco version of a recipe shares its rating)
     meal: {
-      5: "7 9 23 31 32 39 41 43 49 72 73 74 75 76 77 96 99 102 103 106 113 126 130 133 134 143 145 146 147 149 163 169 170 173",
+      5: "7 9 23 31 32 39 41 43 49 72 73 74 75 76 77 96 99 102 103 106 113 126 130 133 134 143 145 146 147 149 163 169 170 173 211 212 216",
       4: "0 1 3 5 10 11 13 14 19 21 26 28 29 30 37 38 40 45 53 54 55 57 59 66 67 68 70 80 82 83 84 85 88 89 92 94 97 98 100 104 105 107 108 109 110 " +
         "117 118 119 120 123 124 125 128 131 132 135 136 138 139 140 141 144 148 150 151 152 153 157 159 160 161 166 168 172 174 175 176 177 178 180 " +
-        "181 183 185 188 189 193 205 206 207 208 209 210",
+        "181 183 185 188 189 193 205 206 207 208 209 210 213 214 215 217",
       2: "2 4 12 16 17 22 34 36 42 48 52 58 60 65 91 93 116 155 184 190 192 194 195 196 198 199 200 201 202",
       1: "25 27 44",
     },
