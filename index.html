@@ -4401,7 +4401,7 @@ button.btn { border-radius: 0; }
     try { if (typeof starterKit === "function" && week && !week.error) kit = starterKit(8) || []; } catch {}
     $("kit").hidden = !kit.length;
     $("kit").innerHTML = kit.length ? `<h3>Worth buying once</h3><p>These keep for months and turn up in the most meals per dollar. Tick any you already have.</p><div class="chips">${kit.map((x) =>
-      `<label class="chip"><input type="checkbox" data-staple="${x.k}"><span>${esc(x.name || stapleName(x.k))}${x.price ? `<small>$${(+x.price).toFixed(2)}</small>` : ""}</span></label>`).join("")}</div>` : "";
+      `<label class="chip"><input type="checkbox" data-staple="${x.k}"><span>${esc(x.name || stapleName(x.k))}${x.price || x.week ? `<small>${[x.week ? `${x.week} meal${x.week === 1 ? "" : "s"} this week` : "", x.price ? `$${(+x.price).toFixed(2)}` : ""].filter(Boolean).join(" · ")}</small>` : ""}</span></label>`).join("")}</div>` : "";
   }
   applyStaples();
   // "Clear pantry" in the leftovers section also unticks the staples, or they would come back on the next load
