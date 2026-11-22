@@ -806,8 +806,8 @@ button.btn { border-radius: 0; }
 <meta property="og:type" content="website">
 <meta property="og:title" content="Big Box Diet">
 <meta property="og:description" content="Pour in your stats. Get your daily targets, a full week of meals, and the grocery list.">
-<meta property="og:url" content="https://mjsbroadbent.github.io/diet/">
-<meta property="og:image" content="https://mjsbroadbent.github.io/diet/og.png">
+<meta property="og:url" content="https://bigboxdiet.com/">
+<meta property="og:image" content="https://bigboxdiet.com/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Big Box Diet cereal box with a bowl of chicken, rice, broccoli and berries">
@@ -4142,7 +4142,7 @@ button.btn { border-radius: 0; }
   // Share link: settings, the week (swaps, done days), pantry and store choices, packed into the link's #plan= part.
   // Nothing goes to a server. Ticks, ratings and the look stay on each device.
   const SHARED = ["ad-inputs", "ad-seed", "ad-week", "ad-nostock", "ad-staples", "ad-pantry", "ad-have"];
-  const SITE = "https://mjsbroadbent.github.io/diet/";
+  const SITE = "https://bigboxdiet.com/";
   const b64u = (u8) => { let t = ""; u8.forEach((c) => (t += String.fromCharCode(c))); return btoa(t).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, ""); };
   const unb64u = (t) => Uint8Array.from(atob(t.replace(/-/g, "+").replace(/_/g, "/")), (c) => c.charCodeAt(0));
   const pipe = async (u8, stream) => new Uint8Array(await new Response(new Blob([u8]).stream().pipeThrough(stream)).arrayBuffer());
@@ -4353,7 +4353,7 @@ button.btn { border-radius: 0; }
     const hint = $("installHint");
     if (installEvt) { installEvt.prompt(); await installEvt.userChoice; installEvt = null; return; }
     const ios = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-    const home = "https://mjsbroadbent.github.io/diet/";
+    const home = "https://bigboxdiet.com/";
     if (!window.BBD_PWA) hint.innerHTML = `This preview can't be installed. Open <a href="${home}" target="_blank" rel="noopener">${home.replace("https://", "")}</a> and press Install there${ios ? " (in Safari: Share, then Add to Home Screen)" : ""}.`;
     else if (ios) hint.textContent = "In Safari, tap the Share button, then Add to Home Screen.";
     else hint.textContent = "Use your browser's menu: Install app, or Add to Home screen. In Firefox on desktop, installing isn't supported.";
