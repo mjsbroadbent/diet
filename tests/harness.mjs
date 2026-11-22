@@ -197,6 +197,8 @@ for (const prof of PROFILES) for (let k = 0; k < SEEDS + (prof.seeds?.length || 
       const k = kk.replace(/@2$/, ""), o = B.open(k);
       if (!o.life || !o.unit || o.freezes) continue;
       const s = (at[kk] ||= { r: 0, f: 0 });
+      // A scrap (under 20 g, or 5% of the pack) left past its days is tossed, as the planner does
+      if (s.r > 1e-6 && di - s.f >= o.life && s.r <= Math.max(20, 0.05 * o.unit)) s.r = 0;
       for (let g = n[kk]; g > 1e-6;) {
         if (s.r <= 1e-6) { if (g <= Math.max(5, 0.02 * o.unit)) break; s.r = o.unit; s.f = di; }
         const x = Math.min(s.r, g);
@@ -257,6 +259,8 @@ if (!only || "saved".includes(only.toLowerCase())) {
     await p2.goto(pageUrl);
     await p2.waitForFunction(() => window.__bbd);
     await p2.waitForTimeout(500);
+    // A new plan is built after the page paints "Planning your week"
+    await p2.waitForFunction(() => document.getElementById("planning")?.hidden !== false, null, { timeout: 60000 });
     const now = await p2.evaluate(() => JSON.parse(localStorage.getItem("ad-week") || "null"));
     const old = JSON.parse(st["ad-week"]);
     const changed = old.days.flatMap((d, i) => d.ids.map((id, j) => (now?.days?.[i]?.ids[j] === id ? null : `day ${i + 1} meal ${j + 1}: ${id} -> ${now?.days?.[i]?.ids[j]}`)).filter(Boolean));
