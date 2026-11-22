@@ -25,6 +25,7 @@
   --protein: #D2352B;
   --carbs: #E39400;
   --fat: #2457C5;
+  --m-b: #138A7E; --m-l: #6E4BC2; --m-d: #2F3A4A; --m-s: #D44D8A; --m-t: #9A6A2E;
   --ok: #1E7D45; --ok-soft: #DDF3E4;
   --warn: #9A5B00; --warn-soft: #FFF0CC;
   --bad: #B8261A; --bad-soft: #FFE1DC;
@@ -96,6 +97,21 @@ input:focus-visible, select:focus-visible, button:focus-visible, .seg label:has(
 .course.head { font-family: var(--display); font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
 .course b { font-weight: 600; font-size: 14px; }
 .course select { font-size: 14px; padding: 7px 8px; }
+.sl { display: grid; gap: 2px; min-width: 0; }
+.sl input[type="range"] { width: 100%; margin: 4px 0 0; accent-color: var(--accent); cursor: pointer; }
+.ticks { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--muted); }
+.ticks span.on { color: var(--ink); font-weight: 700; }
+.fold summary { cursor: pointer; font-size: 13px; font-weight: 500; color: var(--muted); padding: 2px 0; }
+.fold summary b { color: var(--ink); font-weight: 700; margin-left: 4px; }
+.fold[open] summary { margin-bottom: 6px; }
+.fold > .seg, .fold > .chips { margin-bottom: 8px; }
+.msplit:empty { display: none; }
+.msplit { border-bottom: 5px solid var(--ink); padding: 4px 0 6px; }
+.msplit .mh { font-size: 12px; font-weight: 800; }
+.msplit .bar { margin: 5px 0 4px; }
+.mkey { display: flex; flex-wrap: wrap; gap: 2px 12px; font-family: var(--body); font-size: 12px; font-variant-numeric: tabular-nums; }
+.mkey i { font-style: normal; display: inline-block; width: 9px; height: 9px; margin-right: 5px; vertical-align: 0; }
+.mkey em { font-style: normal; color: var(--muted); }
 @media (max-width: 480px) { .course { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .course b, .course.head span:first-child { grid-column: 1 / -1; } .course.head span:first-child { display: none; } }
 
 .say { display: contents; }
@@ -176,6 +192,7 @@ button.btn:hover { filter: brightness(1.08); }
   --bg: #141619; --bg-dot: #141619; --surface: #1D2024; --ink: #E7E9EC; --muted: #A1A7AF; --line: #34383E;
   --accent: #7AAEF5; --accent-soft: #1E2A3B; --on-accent: #0D1420; --red: #7AAEF5; --red-deep: #5F95E0; --blue: #7AAEF5;
   --protein: #F0776B; --carbs: #E9B341; --fat: #7AAEF5;
+  --m-b: #4CC3B4; --m-l: #A88BEB; --m-d: #C9D1DC; --m-s: #EE86B6; --m-t: #CFA067;
   --ok: #6FCF97; --ok-soft: #173325; --warn: #E9B341; --warn-soft: #33290F; --bad: #F0776B; --bad-soft: #3A1C19;
   color-scheme: dark;
 }
@@ -381,6 +398,17 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
   .tag.new { animation: reply .35s cubic-bezier(.3, 1.6, .5, 1) both; transform-origin: 85% 100%; }
   @keyframes reply { from { transform: scale(.2); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 }
+/* Effort and variety sliders: a printed track with a square knob */
+.sl input[type="range"] { -webkit-appearance: none; appearance: none; height: 22px; background: transparent; }
+.sl input[type="range"]::-webkit-slider-runnable-track { height: 8px; border: 2px solid var(--ink); background: linear-gradient(var(--red), var(--red)) 0 0 / var(--fill, 0%) 100% no-repeat, var(--surface); }
+.sl input[type="range"]::-moz-range-track { height: 8px; border: 2px solid var(--ink); background: linear-gradient(var(--red), var(--red)) 0 0 / var(--fill, 0%) 100% no-repeat, var(--surface); }
+.sl input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 22px; margin-top: -9px; background: var(--bg); border: 2px solid var(--ink); box-shadow: 2px 2px 0 var(--ink); }
+.sl input[type="range"]::-moz-range-thumb { width: 14px; height: 18px; border-radius: 0; background: var(--bg); border: 2px solid var(--ink); box-shadow: 2px 2px 0 var(--ink); }
+.ticks { font-family: var(--label); text-transform: uppercase; letter-spacing: 0.02em; font-size: 10.5px; }
+.ticks span.on { color: var(--red); font-weight: 900; }
+.fold summary { font-weight: 700; color: var(--ink); }
+.fold summary b { font-family: var(--slant); font-style: italic; font-weight: 900; text-transform: uppercase; color: var(--red); }
+.msplit .mh { font-family: var(--label); }
 /* Vintage controls: no rounded app buttons in the cereal skin */
 :root { --star: polygon(50.0% 0.0%, 58.5% 13.0%, 71.7% 5.0%, 73.7% 20.3%, 89.1% 18.8%, 84.2% 33.5%, 98.7% 38.9%, 88.0% 50.0%, 98.7% 61.1%, 84.2% 66.5%, 89.1% 81.2%, 73.7% 79.7%, 71.7% 95.0%, 58.5% 87.0%, 50.0% 100.0%, 41.5% 87.0%, 28.3% 95.0%, 26.3% 79.7%, 10.9% 81.2%, 15.8% 66.5%, 1.3% 61.1%, 12.0% 50.0%, 1.3% 38.9%, 15.8% 33.5%, 10.9% 18.8%, 26.3% 20.3%, 28.3% 5.0%, 41.5% 13.0%); --fork: polygon(0 0, 100% 0, calc(100% - 7px) 50%, 100% 100%, 0 100%, 7px 50%); }
 /* Calorie counts on tilted ribbons */
@@ -558,17 +586,17 @@ button.btn { border-radius: 0; }
           </div>
         </div>
         <p class="hint" id="slotHint"></p>
-        <div class="f">Week starts on
+        <details class="fold"><summary>Week starts on <b id="startSum">Monday</b></summary>
           <div class="seg" role="radiogroup" aria-label="Week starts on" id="startSeg"></div>
-        </div>
-        <div class="f">Eating out (replaces dinner)
+        </details>
+        <details class="fold"><summary>Eating out (replaces dinner) <b id="outSum">None</b></summary>
           <div class="chips" id="outDays"></div>
           <div class="seg" role="radiogroup" aria-label="Eating out style" id="outStyleSeg">
             <label><input type="radio" name="outStyle" id="out-h" value="h" checked><span>Healthy</span></label>
             <label><input type="radio" name="outStyle" id="out-i" value="i"><span>Indulgent</span></label>
           </div>
           <p class="hint" id="outHint"></p>
-        </div>
+        </details>
         <div class="courses" id="courses"></div>
         <label class="check"><input type="checkbox" id="premade" checked>
           <span>Premade meals and salad kits<small>Frozen entrées, soups, egg bites and bagged salads with their dressing. Turn off to cook everything from ingredients.</small></span></label>
@@ -1244,6 +1272,9 @@ button.btn { border-radius: 0; }
   ];
   const EFFORT = [["10", "Quick (10 min or less)"], ["25", "Some cooking (25 min or less)"], ["999", "Any, including 30 to 45 min"]];
   const VARIETY = [["1", "Same every day"], ["3", "Rotate 2 or 3 recipes"], ["7", "Different every day"]];
+  const TICKS = { effort: ["10 min", "25 min", "45 min"], variety: ["Same", "2 or 3", "Daily"] };
+  const slider = (k, c, L, def) => `<div class="sl"><input type="range" min="0" max="2" step="1" id="${k}-${c.t}" value="${L.findIndex(([v]) => v === def)}" aria-label="${c.name} ${k}">
+        <div class="ticks" aria-hidden="true">${TICKS[k].map((t) => `<span>${t}</span>`).join("")}</div></div>`;
   const SLOT_TYPE = { Breakfast: "b", Lunch: "l", Dinner: "d", Snack: "s", Treat: "h" };
   const TREAT_COURSE = { effort: 999, variety: 7 };
   const DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
@@ -1290,20 +1321,32 @@ button.btn { border-radius: 0; }
   function showOut() {
     const any = document.querySelector('input[name="out"]:checked');
     $("outStyleSeg").hidden = !any;
+    $("startSum").textContent = DAY_NAMES[startDay()];
+    const od = [...document.querySelectorAll('input[name="out"]:checked')].map((x) => DAY_NAMES[+x.value].slice(0, 3));
+    $("outSum").textContent = od.length ? od.join(", ") + " · " + (radio("outStyle") === "h" ? "healthy" : "indulgent") : "None";
     $("outHint").textContent = !any ? "Pick the days you'll eat dinner out." : radio("outStyle") === "h"
       ? "Counted as a big salad with grilled protein: about 650 kcal and 45 g protein. The rest of the day adjusts."
       : "Counted as a burger and fries: about 1,350 kcal and 45 g protein. The rest of that day gets lighter.";
   }
   $("courses").innerHTML = `<div class="course head"><span>Course</span><span>Effort</span><span>Variety</span></div>` +
     COURSES.map((c) => `<div class="course" id="row-${c.t}"><b>${c.name}</b>
-      <select id="effort-${c.t}" aria-label="${c.name} effort">${EFFORT.map(([v, l]) => `<option value="${v}" ${v === c.effort ? "selected" : ""}>${l}</option>`).join("")}</select>
-      <select id="variety-${c.t}" aria-label="${c.name} variety">${VARIETY.map(([v, l]) => `<option value="${v}" ${v === c.variety ? "selected" : ""}>${l}</option>`).join("")}</select></div>`).join("");
+      ${slider("effort", c, EFFORT, c.effort)}
+      ${slider("variety", c, VARIETY, c.variety)}</div>`).join("");
+  function syncSliders() {
+    COURSES.forEach((c) => [["effort", EFFORT], ["variety", VARIETY]].forEach(([k, L]) => {
+      const el = $(k + "-" + c.t), i = +el.value;
+      el.setAttribute("aria-valuetext", L[i][1]);
+      el.style.setProperty("--fill", i * 50 + "%");
+      el.nextElementSibling.querySelectorAll("span").forEach((t, j) => t.classList.toggle("on", j === i));
+    }));
+  }
   const slotsFor = (meals, snacks, treat) => [...LAYOUT[meals + "-" + snacks], ...(treat && treat !== "none" ? ["Treat"] : [])];
   function showCourses() {
     const slots = slotsFor(radio("meals"), radio("snacks"), radio("treat"));
     const t = radio("treat");
     if (t !== "none") SLOT_TYPE.Treat = t;
     COURSES.forEach((c) => ($("row-" + c.t).hidden = !slots.some((sl) => SLOT_TYPE[sl] === c.t)));
+    syncSliders();
     $("slotHint").textContent = "Each day: " + slots.join(", ").toLowerCase().replace(/^./, (x) => x.toUpperCase()) + "." +
       (t === "h" ? " Healthy treats are dark chocolate or fruit." : t === "i" ? " Indulgent treats are ice cream, cookies or chips." : "") + (t !== "none" ? " The treat is a fixed portion, and the rest of the day shrinks to fit it." : "");
   }
@@ -1361,7 +1404,7 @@ button.btn { border-radius: 0; }
       diets: [...document.querySelectorAll('input[name="diet"]:checked')].map((x) => x.value),
       avoid: tags.avoid.join(","), likes: tags.likes.join(","), meals: radio("meals"), snacks: radio("snacks"), treat: radio("treat"),
       out: { days: [...document.querySelectorAll('input[name="out"]:checked')].map((x) => +x.value), style: radio("outStyle") },
-      course: Object.fromEntries(COURSES.map((c) => [c.t, { effort: +$("effort-" + c.t).value, variety: +$("variety-" + c.t).value }])),
+      course: Object.fromEntries(COURSES.map((c) => [c.t, { effort: +EFFORT[+$("effort-" + c.t).value][0], variety: +VARIETY[+$("variety-" + c.t).value][0] }])),
       store: radio("store"), packs: $("packs").checked, premade: $("premade").checked, sauce: $("sauce").checked, freezer: radio("freezer"), start: startDay(),
     };
   }
@@ -1415,6 +1458,7 @@ button.btn { border-radius: 0; }
       <h2>Daily Plan</h2>
       <div class="serv"><span>${r.goal.name}</span><span>${s.diets.length ? s.diets.join(", ") : "No restrictions"}</span></div>
       <div class="cal"><span class="k">Calories</span><span class="v">${fmt(r.target)}</span></div>
+      <div class="msplit" id="mealSplit">${mealSplitHTML}</div>
       <div class="bar" role="img" aria-label="Calories from protein ${pP}%, carbs ${pC}%, fat ${pF}%">
         <div style="width:${pP}%;background:var(--protein)"></div><div style="width:${pC}%;background:var(--carbs)"></div><div style="width:${pF}%;background:var(--fat)"></div>
       </div>
@@ -1894,17 +1938,36 @@ button.btn { border-radius: 0; }
     return { meals, tot };
   }
 
+  let mealSplitHTML = "";
+  const MEAL_ORDER = [["Breakfast", "var(--m-b)"], ["Lunch", "var(--m-l)"], ["Dinner", "var(--m-d)"], ["Snacks", "var(--m-s)"], ["Treat", "var(--m-t)"]];
+  function renderMealSplit(all) {
+    const sum = {};
+    all.forEach((d, di) => d.meals.forEach((x, i) => {
+      const sl = slotsOf(week.days[di])[i] || "";
+      const k = sl === "Snack" ? "Snacks" : x.m.out ? "Dinner" : sl;
+      sum[k] = (sum[k] || 0) + x.n[0] / 7;
+    }));
+    const tot = Object.values(sum).reduce((a, b) => a + b, 0) || 1;
+    const rows = MEAL_ORDER.filter(([k]) => sum[k] > 0).map(([k, c]) => ({ k, c, v: sum[k], p: Math.round((sum[k] / tot) * 100) }));
+    mealSplitHTML = rows.length ? `<div class="mh">By meal, daily average</div>
+      <div class="bar" role="img" aria-label="Calories by meal: ${rows.map((x) => `${x.k} ${x.p}%`).join(", ")}">${rows.map((x) => `<div style="width:${(x.v / tot) * 100}%;background:${x.c}"></div>`).join("")}</div>
+      <div class="mkey">${rows.map((x) => `<span><i style="background:${x.c}"></i>${x.k} <b>${fmt(x.v)}</b> <em>${x.p}%</em></span>`).join("")}</div>` : "";
+    const el = $("mealSplit"); if (el) el.innerHTML = mealSplitHTML;
+  }
+
   function renderMenu() {
     const days = $("days"), warn = $("menuWarn");
     if (!week || week.error) {
       days.innerHTML = ""; $("grocery").innerHTML = ""; $("cost").hidden = true; $("leftSec").hidden = true;
       warn.hidden = false; warn.textContent = week?.error || "";
       renderHidden();
+      mealSplitHTML = ""; if ($("mealSplit")) $("mealSplit").innerHTML = "";
       $("menuSummary").textContent = "";
       return;
     }
     const T = ctx.T;
     const all = week.days.map(dayData);
+    renderMealSplit(all);
     const avg = [0, 0, 0, 0, 0];
     all.forEach((d) => d.tot.forEach((v, j) => (avg[j] += v / 7)));
     const carbOf = (n) => (T.keto ? n[2] - n[4] : n[2]);
@@ -2216,7 +2279,7 @@ button.btn { border-radius: 0; }
     v.premade = $("premade").checked;
     v.sauce = $("sauce").checked;
     v.out = read().out.days;
-    ["age", "heightCm", "heightFt", "heightIn", "weight", ...COURSES.flatMap((c) => ["effort-" + c.t, "variety-" + c.t])].forEach((id) => (v.fields[id] = $(id).value));
+    ["age", "heightCm", "heightFt", "heightIn", "weight", ...COURSES.flatMap((c) => ["effort-" + c.t, "variety-" + c.t])].forEach((id) => (v.fields[id] = $(id).value)); v.sliders = 1;
     v.tags = tags;
     ls.set("ad-inputs", v);
   }
@@ -2229,7 +2292,12 @@ button.btn { border-radius: 0; }
       tags[k] = t; renderTags(k);
     });
     if (v.fields) { delete v.fields.avoid; delete v.fields.likes; }
-    Object.entries(v.fields || {}).forEach(([id, val]) => { if ($(id) && val != null) $(id).value = val; });
+    Object.entries(v.fields || {}).forEach(([id, val]) => {
+      if (!$(id) || val == null) return;
+      const L = id.startsWith("effort-") ? EFFORT : id.startsWith("variety-") ? VARIETY : null;
+      if (L && v.sliders !== 1) { const i = L.findIndex(([x]) => x === String(val)); if (i < 0) return; val = i; }
+      $(id).value = val;
+    });
     Object.entries(v.radios || {}).forEach(([n, val]) => { const el = document.querySelector(`input[name="${n}"][value="${val}"]`); if (el) el.checked = true; });
     // Dairy-free moved to the allergies field
     if ((v.diets || []).includes("Dairy-free") && !tags.avoid.some((t) => /dairy/i.test(t))) { tags.avoid.push("dairy"); renderTags("avoid"); }
