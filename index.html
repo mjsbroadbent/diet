@@ -2238,10 +2238,10 @@ button.btn { border-radius: 0; }
 
   // Food eaten by the piece comes in whole pieces on every plate: never 2 1/2 eggs or half an orange.
   // Anything counted in units (eggs, wraps, buns, bars, sausages...) plus fruit eaten whole. Halves only where people
-  // really do that: half a banana or avocado, a split bagel or English muffin, a large naan or pita, half a scoop.
+  // really do that: half a banana or avocado, half a large naan, half a scoop.
   // Bagged salad kits are counted in bags but eaten like any salad, so they aren't piece food.
   const BY_PIECE = new Set(["orange", "clementine", "kiwi", "apple", "pear", "banana", "avocado"]);
-  const HALVES = new Set(["whey", "pea", "naan", "pita", "bagel", "emuffin", "banana", "avocado"]);
+  const HALVES = new Set(["whey", "pea", "naan", "banana", "avocado"]);
   const NOT_PIECES = new Set(["saladkit", "kalekit"]);
   const pieceStep = (k) => { const x = ING[k]?.[8] || {}; if (!x.each || NOT_PIECES.has(k) || !(x.unit || BY_PIECE.has(k))) return 0; return HALVES.has(k) && !x.whole ? x.each / 2 : x.each; };
   // Round a scaled recipe to amounts you can actually measure; the optimiser scores these rounded amounts,

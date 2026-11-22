@@ -94,7 +94,7 @@ const RULES = [
   { id: "freezer", hard: true, desc: "frozen food fits the freezer on its busiest day", check: (w) => (w.fz && w.fz.peak > w.fz.cap + 1 ? [`${(w.fz.peak / 1000).toFixed(1)} kg of ${(w.fz.cap / 1000).toFixed(0)} kg`] : []) },
   { id: "pick-one", hard: true, desc: "one of each pick-one group in a plan: protein powder (whey or plant), milk (dairy, soy or oat), rice (white or brown)", check: (w) =>
     [["whey", "pea"], ["milk", "soymilk", "oatmilk"], ["wrice", "brice"]].map((g) => g.filter((k) => w.ings.has(k))).filter((g) => g.length > 1).map((g) => g.join(" + ")) },
-  { id: "pieces", hard: true, desc: "food eaten by the piece is served whole (halves only for banana, avocado, bagel, English muffin, naan, pita, scoops)", check: (w) => w.pieces.slice(0, 4) },
+  { id: "pieces", hard: true, desc: "food eaten by the piece is served whole (halves only for banana, avocado, naan, scoops)", check: (w) => w.pieces.slice(0, 4) },
   { id: "waste", hard: true, desc: "no fresh food wasted ($0)", check: (w) => (w.shop && w.shop.waste > 0.005 ? [`$${Math.round(w.shop.waste)}`] : []) },
 ];
 
@@ -150,7 +150,7 @@ for (const prof of PROFILES) for (let k = 0; k < SEEDS + (prof.seeds?.length || 
       return { k, p, tk: own?.tk ?? o.T.k, ms: (d.own || []).find((y) => y.who === o.who)?.ms || [], own: own?.meals.map((x) => x.m.name) || [], bad: (own?.meals || []).filter((x) => !B.allowed(x.m, o.diets, o.avoid)).map((x) => x.m.name) };
     }) }));
     // Whole pieces: the harness keeps its own list, so a change to the engine's rule can't quietly pass itself
-    const FRUIT = ["orange", "clementine", "kiwi", "apple", "pear", "banana", "avocado"], HALF = ["whey", "pea", "naan", "pita", "bagel", "emuffin", "banana", "avocado"], BAGS = ["saladkit", "kalekit"];
+    const FRUIT = ["orange", "clementine", "kiwi", "apple", "pear", "banana", "avocado"], HALF = ["whey", "pea", "naan", "banana", "avocado"], BAGS = ["saladkit", "kalekit"];
     const pieces = [];
     const chk = (k, g, where) => {
       const x = B.ING[k][8] || {};
