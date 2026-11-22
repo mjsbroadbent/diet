@@ -2359,7 +2359,7 @@ button.btn { border-radius: 0; }
   const TREAT_COURSE = { effort: 999, variety: 7 };
   const DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
   // Meals stay within ¾ to 1½ of a normal portion; a bigger appetite gets an extra snack instead of a giant plate
-  const STEPS = { b: [0.75, 1, 1.25, 1.5], l: [0.75, 1, 1.25, 1.5], d: [0.75, 1, 1.25, 1.5], s: [0.5, 0.75, 1, 1.25, 1.5, 2], h: [1], i: [1], o: [1] };
+  const STEPS = { b: [0.75, 1, 1.25, 1.5], l: [0.75, 1, 1.25, 1.5], d: [0.75, 1, 1.25, 1.5], s: [0.75, 1, 1.25, 1.5], h: [1], i: [1], o: [1] };
   // Proteins you eat: 2 often, 1 sometimes, 0 never. Plant proteins start at "sometimes" unless you're vegetarian or vegan.
   const PROT_KEYS = ["chicken", "turkey", "beef", "pork", "fish", "shellfish", "egg", "dairy", "tofu", "legume", "plant-meat"];
   const PLANT = new Set(["tofu", "legume", "plant-meat"]);
@@ -4444,13 +4444,17 @@ button.btn { border-radius: 0; }
   // A meal counts by how much the planner wants it (appeal, proteins you eat, your ratings), so a staple behind
   // well-liked meals ranks above one behind meals you'd rarely see. Sauces also count the meals "Sauce it up" can dress with them.
   // Returns [{ k, name, meals, week, price, perDollar }], best first, leaving out what's already ticked or in the pantry.
-  // meals counts every meal variant you could get (library-sized); week counts this week's meals that use it.
+  // meals counts every meal variant you could get (library-sized); week counts this week's meals that use it (always at least 1 once a week is built).
   function starterKit(n = 8) {
     if (!ctx?.pools) return [];
     const meals = [...new Set(["b", "l", "d", "s"].flatMap((t) => ctx.pools[t] || []))];
     const out = [];
     STAPLES.forEach(([, ks]) => ks.forEach((k) => {
       if (staples.has(k) || (pantry[k] || 0) > 0) return;
+      // week: how many of this week's meals (yours and everyone's own) use it; only staples this plan uses are suggested
+      let wk = 0;
+      (week?.days || []).forEach((d) => { d.ids.forEach((id) => { if (MEAL[id].items.some(([x]) => x === k)) wk++; }); (d.own || []).forEach((o) => o.ids.forEach((id) => { if (MEAL[id].items.some(([x]) => x === k)) wk++; })); });
+      if (week?.days && !wk) return;
       const P = pk(k);
       if (!P?.price) return;
       let w = 0, c = 0;
@@ -4461,9 +4465,6 @@ button.btn { border-radius: 0; }
         w += ctx.want(m) * (uses ? 1 : 0.3);
         if (uses) c++;
       });
-      // week: how many of this week's meals (yours and everyone's own) use it, for display
-      let wk = 0;
-      (week?.days || []).forEach((d) => { d.ids.forEach((id) => { if (MEAL[id].items.some(([x]) => x === k)) wk++; }); (d.own || []).forEach((o) => o.ids.forEach((id) => { if (MEAL[id].items.some(([x]) => x === k)) wk++; })); });
       if (w > 0) out.push({ k, name: stapleName(k), meals: c, week: wk, price: Math.round(P.price * 100) / 100, perDollar: w / P.price });
     }));
     return out.sort((a, b) => b.perDollar - a.perDollar).slice(0, n);
