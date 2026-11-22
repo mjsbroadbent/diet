@@ -305,9 +305,14 @@ html[data-step="you"] [data-step]:not([data-step~="you"]), html[data-step="pantr
 .staples { display: grid; gap: 16px; }
 .staples h3 { margin: 0 0 8px; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
 .staples .chip span { font-size: 14px; }
-.kit { padding: 12px 14px; border: 1px dashed var(--accent); border-radius: 10px; margin-bottom: 16px; }
+.kit { padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; margin-bottom: 20px; background: var(--surface); }
 .kit p { margin: 0 0 8px; font-size: 14px; color: var(--muted); }
-.kit .chip small { font-weight: 500; opacity: 0.8; margin-left: 6px; text-transform: none; letter-spacing: 0; }
+.kit-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.kit-list li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 8px 0; border-top: 1px solid var(--line); }
+.kit-list b { display: block; font-size: 15px; }
+.kit-list small { display: block; font-size: 14px; color: var(--muted); }
+.kit-list .ghost { font-size: 14px; min-height: 40px; white-space: nowrap; }
+.have-h { margin: 0 0 10px; font-size: 16px; }
 .step-next { gap: 10px; }
 @media (max-width: 820px) {
   .steps { position: fixed; left: 0; right: 0; bottom: 0; z-index: 45; gap: 4px; padding: 6px max(8px, env(safe-area-inset-left)) calc(env(safe-area-inset-bottom) + 6px); background: var(--surface); border-top: 1px solid var(--line); box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08); }
@@ -744,6 +749,11 @@ button.btn { border-radius: 0; }
 /* Pantry step: shelf labels */
 .staples h3 { font-family: var(--label); color: var(--red); font-weight: 900; font-style: italic; letter-spacing: 0.03em; }
 
+/* Pantry: the buy-once list sits on its own printed panel */
+.kit { border: 2px solid var(--ink); border-radius: 0; box-shadow: 4px 4px 0 var(--ink); }
+.kit-list li { border-top: 2px dotted var(--ink); }
+.have-h { font-family: var(--display); font-weight: 400; font-size: 22px; letter-spacing: 0.03em; text-transform: uppercase; }
+
 /* Household builder */
 .person { border: 2px solid var(--ink); border-radius: 0; box-shadow: 4px 4px 0 var(--ink); }
 .person-h input, .person select { border: 2px solid var(--ink); border-radius: 0; background: var(--surface); }
@@ -765,6 +775,8 @@ button.btn { border-radius: 0; }
 .day .slot { font-size: 12.5px; }
 .grocery small, #gbar .note, #gbar button { font-size: 14px; }
 .grocery .keep { font-size: 12px; }
+.cost span, .left .li small, #storeHint, [data-step~="shop"] .hint, .fine p, .fine b { font-size: 14px; }
+.grocery .keep, .left .keep, .gsec small .keep { font-size: 13px; }
 </style>
 <script>
   (function () { var k; try { k = JSON.parse(localStorage.getItem("ad-skin")); } catch (e) {} k = k === "light" || k === "dark" ? k : "cereal";
@@ -1012,10 +1024,11 @@ button.btn { border-radius: 0; }
     <div class="menu-head">
       <div>
         <h2 class="sec" id="pantryTitle">Your pantry</h2>
-        <p>Tick the staples you already have. They keep for months, so the grocery list won't buy them and the menu leans on them. Skip this if you'd rather start from scratch.</p>
+        <p>Set up the long-life basics once: sauces, spices, grains and cans that keep for months. Anything you already have stays off the grocery list. Skip this if you'd rather start from scratch.</p>
       </div>
     </div>
     <div class="staples kit" id="kit" hidden></div>
+    <h3 class="have-h" id="haveH">Already have these? Tick them</h3>
     <div class="staples" id="staples"></div>
   </section>
   <div class="step-next" data-step="pantry"><button type="button" class="ghost" data-go="week">Skip</button><button type="button" class="btn" data-go="week">Next: your week</button></div>
@@ -4343,10 +4356,13 @@ button.btn { border-radius: 0; }
     if (k === "pantry" && typeof renderKit === "function") renderKit();
     if (location.hash) history.replaceState(null, "", location.pathname + location.search);
     if (!scroll) return;
-    // Land at the top of the new step if you were scrolled past it
+    // Desktop: land at the top of the steps if you were scrolled past them.
+    // Phones: after step one, land on the step's own content, so the hero doesn't fill the screen.
     const phone = matchMedia("(max-width: 820px)").matches;
-    const top = (phone ? document.querySelector(".grid") : $("steps")).getBoundingClientRect().top + scrollY - (phone ? 70 : 12);
-    if (scrollY > top) scrollTo({ top, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+    const el = phone ? (k === "you" ? document.querySelector(".grid") : [...document.querySelectorAll(`body [data-step~="${k}"]`)].find((e) => e.getClientRects().length)) : $("steps");
+    if (!el) return;
+    const top = Math.max(0, el.getBoundingClientRect().top + scrollY - (phone ? ((m) => (m && m.getClientRects().length ? m.offsetHeight + 10 : 12))(document.querySelector(".mini")) : 12));
+    if (phone && k !== "you" ? Math.abs(scrollY - top) > 4 : scrollY > top) scrollTo({ top, behavior: scroll === "instant" || matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
   }
   document.addEventListener("click", (e) => { const b = e.target.closest("[data-go]"); if (b) goStep(b.dataset.go, true); });
   goStep(document.documentElement.dataset.step);
@@ -4413,14 +4429,17 @@ button.btn { border-radius: 0; }
     renderKit();
   }
   $("staples").addEventListener("change", onStaple);
-  $("kit").addEventListener("change", onStaple);
+  $("kit").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-kit-have]"); if (!b) return;
+    onStaple({ target: { dataset: { staple: b.dataset.kitHave }, checked: true } });
+  });
   // Worth buying once: the planner's starter kit, the staples that turn up in the most of your meals per dollar
   function renderKit() {
     let kit = [];
     try { if (typeof starterKit === "function" && week && !week.error) kit = starterKit(8) || []; } catch {}
     $("kit").hidden = !kit.length;
-    $("kit").innerHTML = kit.length ? `<h3>Worth buying once</h3><p>These keep for months and turn up in the most meals per dollar. Tick any you already have.</p><div class="chips">${kit.map((x) =>
-      `<label class="chip"><input type="checkbox" data-staple="${x.k}"><span>${esc(x.name || stapleName(x.k))}${x.price || x.week ? `<small>${[x.week ? `${x.week} meal${x.week === 1 ? "" : "s"} this week` : "", x.price ? `$${(+x.price).toFixed(2)}` : ""].filter(Boolean).join(" · ")}</small>` : ""}</span></label>`).join("")}</div>` : "";
+    $("kit").innerHTML = kit.length ? `<h3>Worth buying once</h3><p>Long-life staples that turn up in the most meals per dollar. The ones this week uses are already on your shopping list.</p><ul class="kit-list">${kit.map((x) =>
+      `<li><span><b>${esc(x.name || stapleName(x.k))}</b><small>${[x.week ? `${x.week} meal${x.week === 1 ? "" : "s"} this week` : "Not on this week's menu", x.price ? `$${(+x.price).toFixed(2)}` : ""].filter(Boolean).join(" · ")}</small></span><button type="button" class="ghost" data-kit-have="${x.k}">I have it</button></li>`).join("")}</ul>` : "";
   }
   applyStaples();
   // "Clear pantry" in the leftovers section also unticks the staples, or they would come back on the next load
@@ -4522,6 +4541,7 @@ button.btn { border-radius: 0; }
   showCourses();
   update(true);
   if (document.documentElement.dataset.step === "pantry") renderKit();
+  if (document.documentElement.dataset.step !== "you" && matchMedia("(max-width: 820px)").matches) requestAnimationFrame(() => goStep(document.documentElement.dataset.step, "instant"));
 })();
 </script>
 
