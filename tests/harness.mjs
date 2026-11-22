@@ -98,6 +98,7 @@ const RULES = [
   { id: "hh-diet", hard: true, desc: "everyone in a household is served a version of each shared meal that fits their own diet", check: (w) => w.hhBad.slice(0, 4) },
   { id: "hh-mixed", hard: true, desc: "meat eater sharing with a vegetarian: the meat eater still gets meat or fish in at least a third of lunches and dinners", check: (w) => (w.mixed && w.meatShare < 1 / 3 ? [`${Math.round(w.meatShare * 100)}% of lunches and dinners`] : []) },
   { id: "sometimes", hard: true, desc: "a protein set to Sometimes is in at most 3 lunches and dinners a week (unless the page says the settings leave too few proteins)", check: (w) => w.ceil.slice(0, 3) },
+  { id: "fridge-life", hard: true, desc: "no fresh food is planned past its fridge life from the shop it was bought on (day 1, or the day-8 top-up)", check: (w) => w.stale.slice(0, 4) },
   { id: "pieces", hard: true, desc: "food eaten by the piece is served whole (halves only for banana, avocado, naan, scoops)", check: (w) => w.pieces.slice(0, 4) },
   { id: "waste", hard: true, desc: "no fresh food wasted ($0)", check: (w) => (w.shop && w.shop.waste > 0.005 ? [`$${Math.round(w.shop.waste)}`] : []) },
 ];
@@ -179,13 +180,19 @@ for (const prof of PROFILES) for (let k = 0; k < SEEDS + (prof.seeds?.length || 
     ld.forEach((m) => (fam[m.main] = (fam[m.main] || 0) + 1));
     const told = /too few proteins/.test(document.querySelector("#days")?.closest("section")?.textContent || document.body.textContent);
     const ceil = told ? [] : Object.keys(fam).filter((f) => ctx.prots?.[f] === 1 && fam[f] > ctx.protCeil).map((f) => `${f} x${fam[f]}`);
+    // Fridge life: fresh food bought on day 1 (or "k@2" on the day-8 top-up) is eaten within its days
+    const stale = [];
+    week.days.forEach((d, di) => B.dayData(d, di).meals.forEach((x) => x.items.forEach((it) => {
+      const life = B.fridge(it.k), from = B.keyOf(it.k, di).endsWith("@2") ? 7 : 0;
+      if (di - from >= life) stale.push(`day ${di + 1}: ${it.k} (keeps ${life} days from day ${from + 1})`);
+    })));
     const ings = new Set();
     week.days.forEach((d, di) => { const dd = B.dayData(d, di); dd.meals.forEach((x) => x.items.forEach((it) => ings.add(it.k))); (dd.own || []).forEach((o) => o.meals.forEach((x) => x.items.forEach((it) => ings.add(it.k)))); });
-    return { hhBad, meatShare, ceil, pieces, ings: [...ings], hh: (ctx.house?.n || 1) + (ctx.house?.others.length || 0), others, never, T: ctx.T, days, protein, shop: B.shopStats(), fz: { peak: B.freezerPeak(), cap: ctx.fcap }, cv: Object.fromEntries(Object.entries(ctx.course).map(([k, c]) => [k, c.variety])), labels, daily, quickDinner: ctx.course.d.effort <= 10 };
+    return { stale, hhBad, meatShare, ceil, pieces, ings: [...ings], hh: (ctx.house?.n || 1) + (ctx.house?.others.length || 0), others, never, T: ctx.T, days, protein, shop: B.shopStats(), fz: { peak: B.freezerPeak(), cap: ctx.fcap }, cv: Object.fromEntries(Object.entries(ctx.course).map(([k, c]) => [k, c.variety])), labels, daily, quickDinner: ctx.course.d.effort <= 10 };
   }, { s: S, seed });
   w.tight = !!prof.tight;
   w.mixed = !!prof.mixed;
-  w.hhBad ||= []; w.ceil ||= []; w.pieces ||= [];
+  w.stale ||= []; w.hhBad ||= []; w.ceil ||= []; w.pieces ||= [];
   w.ings = new Set(w.ings || []);
   w.low = !!prof.low;
   w.nDays = S.weeks === 2 ? 14 : 7;

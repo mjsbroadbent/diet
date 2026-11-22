@@ -623,6 +623,16 @@ window.BBD_DATA = (() => {
     garam: ["Tata Sampann garam masala, 100 g", 100, 1.99, "p"],
     chutney: ["Patak's sweet mango chutney, 250 ml", 330, 7.49, "p"],
   };
+  // Fridge life in days for fresh food stored well (Chief, a chef of 20 years: beans, zucchini, mushrooms, cucumbers and
+  // most produce keep two weeks; tender greens are the risk). Fresh food not listed keeps 14 days. Under 14 days, a two-week
+  // plan buys it again on the day-8 top-up. tip: how to store it, shown when the first shop holds it into week 2.
+  const FRIDGE = {
+    days: { spinach: 7, greens: 7, saladkit: 7, caesar: 7, grsalad: 7, quinsal: 7, penne: 7, tzatziki: 7, ewwrap: 7, banana: 7, raspberries: 7, pineapple: 7 },
+    tip: { mushroom: "paper bag in the fridge", cucumber: "wrapped, in the crisper", zucchini: "dry, in the crisper", greenbeans: "in a bag in the crisper",
+      pepper: "in the crisper", tomato: "on the counter till ripe, then the fridge", asparagus: "stems in a little water in the fridge", brussels: "in a bag in the crisper",
+      caulifl: "wrapped, in the fridge", romaine: "wrapped in a damp towel", bokchoy: "in a bag in the crisper", kalekit: "sealed, in the fridge",
+      grapes: "unwashed, in the fridge", blueberries: "unwashed, in the fridge" },
+  };
   const KEEP = { p: ["Keeps", "Pantry or freezer. Carries over."], z: ["Freeze", "Freeze what you won't use in a few days."], r: ["Keeps a few weeks", "Fridge or a cool cupboard."], x: ["Use this week", "Won't keep. Not carried over."] };
   // Recipes at a base portion. Portions are scaled per day to hit your targets.
   const MEAL_ROWS = [
@@ -1314,5 +1324,5 @@ window.BBD_DATA = (() => {
     granola: "Granola. Crunch on yogurt and cottage cheese.",
     darkbites: "Dark chocolate bites. A little sweet on yogurt or oats.",
   };
-  return { S, ING, INSTORE, COSTCO, SUB, UNIT, FROZEN, STAPLE, FREEZER, NOFRILLS, NF_DATE, NF_KEEP, ELSE_DATE, ELSEWHERE, KEEP, APPEAL, SWEET, MEASURE, SAUCE, PLANETS, ABOUT, MEAL_ROWS, PARTS };
+  return { S, ING, INSTORE, COSTCO, SUB, UNIT, FROZEN, STAPLE, FREEZER, NOFRILLS, NF_DATE, NF_KEEP, ELSE_DATE, ELSEWHERE, KEEP, FRIDGE, APPEAL, SWEET, MEASURE, SAUCE, PLANETS, ABOUT, MEAL_ROWS, PARTS };
 })();
