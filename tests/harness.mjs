@@ -26,7 +26,7 @@ const PROFILES = [
   { name: "Pescatarian, treats", s: { diets: ["Pescatarian"], treat: "h", sex: "female", heightCm: 168, weightKg: 58, goal: "maintain" } },
   { name: "Athlete bulk, 110 kg", tight: true, s: { heightCm: 188, weightKg: 110, age: 28, goal: "gain", activity: 1.9, snacks: "1" } },
   { name: "Big man, gain, 2 snacks", s: { heightCm: 190, weightKg: 92, age: 24, goal: "gain", activity: 1.725, snacks: "2", treat: "i" } },
-  { name: "Any store, eats out Fri/Sat", s: { store: "any", out: { days: [4, 5], style: "i" } } },
+  { name: "Any store, eats out Fri/Sat, dirty snack", s: { store: "any", out: { days: [4, 5], style: "i" }, treat: "j" } },
   { name: "Mostly Costco, no freezer", s: { store: "mostly", freezer: "none", sex: "female", age: 33, heightCm: 172, weightKg: 75 } },
   { name: "Mix and match, quick dinners", s: { mix: true, course: { d: { effort: 25, variety: 3 }, l: { effort: 10, variety: 2 } } } },
 ];
@@ -38,6 +38,10 @@ const RULES = [
   { id: "diet", hard: true, desc: "every meal fits the diet and avoid list", check: (w) => w.days.flatMap((d, i) => d.meals.filter((m) => !m.ok).map((m) => `day ${i + 1}: ${m.name}`)) },
   { id: "kcal", hard: true, desc: "each day within 15% of its calorie target", check: (w) => w.days.flatMap((d, i) => (Math.abs(d.kcal - d.tk) / d.tk > 0.15 ? [`day ${i + 1}: ${Math.round(d.kcal)} vs ${d.tk}`] : [])) },
   { id: "kcal-10", hard: true, desc: "big-appetite profile: every day within 10% of its calorie target", check: (w) => (w.tight ? w.days.flatMap((d, i) => (Math.abs(d.kcal - d.tk) / d.tk > 0.1 ? [`day ${i + 1}: ${Math.round(d.kcal)} vs ${d.tk}`] : [])) : []) },
+  { id: "treat-kind", hard: true, desc: "treats are good or cheat treats, dirty snacks sit in their own slot, and a daily one is there every day", check: (w) => w.days.flatMap((d, i) => [
+    ...d.meals.filter((m) => (m.slot === "Treat" && m.type !== "h" && m.type !== "i") || (m.slot === "Dirty snack") !== (m.type === "j")).map((m) => `day ${i + 1}: ${m.slot} ${m.name} (${m.type})`),
+    ...(w.treat === "j" && !d.slots.includes("Dirty snack") ? [`day ${i + 1}: no dirty snack`] : []),
+  ]) },
   { id: "kcal-tight", hard: false, desc: "each day within 8% of its calorie target", check: (w) => w.days.flatMap((d, i) => (Math.abs(d.kcal - d.tk) / d.tk > 0.08 ? [`day ${i + 1}: ${Math.round(d.kcal)} vs ${d.tk}`] : [])) },
   { id: "protein", hard: true, desc: "weekly protein at least 85% of target", check: (w) => (w.protein < 0.85 * w.T.p * 7 ? [`${Math.round(w.protein / 7)} g a day vs ${w.T.p} g`] : []) },
   { id: "repeat-day", hard: true, desc: "no dish twice in one day", check: (w) => w.days.flatMap((d, i) => {
@@ -125,6 +129,7 @@ for (const prof of PROFILES) for (let k = 0; k < SEEDS; k++) {
     return { hh: (ctx.house?.n || 1) + (ctx.house?.others.length || 0), others, never, T: ctx.T, days, protein, shop: B.shopStats(), fz: { peak: B.freezerPeak(), cap: ctx.fcap }, cv: Object.fromEntries(Object.entries(ctx.course).map(([k, c]) => [k, c.variety])), labels, daily, quickDinner: ctx.course.d.effort <= 10 };
   }, { s: { ...base, ...prof.s }, seed });
   w.tight = !!prof.tight;
+  w.treat = { ...base, ...prof.s }.treat;
   const fails = RULES.map((rule) => ({ rule, probs: rule.check(w) })).filter((x) => x.probs.length);
   results.push({ prof: prof.name, seed, w, fails });
   if (verbose) {

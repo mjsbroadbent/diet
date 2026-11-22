@@ -2444,6 +2444,7 @@ button.btn { border-radius: 0; }
   // Treat flavour: sweet if any ingredient is sweet, otherwise salty. Treats default to sweet; hold a treat button to pick.
   const SWEET = new Set(["darkchoc", "strawberries", "berries", "honey", "banana", "icecream", "icebar", "cookie", "mango", "darkbites", "pineapple", "raspberries", "grapes", "blueberries"]);
   const flavorOf = (m) => (m.items.some(([k]) => SWEET.has(k)) ? "sweet" : "salty");
+  const TREAT_NAME = { h: "good treat", i: "cheat treat", j: "dirty snack" };
   let dailyFlav = "sweet";
   let prots = {}; // proteins you eat: only the ones the person set; 2 often, 1 sometimes, 0 never
   let swapNote = null; // the meal just swapped out, so it can be rated "less" or "never"
@@ -2473,11 +2474,11 @@ button.btn { border-radius: 0; }
   const TICKS = { effort: ["10 min", "25 min", "45 min"], variety: ["Same", "2", "3", "5", "Daily"] };
   const slider = (k, c, L, def) => `<div class="sl"><input type="range" min="0" max="${L.length - 1}" step="1" id="${k}-${c.t}" value="${L.findIndex(([v]) => v === def)}" aria-label="${c.name} ${k}">
         <div class="ticks" aria-hidden="true">${TICKS[k].map((t, j, a) => `<span style="--p:${j / (a.length - 1)}">${t}</span>`).join("")}</div></div>`;
-  const SLOT_TYPE = { Breakfast: "b", Lunch: "l", Dinner: "d", Snack: "s", Treat: "h", "Extra meal": "b" };
+  const SLOT_TYPE = { Breakfast: "b", Lunch: "l", Dinner: "d", Snack: "s", Treat: "h", "Dirty snack": "j", "Extra meal": "b" };
   const TREAT_COURSE = { effort: 999, variety: 7 };
   const DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
   // Meals stay within ¾ to 1½ of a normal portion; a bigger appetite gets an extra snack instead of a giant plate
-  const STEPS = { b: [0.75, 1, 1.25, 1.5], l: [0.75, 1, 1.25, 1.5], d: [0.75, 1, 1.25, 1.5], s: [0.75, 1, 1.25, 1.5], h: [1], i: [1], o: [1] };
+  const STEPS = { b: [0.75, 1, 1.25, 1.5], l: [0.75, 1, 1.25, 1.5], d: [0.75, 1, 1.25, 1.5], s: [0.75, 1, 1.25, 1.5], h: [1], i: [1], j: [1], o: [1] };
   // Proteins you eat: 2 often, 1 sometimes, 0 never. Plant proteins start at "sometimes" unless you're vegetarian or vegan.
   const PROT_KEYS = ["chicken", "turkey", "beef", "pork", "fish", "shellfish", "egg", "dairy", "tofu", "legume", "plant-meat"];
   const PLANT = new Set(["tofu", "legume", "plant-meat"]);
@@ -2562,7 +2563,8 @@ button.btn { border-radius: 0; }
       el.nextElementSibling.querySelectorAll("span").forEach((t, j) => t.classList.toggle("on", j === i));
     }));
   }
-  const slotsFor = (meals, snacks, treat) => [...LAYOUT[meals + "-" + snacks], ...(treat && treat !== "none" ? ["Treat"] : [])];
+  const slotOfTreat = (kind) => (kind === "j" ? "Dirty snack" : "Treat");
+  const slotsFor = (meals, snacks, treat) => [...LAYOUT[meals + "-" + snacks], ...(treat && treat !== "none" ? [slotOfTreat(treat)] : [])];
   function showCourses() {
     const slots = slotsFor(radio("meals"), radio("snacks"), radio("treat"));
     const t = radio("treat");
@@ -2827,8 +2829,8 @@ button.btn { border-radius: 0; }
     const diets = [...new Set([...s.diets, ...house.others.flatMap((o) => o.diets)])], avoid = [...new Set([...terms(s.avoid), ...house.others.flatMap((o) => o.avoid)])], likes = terms(s.likes);
     let slots = slotsFor(s.meals, s.snacks, s.treat);
     const treat = s.treat !== "none" ? s.treat : null;
-    if (treat) SLOT_TYPE.Treat = treat;
-    const course = { ...s.course, h: TREAT_COURSE, i: TREAT_COURSE, o: { effort: 999, variety: 1 } };
+    if (treat && treat !== "j") SLOT_TYPE.Treat = treat;
+    const course = { ...s.course, h: TREAT_COURSE, i: TREAT_COURSE, j: TREAT_COURSE, o: { effort: 999, variety: 1 } };
     const pools = {}, relaxed = [];
     const mostly = s.store === "mostly" && Object.keys(NOFRILLS).length > 0;
     const costco = s.store === "costco" || mostly;
@@ -2848,7 +2850,7 @@ button.btn { border-radius: 0; }
       if (quick.length || !fit.length) pools[type] = quick;
       else { pools[type] = [...fit].sort((a, b) => a.min - b.min).slice(0, 3); relaxed.push(type); }
     }
-    if (treat) { const f = pools[treat].filter((m) => flavorOf(m) === (s.flav || "sweet")); if (f.length) pools[treat] = f; }
+    if (treat === "h" || treat === "i") { const f = pools[treat].filter((m) => flavorOf(m) === "sweet"); if (f.length) pools[treat] = f; }
     // Dinner is a proper dinner (no sandwiches or wraps) unless dinner effort is set to the quickest
     if (pools.d && course.d.effort > 10) { const f = pools.d.filter((m) => m.dinner !== false); if (f.length) pools.d = f; }
     // Appeal: meals people actually want to eat are picked more (appeal squared), proteins you eat "sometimes" less,
@@ -2870,8 +2872,8 @@ button.btn { border-radius: 0; }
     const liked = (m) => likes.some((t) => m.text.includes(t));
     const T = { k: r.target, p: r.protein, c: r.carbs, f: r.fat, keto: r.keto };
     let treatNote = "";
-    if (treat && !pools[treat].length) { slots = slots.filter((x) => x !== "Treat"); treatNote = `No ${treat === "h" ? "healthy" : "indulgent"} treats fit your diet and avoid list, so the week has none.`; }
-    return { slots, pools, liked, want, appealOf, appealScore, T, score: makeScorer(T), likes, relaxed, course, treatNote, out: s.out, start: s.start, treatPools: { h: library.filter((m) => m.type === "h" && allowed(m, diets, avoid)), i: library.filter((m) => m.type === "i" && allowed(m, diets, avoid)) }, costco, mostly, packs: costco && s.packs, cap: s.cap > 0 ? s.cap * (house.n + house.others.length) : Infinity, house, library, fcap, sauce: s.sauce, diets, avoid, gw, mix: !!s.mix };
+    if (treat && !pools[treat].length) { slots = slots.filter((x) => x !== slotOfTreat(treat)); treatNote = `No ${TREAT_NAME[treat]}s fit your diet and avoid list, so the week has none.`; }
+    return { slots, pools, liked, want, appealOf, appealScore, T, score: makeScorer(T), likes, relaxed, course, treatNote, out: s.out, start: s.start, treatPools: { h: library.filter((m) => m.type === "h" && flavorOf(m) === "sweet" && allowed(m, diets, avoid)), i: library.filter((m) => m.type === "i" && flavorOf(m) === "sweet" && allowed(m, diets, avoid)), j: library.filter((m) => m.type === "j" && allowed(m, diets, avoid)) }, costco, mostly, packs: costco && s.packs, cap: s.cap > 0 ? s.cap * (house.n + house.others.length) : Infinity, house, library, fcap, sauce: s.sauce, diets, avoid, gw, mix: !!s.mix };
   }
 
   function buildWeek(ctx, seed) {
@@ -2891,7 +2893,7 @@ button.btn { border-radius: 0; }
     const perDay = {};
     slots.forEach((sl) => (perDay[SLOT_TYPE[sl]] = (perDay[SLOT_TYPE[sl]] || 0) + 1));
     const cap = Object.fromEntries(Object.keys(perDay).map((t) => [t, ctx.course[t].variety * perDay[t]]));
-    const chosen = { b: new Set(), l: new Set(), d: new Set(), s: new Set(), h: new Set(), i: new Set(), o: new Set() };
+    const chosen = { b: new Set(), l: new Set(), d: new Set(), s: new Set(), h: new Set(), i: new Set(), j: new Set(), o: new Set() };
     // A dish served as lunch isn't also served as dinner this week, so lunch and dinner always differ
     const servedAs = {};
     // Big-pack planning: what's already open (or in the pantry) is free to use; opening a new pack costs its price
@@ -3224,7 +3226,7 @@ button.btn { border-radius: 0; }
   let leftovers = null;
   const skipped = {};
 
-  function inputsKey(s, r) { return JSON.stringify([r.target, r.protein, r.carbs, r.fat, r.keto, s.diets, s.avoid, s.likes, s.meals, s.snacks, s.treat, s.flav, s.out, s.start, s.course, s.store, s.packs, s.freezer, [...nostock], s.premade, s.styles, s.mix, s.cap, s.prots, s.hh]); }
+  function inputsKey(s, r) { return JSON.stringify([r.target, r.protein, r.carbs, r.fat, r.keto, s.diets, s.avoid, s.likes, s.meals, s.snacks, s.treat, s.out, s.start, s.course, s.store, s.packs, s.freezer, [...nostock], s.premade, s.styles, s.mix, s.cap, s.prots, s.hh]); }
 
   function refreshMenu(s, r, force) {
     ctx = context(s, r);
@@ -3598,9 +3600,10 @@ button.btn { border-radius: 0; }
     (d.sauce ||= {})[si] = { id: d.ids[si], k: next };
     afterDayChange();
   }
-  function addTreat(di, kind, flav = "sweet") {
-    const d = week.days[di], pool = ctx.treatPools[kind].filter((m) => flavorOf(m) === flav);
-    if (!pool.length) { alertNote(`No ${flav} ${kind === "h" ? "healthy" : "indulgent"} treats fit your diet and avoid list.`); return; }
+  // kind: "h" good treat, "i" cheat treat (both sweet), "j" dirty snack (salty). Counted in the day; the rest of the day shrinks to fit, and later days balance anything over.
+  function addTreat(di, kind) {
+    const d = week.days[di], pool = ctx.treatPools[kind] || [];
+    if (!pool.length) { alertNote(`No ${TREAT_NAME[kind] || "treat"}s fit your diet and avoid list.`); return; }
     const t = dayT(d), used = new Set(week.days.flatMap((x) => x.ids));
     let best = null;
     for (const m of pool) {
@@ -3609,7 +3612,7 @@ button.btn { border-radius: 0; }
       const sc = o.s + (d.ids.includes(m.id) ? 1 : used.has(m.id) ? 0.01 : 0) + Math.random() * 0.002;
       if (!best || sc < best.sc) best = { m, ms: o.ms, sc };
     }
-    d.slots = [...slotsOf(d), "Treat"];
+    d.slots = [...slotsOf(d), slotOfTreat(kind)];
     d.ids.push(best.m.id);
     d.ms = best.ms;
     (d.addedTreats ||= []).push(d.ids.length - 1);
@@ -3919,7 +3922,7 @@ button.btn { border-radius: 0; }
     const sum = {};
     all.forEach((d, di) => d.meals.forEach((x, i) => {
       const sl = slotsOf(week.days[di])[i] || "";
-      const k = sl === "Snack" || sl === "Extra meal" ? "Snacks" : x.m.out ? "Dinner" : sl;
+      const k = sl === "Snack" || sl === "Extra meal" ? "Snacks" : sl === "Dirty snack" ? "Treat" : x.m.out ? "Dinner" : sl;
       sum[k] = (sum[k] || 0) + x.n[0] / 7;
     }));
     const tot = Object.values(sum).reduce((a, b) => a + b, 0) || 1;
@@ -3952,10 +3955,10 @@ button.btn { border-radius: 0; }
     $("menuSummary").textContent = `Daily average ${fmt(avg[0])} kcal · ${fmt(avg[1])} g protein · ${fmt(carbOf(avg))} g ${T.keto ? "net carbs" : "carbs"} · ${fmt(avg[3])} g fat. Target ${fmt(T.k)} kcal.`;
 
     const offDays = all.filter((d, di) => !week.days[di].passed && !(week.days[di].log && Object.keys(week.days[di].log).length) && Math.abs(d.tot[0] - dayT(week.days[di]).k) / dayT(week.days[di]).k > 0.1).length;
-    const thin = Object.entries(ctx.pools).filter(([t, p]) => ctx.slots.some((sl) => SLOT_TYPE[sl] === t) && p.length < 4 && ctx.course[t].variety >= 7).map(([t]) => ({ b: "breakfast", l: "lunch", d: "dinner", s: "snack", h: "treat", i: "treat" })[t]);
+    const thin = Object.entries(ctx.pools).filter(([t, p]) => ctx.slots.some((sl) => SLOT_TYPE[sl] === t) && p.length < 4 && ctx.course[t].variety >= 7).map(([t]) => ({ b: "breakfast", l: "lunch", d: "dinner", s: "snack", h: "treat", i: "treat", j: "dirty snack" })[t]);
     const notes = [];
     if (thin.length) notes.push(`Only a few ${thin.join(", ")} recipes fit your filters, so some meals repeat.`);
-    const CN = { b: "breakfast", l: "lunch", d: "dinner", s: "snack", h: "treat", i: "treat" };
+    const CN = { b: "breakfast", l: "lunch", d: "dinner", s: "snack", h: "treat", i: "treat", j: "dirty snack" };
     if (ctx.treatNote) notes.push(ctx.treatNote);
     if (ctx.relaxed.length) notes.push(`No ${ctx.relaxed.map((t) => CN[t]).join(" or ")} recipes fit your effort setting and diet together, so the quickest ones that fit your diet are used.`);
     if (offDays) notes.push(`${offDays} day${offDays > 1 ? "s are" : " is"} more than 10% off your calorie target. Try Shuffle or a different number of meals.`);
@@ -4464,6 +4467,7 @@ button.btn { border-radius: 0; }
   function restoreInputs() {
     const v = ls.get("ad-inputs");
     if (!v) return;
+    if (v.flav === "salty" && v.radios?.treat === "i") v.radios.treat = "j";
     dailyFlav = v.flav === "salty" ? "salty" : "sweet";
     people = Array.isArray(v.people) ? v.people : [];
     prots = v.prots && typeof v.prots === "object" ? v.prots : {};
