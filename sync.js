@@ -2,6 +2,7 @@
 // The site never needs it: everything still lives in localStorage, and this file only copies the
 // plan keys to users/{uid} in Firestore and back. It loads as a plain script in <head> so it can see
 // every localStorage write the planner makes, and it pulls in the Firebase SDK only on the live site.
+// When this file changes, bump the ?v= on its <script> tag in index.html and in sw.js SHELL so browsers drop old copies.
 (function () {
   "use strict";
   // Firebase web config is public by design (security comes from Auth + the Firestore rules in firestore.rules)
