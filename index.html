@@ -4509,13 +4509,18 @@ button.btn { border-radius: 0; }
     const nDays = week.days.length || 7, two = nDays > 7;
     const nextW = two ? "your next plan" : "next week", endW = two ? "the plan's end" : "week's end";
     const split = [shopNF || topUp > 0.5 ? `${money(shop - shopNF - topUp)} Costco${two ? " on day 1" : ""}` : "", shopNF ? `${money(shopNF)} other stores` : "", topUp > 0.5 ? `${money(topUp)} fresh top-up on day 8` : ""].filter(Boolean).join(" · ");
-    const kit = rows.filter((r) => r.packs && isStaple(r.k)).reduce((a, r) => a + r.cost, 0);
+    // Staples: first-time setup, new staples for new recipes, or restocks of ones that ran short (the engine's shopStats split)
+    const st = shopStats() || {}, first = st.firstShop !== false;
+    const kit = st.kit ?? rows.filter((r) => r.packs && isStaple(r.k)).reduce((a, r) => a + r.cost, 0), restock = st.restock || 0, food = shop - kit - restock;
+    const r10 = (v) => "$" + Math.max(10, Math.round(v / 10) * 10);
+    const next = st.nextShop && st.nextShop[1] > 0 ? (two ? [st.nextShop[0] * 2, st.nextShop[1] * 2] : st.nextShop) : null;
+    const stapleLine = [kit > 0.5 ? `${money(kit)} ${first ? "pantry setup, bought once" : "new pantry staples"}` : "", restock > 0.5 ? `${money(restock)} restocking staples` : ""].filter(Boolean);
 
     $("cost").hidden = false;
     $("cost").innerHTML = `
       <div class="lead"><span>What you eat costs</span><b>${money(eaten / nDays)}<small> a day</small></b><span>${money(eaten)} of food over ${nDays} days${shop > eaten * 1.25 && carryVal > 1 ? `. The shop costs more because Costco packs are big: ${money(carryVal)} of it carries into ${nextW}.` : "."}</span></div>
-      <div><span>${two ? "Your shop, both trips, in-store" : "This week's shop, in-store"}</span><b>${money(shop)}</b><span>${Number.isFinite(ctx.cap) && shop - kit > ctx.cap + 0.5 ? `<em class="over">Closest we can get ${two ? "for two weeks" : "this week"} is ${money(shop - kit)}, over your $${Math.round(ctx.cap)} cap.</em>` : ""}${kit > 0.5 ? `${money(kit)} pantry setup, bought once · ${money(shop - kit)} ${two ? "food for both weeks" : "this week's food"}<br>` : ""}${split || `${money(shop * INSTORE)} on Costco Same-Day`}</span></div>
-      <div><span>Carries over to ${nextW}</span><b>${money(carryVal)}</b><span>${wasteVal > 0.5 ? money(wasteVal) + " of fresh food won't keep" : "Mostly pantry and freezer"}</span></div>
+      <div><span>${two ? "Your shop, both trips, in-store" : "This week's shop, in-store"}</span><b>${money(shop)}</b><span>${Number.isFinite(ctx.cap) && food > ctx.cap + 0.5 ? `<em class="over">Closest we can get ${two ? "for two weeks" : "this week"} is ${money(food)}, over your $${Math.round(ctx.cap)} cap.</em>` : ""}${stapleLine.length ? `${stapleLine.join(" · ")} · ${money(food)} ${two ? "food for both weeks" : "this week's food"}<br>` : ""}${split || `${money(shop * INSTORE)} on Costco Same-Day`}</span></div>
+      <div><span>Carries over to ${nextW}</span><b>${money(carryVal)}</b><span>${wasteVal > 0.5 ? money(wasteVal) + " of fresh food won't keep" : "Mostly pantry and freezer"}${next ? `<br>So ${two ? "the next two weeks' shop" : "next week's shop"} is usually about ${r10(next[0])} to ${r10(next[1])}` : ""}</span></div>
       <div><span>Freezer, busiest day</span><b>${(fzPeak / 1000).toFixed(1)} kg</b><span>${fcap === Infinity ? `No limit set · ${(fzLeft / 1000).toFixed(1)} kg left at ${endW}` : fcap === 0 ? "No freezer, so no frozen packs" : `of ${fcap / 1000} kg${fzPeak > fcap ? ". Over your space: try Shuffle" : ""} · ${(fzLeft / 1000).toFixed(1)} kg left at ${endW}`}</span></div>`;
     $("groceryNote").textContent = ctx.mostly
       ? `Costco packs at warehouse prices, plus No Frills for what Costco doesn't carry or where a Costco pack would mostly go to waste${NF_DATE ? ` (No Frills prices from ${NF_DATE})` : ""}. Tick items off as you shop.`
@@ -4529,13 +4534,13 @@ button.btn { border-radius: 0; }
     [KIT, ...Object.values(S), OTHER, TOP].filter((sec) => bySec[sec]).forEach((sec) => {
       const div = document.createElement("div");
       div.className = "gsec" + (sec === KIT ? " kit" : sec === OTHER ? " kit other" : sec === TOP ? " kit topup" : "");
-      div.innerHTML = `<h3>${sec}</h3>${sec === KIT ? `<p class="note">Staples that keep for months. Buy them once and they're in your pantry for next week.</p>` : sec === OTHER ? `<p class="note">Not at Costco, or a smaller size beats the Costco pack. A separate stop.</p>` : sec === TOP ? `<p class="note">Fresh food for days 8 to 14, bought around day 8 so it's still good when you eat it. Any grocery store works.</p>` : ""}` + bySec[sec].sort((a, b) => b.cost - a.cost || a.prod.localeCompare(b.prod)).map((r) => {
+      div.innerHTML = `<h3>${sec === KIT && !first ? "Pantry staples" : sec}</h3>${sec === KIT ? `<p class="note">${first ? "Staples that keep for months. Buy them once and they're in your pantry for next week." : restock > 0.5 ? "Staples that keep for months: new ones this week's recipes need, and restocks of ones that ran short." : "Staples that keep for months, new for this week's recipes. They stay in your pantry after."}</p>` : sec === OTHER ? `<p class="note">Not at Costco, or a smaller size beats the Costco pack. A separate stop.</p>` : sec === TOP ? `<p class="note">Fresh food for days 8 to 14, bought around day 8 so it's still good when you eat it. Any grocery store works.</p>` : ""}` + bySec[sec].sort((a, b) => b.cost - a.cost || a.prod.localeCompare(b.prod)).map((r) => {
         const u = unit(r.k);
         const need = `uses ${mass(r.used, u)}${dry(r.k)}`;
         const buy = r.packs ? `${r.packs > 1 ? r.packs + " packs · " : ""}${need}${r.inPantry ? `, ${mass(r.inPantry, u)} from your pantry` : ""}` : `<span class="pantry">In your pantry</span> · ${need}`;
         const alt = r.nf && week.alt?.[r.k] ? `<span class="why">Smaller size beats the Costco pack (${COSTCO[r.k][0]}, ${money(week.alt[r.k].cost)}), which would leave ${mass(week.alt[r.k].left, u)}${dry(r.k)} over.</span>` : r.nf ? `<span class="why">Not at Costco.</span>` : r.other ? `<span class="why">Not at Costco${!r.packs ? "" : r.est ? ". Price is a guess, not a store scan" : `. Instacart price, ${ELSE_DATE.replace(/, \d{4}$/, "")}`}.</span>` : "";
         return gRow(r.kk, checked.has(r.kk) || !r.packs, `<span class="row2"><span>${r.nf ? `<span class="store-nf">No Frills</span> ` : ""}${r.prod}</span><span class="price">${r.packs ? (r.est ? "~" : "") + money(r.cost) : ""}</span></span>`,
-          `<small>${buy}<span class="keep ${r.keep}" title="${KEEP[r.keep][1]}">${KEEP[r.keep][0]}</span>${alt}</small>`,
+          `<small>${buy}<span class="keep ${r.keep}" title="${KEEP[r.keep][1]}">${KEEP[r.keep][0]}</span>${alt}${r.packs && r.inPantry && !r.top && isStaple(r.k) ? `<span class="why">Restock: what's in your pantry won't last the ${two ? "two weeks" : "week"}.</span>` : ""}</small>`,
           r.top ? [] : [r.packs ? `<button type="button" data-have="${r.k}">Already have it</button>` : `<button type="button" data-unhave="${r.k}">Don't have it</button>`,
            r.nf || r.other ? "" : `<button type="button" data-nostock="${r.k}">Not at my Costco</button>`],
           `${r.packs > 1 ? r.packs + " × " : ""}${r.prod}${r.nf ? " (No Frills)" : r.other ? " (other store)" : ""}${r.packs ? ", " + (r.est ? "about " : "") + money(r.cost) : ""}`, shopLink(r.top || r.nf || r.other ? "nf" : "costco", r.prod));
