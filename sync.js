@@ -89,7 +89,8 @@
     var top = document.querySelector(".topbar");
     if (!top || box) return;
     box = el("div", "acct"); box.id = "acct";
-    top.insertBefore(box, document.getElementById("install"));
+    var inst = document.getElementById("install");
+    if (inst) inst.parentNode.insertBefore(box, inst); else top.appendChild(box);
     ui(meta().uid ? "busy" : "out", {});
     var foot = document.querySelector("footer.fine");
     if (foot) {
