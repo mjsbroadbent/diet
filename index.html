@@ -61,7 +61,7 @@ input[type="number"], input[type="text"], select {
   border: 1px solid var(--line); border-radius: 6px; padding: 9px 10px; width: 100%; min-width: 0;
   font-variant-numeric: tabular-nums;
 }
-input:focus-visible, select:focus-visible, button:focus-visible, .seg label:focus-within, .chip:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+input:focus-visible, select:focus-visible, button:focus-visible, .seg label:has(input:focus-visible), .chip:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
 .unit-in { position: relative; }
 .unit-in span { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 13px; pointer-events: none; }
 .unit-in input { padding-right: 34px; }
@@ -326,7 +326,7 @@ legend { color: var(--red); font-weight: 900; font-family: var(--slant); font-st
 .chip span { border: 2px solid var(--ink); font-weight: 700; }
 .chip input:checked + span { background: var(--blue); border-color: var(--ink); color: var(--surface); }
 input[type="number"], input[type="text"], select { border: 2px solid var(--line); border-radius: 10px; }
-input:focus-visible, select:focus-visible, button:focus-visible, .seg label:focus-within, .chip:focus-within { outline: 3px solid var(--blue); }
+input:focus-visible, select:focus-visible, button:focus-visible, .seg label:has(input:focus-visible), .chip:has(input:focus-visible) { outline: 3px solid var(--blue); }
 
 .label { font-family: var(--label); border: 3px solid var(--ink); box-shadow: var(--shadow); background: var(--surface); }
 .label h2 { font-family: var(--label); }
