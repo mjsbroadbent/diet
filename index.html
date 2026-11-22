@@ -1037,7 +1037,7 @@ button.btn { border-radius: 0; }
             <p class="hint" id="outHint"></p>
           </div>
           <div class="tune-sec">
-            <label class="check"><input type="checkbox" id="sauce">
+            <label class="check"><input type="checkbox" id="sauce" checked>
               <span>Sauce it up<small>Adds a spoonful of barbecue, teriyaki, sweet chili, sriracha, hot sauce, tzatziki, Dijon, pesto or salsa to meals it suits, for variety with no extra work. Calories included.</small></span></label>
           </div>
           <div class="tune-sec" id="freezerRow"><h3 class="tune-h">Freezer space for this shop</h3>
@@ -4430,6 +4430,7 @@ button.btn { border-radius: 0; }
     v.packs = $("packs").checked;
     v.premade = $("premade").checked;
     v.sauce = $("sauce").checked;
+    v.sauceSet = sauceSet;
     v.styles = read().styles;
     v.mix = $("mix").checked;
     v.flav = dailyFlav;
@@ -4440,6 +4441,9 @@ button.btn { border-radius: 0; }
     v.people = people;
     ls.set("ad-inputs", v);
   }
+  // Sauce it up is on by default. A saved plan keeps it off only if the person switched it off themselves
+  let sauceSet = false;
+  document.addEventListener("input", (e) => { if (e.target.id === "sauce") sauceSet = true; }, true);
   function restoreInputs() {
     const v = ls.get("ad-inputs");
     if (!v) return;
@@ -4465,7 +4469,8 @@ button.btn { border-radius: 0; }
     (v.diets || []).forEach((d) => { const el = document.querySelector(`input[name="diet"][value="${d}"]`); if (el) el.checked = true; });
     if (v.packs != null) $("packs").checked = v.packs;
     if (v.premade != null) $("premade").checked = v.premade;
-    if (v.sauce != null) $("sauce").checked = v.sauce;
+    sauceSet = !!v.sauceSet;
+    if (v.sauce != null && (v.sauceSet || v.sauce)) $("sauce").checked = v.sauce;
     if (v.styles) document.querySelectorAll('input[name="style"]').forEach((el) => (el.checked = v.styles.includes(el.value)));
     if (v.mix != null) $("mix").checked = v.mix;
     (v.out || []).forEach((d) => { const el = $("out-" + d); if (el) el.checked = true; });
