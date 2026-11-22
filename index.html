@@ -1211,6 +1211,30 @@ button.btn { border-radius: 0; }
     impnug:      ["Impossible nuggets (frozen)", 230, 14, 18, 11, 3, S.F, "soy gluten", { each: 18, full: true, unit: ["nugget", "nuggets"] }],
     cocoyog:     ["Dairy-free protein yogurt", 105, 8.5, 6, 5.5, 1, S.D, ""],
     oatmilk:     ["Oat milk", 50, 1, 7, 1.5, 0.8, S.D, "oats", { ml: 1 }],
+    // Long-life dressings (wave 2, Nov 22 2026): sauces, seasonings, toppings and frozen sides from Costco Same-Day, label values rounded
+    oyster:      ["Oyster sauce", 105, 2, 24, 0.2, 0, S.N, "shellfish gluten", { tbsp: 18 }],
+    mayo:        ["Mayonnaise", 714, 1, 0.6, 79, 0, S.N, "egg", { tbsp: 14 }],
+    ranch:       ["Ranch dressing", 470, 1, 6, 48, 0, S.N, "dairy egg", { tbsp: 15 }],
+    aioli:       ["Jalapeño lime aioli", 520, 1, 5, 54, 0, S.D, "egg", { tbsp: 15 }],
+    balsglaze:   ["Balsamic glaze", 250, 0.5, 58, 0, 0, S.N, "", { tbsp: 20 }],
+    chilicrunch: ["Chili crunch", 620, 4, 12, 60, 3, S.N, "soy", { tbsp: 13 }],
+    alfredo:     ["Alfredo sauce", 165, 2.5, 5, 15, 0, S.D, "dairy"],
+    queso:       ["Cheddar queso dip", 210, 6, 8, 17, 0, S.D, "dairy", { tbsp: 16 }],
+    montreal:    ["Montreal steak spice", 120, 4, 22, 3, 8, S.N, "", { tbsp: 8 }],
+    montchick:   ["Montreal chicken seasoning", 140, 4, 25, 3, 6, S.N, "", { tbsp: 8 }],
+    tacoseas:    ["Taco seasoning", 300, 8, 55, 6, 12, S.N, "", { tbsp: 8 }],
+    garlicparm:  ["Garlic parmesan seasoning", 250, 8, 35, 8, 3, S.N, "dairy", { tbsp: 8 }],
+    everything:  ["Everything bagel seasoning", 420, 15, 25, 32, 10, S.N, "sesame", { tbsp: 9 }],
+    tajin:       ["Tajín chili lime seasoning", 30, 0, 7, 0, 0, S.N, "", { tbsp: 9 }],
+    nosalt:      ["No-salt herb seasoning", 270, 10, 50, 4, 15, S.N, "", { tbsp: 7 }],
+    italian:     ["Italian seasoning", 270, 10, 60, 5, 30, S.N, "", { tbsp: 3 }],
+    smpaprika:   ["Smoked paprika", 280, 14, 54, 13, 35, S.N, "", { tbsp: 7 }],
+    baconbits:   ["Crumbled bacon", 530, 33, 1, 43, 0, S.D, "pork", { tbsp: 7 }],
+    frenchonion: ["Crispy fried onions", 600, 5, 40, 45, 3, S.N, "gluten", { tbsp: 4 }],
+    olives:      ["Kalamata olives", 230, 1.5, 6, 22, 3, S.D, "", { tbsp: 9 }],
+    artichoke:   ["Marinated artichoke hearts", 120, 2, 7, 9, 4, S.D, ""],
+    sundried:    ["Sun-dried tomatoes in oil", 210, 4, 15, 14, 5, S.D, "", { tbsp: 10 }],
+    normandy:    ["Normandy vegetable blend (frozen)", 30, 2, 5, 0.3, 2.5, S.F, ""],
   };
 
   // ---------- Costco ----------
@@ -1405,6 +1429,29 @@ button.btn { border-radius: 0; }
     impnug: ["Impossible nuggets, 1 kg", 1000, 18.69, "p"],
     cocoyog: ["cocojune dairy-free protein yogurt, 2 × 476 g", 952, 18.14, "r"],
     oatmilk: ["Kirkland Signature oat beverage, 6 × 946 ml", 5676, 14.29, "p"],
+    oyster: ["Lee Kum Kee premium oyster sauce, 907 g", 907, 10.99, "p"],
+    mayo: ["Hellmann's Real mayonnaise, 1.8 L", 1700, 12.09, "p"],
+    ranch: ["Kraft Rancher's Choice dressing, 3 × 710 ml", 2130, 12.64, "p"],
+    aioli: ["Culinary Treasures jalapeño lime aioli, 2 × 750 ml", 1400, 10.99, "r"],
+    balsglaze: ["Nonna Pia's classic balsamic glaze, 250 ml", 330, 10.44, "p"],
+    chilicrunch: ["Chili crunch, 454 g", 454, 25.29, "p"],
+    alfredo: ["Culinary Treasures alfredo sauce, 3 × 650 ml", 1950, 14.29, "r"],
+    queso: ["La Terra Fina mild cheddar queso dip, 879 g", 879, 10.99, "r"],
+    montreal: ["Club House La Grille Montreal steak spice, 825 g", 825, 10.44, "p"],
+    montchick: ["Club House La Grille Montreal chicken seasoning, 675 g", 675, 8.79, "p"],
+    tacoseas: ["Club House taco seasoning, 735 g", 735, 6.59, "p"],
+    garlicparm: ["Kinder's garlic parmesan seasoning, 340 g", 340, 10.99, "p"],
+    everything: ["Kirkland Signature everything bagel seasoning, 505 g", 505, 10.44, "p"],
+    tajin: ["Tajín Clásico seasoning, 400 g", 400, 9.89, "p"],
+    nosalt: ["Kirkland Signature organic no-salt seasoning, 411 g", 411, 13.19, "p"],
+    italian: ["Altius Italian seasoning, 520 g", 520, 9.67, "p"],
+    smpaprika: ["Club House smoked paprika, 545 g", 545, 10.77, "p"],
+    baconbits: ["Kirkland Signature crumbled bacon, 567 g", 567, 10.99, "r"],
+    frenchonion: ["French's crispy fried onions, 680 g", 680, 9.89, "p"],
+    olives: ["Elara pitted Kalamata olives, 2 × 1 L (about 1.1 kg drained)", 1100, 16.49, "r"],
+    artichoke: ["Artichoke hearts in oil, 2 × 1 L (about 1.2 kg drained)", 1200, 16.49, "r"],
+    sundried: ["Neri sun-dried tomatoes, 1 L (about 600 g drained)", 600, 9.67, "r"],
+    normandy: ["Organic Normandy vegetable blend, 2.5 kg", 2500, 20.89, "p"],
   };
   // Library items Costco doesn't carry, and what replaces them (grams × factor)
   const SUB = { blackbeans: ["chickpeas", 1], lentils: ["chickpeas", 1], tempeh: ["tofu", 1.3], corntort: ["tortilla", 0.75], ricenoodle: ["riceramen", 1], ricecake: ["bread", 1.5], pasta: ["spaghetti", 1], tamari: ["soysauce", 1], coco: ["cocofull", 0.36], darkchoc: ["darkbites", 1.25] };
@@ -1414,11 +1461,18 @@ button.btn { border-radius: 0; }
     pb: 1000, honey: 750, salsa: 1050, marinara: 1250, icebar: 70,
     bbq: 480, hotsauce: 740, tzatziki: 454, saladkit: 340, lasagna: 1500, pizza: 555, yakisoba: 255, yakitori: 255, ctsoup: 830, lentsoup: 398, pita: 390, emuffin: 342, tortelloni: 500, shake: 340, protbar: 50, beefstick: 32, cheesestr: 21, bwrap: 128,
     ravioli: 1250, gnocchi: 480, butterch: 650, kalekit: 397, bcsoup: 830, bagel: 660, tunapoke: 125, chparm: 150, sfrice: 300, mush: 172, bsand: 137, ewwrap: 165, chimi: 142,
-    ham: 500, cchicken: 255, texmex: 625, chickpasta: 227, broth: 946, buns: 480, ketotort: 326, ycup: 100, nutbar: 40, rxbar: 52, beyond: 452, cocoyog: 476, oatmilk: 946 };
+    ham: 500, cchicken: 255, texmex: 625, chickpasta: 227, broth: 946, buns: 480, ketotort: 326, ycup: 100, nutbar: 40, rxbar: 52, beyond: 452, cocoyog: 476, oatmilk: 946,
+    ranch: 710, aioli: 750, alfredo: 650, olives: 550, artichoke: 600 };
   // Freezer: frozen-aisle packs always need it; fresh meat, bread and the like go in to keep past a few days
   const FROZEN = new Set(["berries", "broccoli", "edamame", "cauli", "stirfry", "corn", "shrimp", "strawberries", "icecream", "icebar",
     "frittata", "bwrap", "lasagna", "pizza", "yakisoba", "yakitori", "gyoza", "chstrips", "salmonburger", "meatballs", "mango",
-    "pinksalmon", "haddock", "tunapoke", "wedges", "peas", "mixveg", "roastveg", "chparm", "chimi", "taquito", "mandu", "sfrice", "bchstrips", "dumpling", "impnug"]);
+    "pinksalmon", "haddock", "tunapoke", "wedges", "peas", "mixveg", "roastveg", "chparm", "chimi", "taquito", "mandu", "sfrice", "bchstrips", "dumpling", "impnug", "normandy"]);
+  // Staples for the pantry builder: long or indefinite shelf life (pantry, sealed jars, dry goods, powders and frozen basics)
+  const STAPLE = new Set(("whey pea shake protbar rxbar nutbar beefstick coco cocofull blackbeans chickpeas lentils tuna cchicken cantom broth " +
+    "oats brice wrice quinoa pasta spaghetti shortpasta chickpasta riceramen ricenoodle ricecake oil pb ab almonds walnuts chia pepitas honey maple " +
+    "salsa tamari soysauce pesto marinara bbq teriyaki sriracha hotsauce sweetchili dijon butterch satay oyster mayo ranch balsglaze chilicrunch " +
+    "montreal montchick tacoseas garlicparm everything tajin nosalt italian smpaprika frenchonion " +
+    "berries mango edamame cauli stirfry corn peas mixveg roastveg normandy broccoli").split(" "));
   const FREEZER = { all: Infinity, std: 10000, low: 5000, none: 0 };
   // No Frills (Vancouver, in-store prices from nofrills.ca): key: [product, size in purchase units, price]
   const NOFRILLS = /*NF*/{
@@ -1993,6 +2047,22 @@ button.btn { border-radius: 0; }
     caprese: ["Caprese", [["mozz",60],["tomato",60],["pesto",12],["spinach",15]], "Layer mozzarella, tomato and spinach with pesto.", 3, ["ciabatta", "bread", "bagel"]],
     eggcheese: ["Fried egg and cheddar", [["egg",100],["cheddar",20],["spinach",15]], "Fry 2 eggs and stack with cheddar and spinach.", 6, ["emuffin", "bagel", "buns", "bread"]],
   });
+  // Wave 2 parts: long-life sides from the pantry and freezer, so one fresh protein can rotate through them (Nov 22 2026)
+  Object.assign(PARTS.side, {
+    ricepeas: ["rice and peas", [["wrice",180],["peas",100]], "Cook the rice and stir in frozen peas for the last 3 minutes.", 18],
+    quinnorm: ["quinoa and Normandy vegetables", [["quinoa",150],["normandy",180],["oil",5]], "Cook the quinoa, and steam the frozen vegetable blend with a little oil.", 18],
+    roastveg: ["fire-roasted root vegetables", [["roastveg",250]], "Roast the frozen root vegetables at 220°C / 425°F for 20 minutes.", 22],
+    ricemix: ["rice and mixed vegetables", [["wrice",180],["mixveg",130],["oil",4]], "Cook the rice and steam the frozen mixed vegetables.", 18],
+    gnocnorm: ["gnocchi and Normandy vegetables", [["gnocchi",200],["normandy",150]], "Pan-fry the gnocchi until golden and steam the vegetable blend.", 12],
+    potnorm: ["little potatoes and Normandy vegetables", [["littlepot",220],["normandy",150],["oil",6]], "Roast halved little potatoes for 25 minutes and steam the vegetable blend.", 28],
+  });
+  Object.assign(PARTS.base, {
+    veg: ["roast vegetable bowl", [["roastveg",200],["normandy",120]], "Roast the frozen root vegetables 20 minutes and steam the vegetable blend.", 22],
+  });
+  // The roast vegetable bowl suits whatever suits the cauliflower rice bowl
+  Object.values(PARTS.topping).forEach((t) => t[4].includes("cauli") && t[4].push("veg"));
+  // Sides that don't suit Asian-style proteins
+  ["bulgogi", "tofu"].forEach((k) => (PARTS.protein[k][4] ||= []).push("gnocnorm", "potnorm", "roastveg"));
   const COMBOS = (() => {
     const out = [];
     const add = (style, anchor, name, items, how, min) => ["l", "d"].forEach((t) => {
@@ -2530,7 +2600,7 @@ button.btn { border-radius: 0; }
       cauli: 110, greenbeans: 110, mushroom: 70, stirfry: 100, corn: 150, peas: 140, mixveg: 135, roastveg: 130, brussels: 90, caulifl: 100,
       squash: 140, marinara: 250, butterch: 250, icecream: 135, granola: 110, kimchi: 150, broth: 240, ctsoup: 240, lentsoup: 240, bcsoup: 240,
       grsalad: 150, caesar: 100, quinsal: 170, penne: 200, udon: 200, gnocchi: 160, tortelloni: 120, chstrips: 140, cchicken: 140, chipchick: 140,
-      bulgogi: 150 },
+      bulgogi: 150, alfredo: 250, artichoke: 170, normandy: 135 },
     h: { spinach: 30, greens: 30, almonds: 28, walnuts: 28, chips: 28, pretzel: 28, pitachips: 28 },
     n: { chicken: [200, "breast", "breasts"], thigh: [100, "thigh", "thighs"], turkeyslice: [15, "slice", "slices"], steak: [100, "palm-sized piece", "palm-sized pieces"],
       pork: [100, "palm-sized piece", "palm-sized pieces"], salmon: [150, "fillet", "fillets"], cod: [150, "fillet", "fillets"], tilapia: [120, "fillet", "fillets"],
@@ -2758,16 +2828,40 @@ button.btn { border-radius: 0; }
   }
   // "Sauce it up": one spoonful of something on a meal for variety, counted in the day's calories.
   // goes: ingredients it suits. Skipped on meals that already have a sauce, curries, soups and premade meals.
+  // salad: also suits salads. kind: "sauce" (default), "rub" (a dry seasoning) or "top" (a topping), so one anchor can be dressed many ways.
   const SAUCE = {
     bbq:        { g: 30, goes: ["chicken", "thigh", "rchicken", "chstrips", "pork", "beef", "steak", "salmon", "salmonburger", "meatballs", "potato", "sweetpot", "tofu", "drumstick", "porkchop", "bchstrips", "littlepot"] },
     teriyaki:   { g: 30, goes: ["wrice", "brice", "stirfry", "chicken", "thigh", "salmon", "tofu", "shrimp", "edamame", "steak"], no: ["soysauce", "tamari"] },
-    sweetchili: { g: 25, goes: ["shrimp", "chicken", "chstrips", "tofu", "salmon", "gyoza", "wrice", "stirfry", "salmonburger", "tilapia", "pinksalmon", "mandu"] },
+    sweetchili: { g: 25, salad: true, goes: ["shrimp", "chicken", "chstrips", "tofu", "salmon", "gyoza", "wrice", "stirfry", "salmonburger", "tilapia", "pinksalmon", "mandu"] },
     sriracha:   { g: 10, goes: ["wrice", "brice", "egg", "eggwhite", "tofu", "shrimp", "stirfry", "tuna", "smsalmon", "gyoza", "yakisoba", "yakitori", "avocado", "sfrice", "mandu", "bulgogi"] },
-    hotsauce:   { g: 10, goes: ["chicken", "chstrips", "egg", "eggwhite", "potato", "cauli", "thigh", "rchicken", "eggbites", "bwrap", "turkey", "tsausage", "bsand", "ewwrap", "wedges", "bchstrips", "drumstick", "cchicken"] },
-    tzatziki:   { g: 45, goes: ["pita", "naan", "chicken", "chstrips", "salmon", "potato", "cucumber", "chickpeas", "rchicken", "meatballs", "quinoa", "pinksalmon", "tilapia"] },
-    dijon:      { g: 10, goes: ["salmon", "pork", "chicken", "steak", "potato", "greenbeans", "turkeyslice", "smsalmon", "cod", "thigh", "tilapia", "pinksalmon", "porkchop", "ham", "sausage"] },
-    pesto:      { g: 15, goes: ["spaghetti", "pasta", "chicken", "salmon", "tortelloni", "egg", "zucchini", "potato", "quinoa", "cod", "mozz"] },
+    hotsauce:   { g: 10, salad: true, goes: ["chicken", "chstrips", "egg", "eggwhite", "potato", "cauli", "thigh", "rchicken", "eggbites", "bwrap", "turkey", "tsausage", "bsand", "ewwrap", "wedges", "bchstrips", "drumstick", "cchicken"] },
+    tzatziki:   { g: 45, salad: true, goes: ["pita", "naan", "chicken", "chstrips", "salmon", "potato", "cucumber", "chickpeas", "rchicken", "meatballs", "quinoa", "pinksalmon", "tilapia"] },
+    dijon:      { g: 10, salad: true, goes: ["salmon", "pork", "chicken", "steak", "potato", "greenbeans", "turkeyslice", "smsalmon", "cod", "thigh", "tilapia", "pinksalmon", "porkchop", "ham", "sausage"] },
+    pesto:      { g: 15, salad: true, goes: ["spaghetti", "pasta", "chicken", "salmon", "tortelloni", "egg", "zucchini", "potato", "quinoa", "cod", "mozz"] },
     salsa:      { g: 45, goes: ["egg", "tortilla", "corntort", "chickpeas", "blackbeans", "beef", "turkey", "rchicken", "sweetpot", "eggwhite"] },
+    oyster:     { g: 15, goes: ["wrice", "brice", "stirfry", "bokchoy", "broccoli", "chicken", "thigh", "beef", "steak", "tofu", "riceramen", "pork"] },
+    mayo:       { g: 14, goes: ["bread", "buns", "ciabatta", "tortilla", "turkeyslice", "tuna", "cchicken", "ham"] },
+    ranch:      { g: 30, salad: true, goes: ["chicken", "chstrips", "bchstrips", "impnug", "drumstick", "potato", "wedges", "littlepot", "broccoli", "romaine", "greens", "cauli", "turkey", "rchicken"] },
+    aioli:      { g: 20, goes: ["salmon", "cod", "tilapia", "haddock", "shrimp", "chicken", "tortilla", "buns", "potato", "wedges", "salmonburger", "beyond", "turkey", "pinksalmon"] },
+    balsglaze:  { g: 15, salad: true, goes: ["greens", "romaine", "mozz", "chicken", "salmon", "steak", "brussels", "squash", "sweetpot", "quinoa", "porkchop", "roastveg"] },
+    chilicrunch: { g: 8, goes: ["egg", "wrice", "brice", "tofu", "riceramen", "dumpling", "gyoza", "mandu", "edamame", "shrimp", "bokchoy", "salmon", "broccoli"] },
+    alfredo:    { g: 60, goes: ["spaghetti", "pasta", "shortpasta", "gnocchi", "tortelloni", "chickpasta"] },
+    queso:      { g: 30, goes: ["tortilla", "corntort", "beef", "turkey", "rchicken", "chipchick", "potato", "wedges", "broccoli", "chickpeas", "sweetpot"] },
+    montreal:   { g: 3, kind: "rub", goes: ["steak", "beef", "pork", "porkchop", "potato", "littlepot", "wedges", "turkey", "beyond", "mushroom", "roastveg"] },
+    montchick:  { g: 3, kind: "rub", goes: ["chicken", "thigh", "drumstick", "rchicken", "cchicken", "pork", "porkchop", "potato", "littlepot", "cauli", "caulifl", "normandy"] },
+    tacoseas:   { g: 5, kind: "rub", goes: ["beef", "turkey", "chicken", "thigh", "tofu", "chickpeas", "blackbeans", "sweetpot", "corn", "rchicken", "cchicken"] },
+    garlicparm: { g: 3, kind: "rub", goes: ["chicken", "thigh", "potato", "littlepot", "wedges", "broccoli", "caulifl", "cauli", "zucchini", "shrimp", "spaghetti", "gnocchi", "greenbeans"] },
+    everything: { g: 3, kind: "top", salad: true, goes: ["egg", "avocado", "smsalmon", "salmon", "bagel", "bread", "cottage", "cucumber", "tuna", "eggwhite"] },
+    tajin:      { g: 2, kind: "rub", salad: true, goes: ["corn", "mango", "pineapple", "cucumber", "shrimp", "chicken", "tilapia", "cod", "avocado", "sweetpot"] },
+    nosalt:     { g: 3, kind: "rub", salad: true, goes: ["chicken", "thigh", "salmon", "cod", "tilapia", "pork", "porkchop", "steak", "beef", "turkey", "potato", "littlepot", "sweetpot",
+      "broccoli", "greenbeans", "cauli", "caulifl", "zucchini", "mushroom", "egg", "tofu", "quinoa", "asparagus", "normandy", "roastveg"] },
+    italian:    { g: 2, kind: "rub", salad: true, goes: ["chicken", "thigh", "pork", "porkchop", "potato", "littlepot", "zucchini", "mushroom", "egg", "mozz", "quinoa", "greens", "romaine", "shortpasta"] },
+    smpaprika:  { g: 2, kind: "rub", goes: ["chicken", "thigh", "drumstick", "pork", "porkchop", "potato", "sweetpot", "littlepot", "chickpeas", "egg", "cauli", "caulifl", "salmon", "tofu"] },
+    baconbits:  { g: 10, kind: "top", salad: true, goes: ["potato", "littlepot", "broccoli", "greens", "romaine", "egg", "brussels", "greenbeans", "avocado", "corn"] },
+    frenchonion: { g: 8, kind: "top", salad: true, goes: ["greenbeans", "greens", "romaine", "potato", "buns", "beef", "turkey", "beyond", "broccoli"] },
+    olives:     { g: 25, kind: "top", salad: true, goes: ["greens", "romaine", "chickpeas", "feta", "quinoa", "pita", "cucumber", "spaghetti", "pasta", "shortpasta", "cod", "tilapia"] },
+    artichoke:  { g: 40, kind: "top", salad: true, goes: ["greens", "romaine", "spaghetti", "pasta", "shortpasta", "quinoa", "pita", "mozz", "ricotta", "chickpeas"] },
+    sundried:   { g: 15, kind: "top", salad: true, goes: ["spaghetti", "pasta", "shortpasta", "greens", "quinoa", "egg", "ricotta", "mozz", "feta", "chickpeas", "gnocchi"] },
   };
   const SAUCED = new Set([...Object.keys(SAUCE), "marinara", "coco", "cocofull", "hummus", "saladkit", "ctsoup", "lentsoup", "kimchi", "broth", "butterch", "satay", "kalekit", "grsalad", "caesar", "quinsal", "bcsoup", "udon", "bulgogi", "chipchick"]);
   function sauceOptions(m) {
@@ -2778,7 +2872,7 @@ button.btn { border-radius: 0; }
       const sc = SAUCE[k];
       if (!sc.goes.some((x) => ks.includes(x)) || sc.no?.some((x) => ks.includes(x))) return false;
       // Salads get a dressing-style sauce, not a glaze
-      if ((ks.includes("greens") || /salad/i.test(m.name)) && !["dijon", "hotsauce", "sweetchili", "tzatziki", "pesto"].includes(k)) return false;
+      if ((ks.includes("greens") || /salad/i.test(m.name)) && !sc.salad) return false;
       if (ctx.costco && (!COSTCO[k] || nostock.has(k)) && !NOFRILLS[k]) return false;
       const n = m.n.map((v, j) => v + (ING[k][1 + j] * sc.g) / 100);
       return allowed({ tags: new Set([...m.tags, ...ING[k][7].split(" ").filter(Boolean)]), text: m.text + " " + ING[k][0].toLowerCase(), n }, ctx.diets, ctx.avoid);
