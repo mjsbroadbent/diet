@@ -327,6 +327,13 @@ html[data-step="you"] [data-step]:not([data-step~="you"]), html[data-step="pantr
 .kit-list small { display: block; font-size: 14px; color: var(--muted); }
 .kit-list .ghost { font-size: 14px; min-height: 40px; white-space: nowrap; }
 .have-h { margin: 0 0 10px; font-size: 16px; }
+html[data-step="pantry"] #form { display: none; }
+/* Pantry staples: a plain checklist, the rocket above has the character */
+.staples { gap: 18px; }
+.staples .chips { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 0 18px; }
+.staples .chip { display: flex; align-items: center; gap: 10px; min-height: 40px; border-bottom: 1px solid var(--line); }
+.staples .chip input { position: static; opacity: 1; pointer-events: auto; flex: none; width: 18px; height: 18px; margin: 0; accent-color: var(--accent); cursor: pointer; }
+.staples .chip span, .staples .chip input:checked + span { display: block; padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; transform: none; color: var(--ink); font-size: 15px; font-weight: 500; text-transform: none; letter-spacing: 0; }
 .rocket { margin: 0 0 20px; padding: 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
 .rocket-head h3 { margin: 0 0 4px; font-size: 18px; }
 .rocket-head p { margin: 0 0 6px; font-size: 14px; color: var(--muted); }
@@ -349,6 +356,7 @@ html[data-step="you"] [data-step]:not([data-step~="you"]), html[data-step="pantr
 .cargo .acts { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
 .cargo .acts button { font: inherit; font-size: 14px; font-weight: 700; min-height: 40px; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; white-space: nowrap; }
 .cargo .acts button.go { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.cargo .acts button[data-rk="undo"] { background: var(--ok); border-color: var(--ok); color: var(--on-accent); }
 .cargo li.owned .it b::after { content: " ✓"; color: var(--ok); }
 .cargo-sec .cargo { padding: 0; }
 .planet .sum { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 12px; border: 1px dashed var(--line); border-radius: 8px; opacity: 0.6; }
@@ -796,6 +804,11 @@ button.btn { border-radius: 0; }
 .kit { border: 2px solid var(--ink); border-radius: 0; box-shadow: 4px 4px 0 var(--ink); }
 .kit-list li { border-top: 2px dotted var(--ink); }
 .have-h { font-family: var(--display); font-weight: 400; font-size: 22px; letter-spacing: 0.03em; text-transform: uppercase; }
+.staples h3 { font-family: inherit; font-style: normal; font-weight: 700; color: var(--muted); letter-spacing: 0.05em; }
+.staples .chip { border-bottom: 1.5px dotted var(--ink); }
+.staples .chip input { accent-color: var(--blue); }
+.staples { padding: 16px 20px 20px; background: var(--surface); border: 3px solid var(--ink); box-shadow: 5px 5px 0 var(--ink); }
+.staples .chip:nth-child(n) span, .staples .chip input:checked + span { display: block; padding: 0; border: 0; background: none; box-shadow: none; transform: none; color: var(--ink); font-size: 15px; font-weight: 600; text-transform: none; letter-spacing: 0; }
 
 /* Pantry rocket: a back-of-the-box space game, printed on navy with the colour plates a hair off */
 .rocket { position: relative; border: 3px solid var(--ink); border-radius: 0; box-shadow: var(--shadow); color: #FBF4E2; padding: 18px 16px 20px;
@@ -824,6 +837,7 @@ button.btn { border-radius: 0; }
 .cargo li { border-top: 2px dotted var(--ink); }
 .cargo .acts button { border: 2px solid var(--ink); border-radius: 0; box-shadow: 2px 2px 0 var(--ink); font-family: var(--slant); font-style: italic; font-weight: 900; text-transform: uppercase; font-size: 13px; }
 .cargo .acts button.go { background: var(--red); border-color: var(--ink); color: #fff; }
+.cargo .acts button[data-rk="undo"] { background: #2E8B3E; border-color: var(--ink); color: #fff; }
 
 /* Household builder */
 .person { border: 2px solid var(--ink); border-radius: 0; box-shadow: 4px 4px 0 var(--ink); }
@@ -1038,7 +1052,7 @@ button.btn { border-radius: 0; }
           </div>
           <div class="tune-sec">
             <label class="check"><input type="checkbox" id="sauce" checked>
-              <span>Sauce it up<small>Adds a spoonful of barbecue, teriyaki, sweet chili, sriracha, hot sauce, tzatziki, Dijon, pesto or salsa to meals it suits, for variety with no extra work. Calories included.</small></span></label>
+              <span>Sauce it up<small>Adds a spoonful of teriyaki, sweet chili, sriracha, hot sauce, tzatziki, Dijon, pesto or salsa to meals it suits, for variety with no extra work. Calories included.</small></span></label>
           </div>
           <div class="tune-sec" id="freezerRow"><h3 class="tune-h">Freezer space for this shop</h3>
             <div class="seg" role="radiogroup" aria-label="Freezer space">
