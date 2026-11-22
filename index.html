@@ -225,6 +225,10 @@ button.btn:hover { filter: brightness(1.08); }
 .gbar { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; }
 .gbar .note { margin-right: auto; }
 .gbar .ghost { min-height: 44px; }
+.cost .lead { grid-column: span 2; }
+.cost .lead b { font-size: 34px; }
+.cost b small { font-size: 0.5em; font-family: var(--body); font-weight: 700; color: var(--muted); margin-left: 2px; }
+@media (max-width: 380px) { .cost .lead { grid-column: 1 / -1; } }
 @media print {
   html, body { background: #fff !important; color: #000 !important; }
   body { padding: 0 !important; font-size: 11pt; }
@@ -3153,12 +3157,13 @@ button.btn { border-radius: 0; }
     });
     const leftVal = leftovers.reduce((a, r) => a + (r.left / r.size) * r.price, 0);
     const carryVal = leftovers.filter((r) => r.keep !== "x").reduce((a, r) => a + (r.left / r.size) * r.price, 0);
+    const nDays = week.days.length || 7;
 
     $("cost").hidden = false;
     $("cost").innerHTML = `
+      <div class="lead"><span>What you eat costs</span><b>${money(eaten / nDays)}<small> a day</small></b><span>${money(eaten)} of food over ${nDays} days${shop > eaten * 1.25 && carryVal > 1 ? `. The shop costs more because Costco packs are big: ${money(carryVal)} of it carries into next week.` : "."}</span></div>
       <div><span>This week's shop, in-store</span><b>${money(shop)}</b><span>${shopNF ? `${money(shop - shopNF)} Costco · ${money(shopNF)} No Frills` : `${money(shop * INSTORE)} on Costco Same-Day`}</span></div>
-      <div><span>Food you'll eat this week</span><b>${money(eaten)}</b><span>about ${money(eaten / 7)} a day</span></div>
-      <div><span>Left over for next week</span><b>${money(carryVal)}</b><span>${leftVal - carryVal > 0.5 ? money(leftVal - carryVal) + " of fresh food won't keep" : "Mostly pantry and freezer"}</span></div>
+      <div><span>Carries over to next week</span><b>${money(carryVal)}</b><span>${leftVal - carryVal > 0.5 ? money(leftVal - carryVal) + " of fresh food won't keep" : "Mostly pantry and freezer"}</span></div>
       <div><span>Freezer, busiest day</span><b>${(fzPeak / 1000).toFixed(1)} kg</b><span>${fcap === Infinity ? `No limit set · ${(fzLeft / 1000).toFixed(1)} kg left at week's end` : fcap === 0 ? "No freezer, so no frozen packs" : `of ${fcap / 1000} kg${fzPeak > fcap ? ". Over your space: try Shuffle" : ""} · ${(fzLeft / 1000).toFixed(1)} kg left at week's end`}</span></div>`;
     $("groceryNote").textContent = ctx.mostly
       ? `Costco packs at warehouse prices, plus No Frills for what Costco doesn't carry or where a Costco pack would mostly go to waste${NF_DATE ? ` (No Frills prices from ${NF_DATE})` : ""}. Tick items off as you shop.`
