@@ -4281,7 +4281,7 @@ button.btn { border-radius: 0; }
 
   function renderGrocery(all) {
     const sum = {};
-    all.forEach((d) => houseItems(d).forEach(({ k, g }) => (sum[k] = (sum[k] || 0) + g)));
+    all.forEach((d, di) => houseItems(d).forEach(({ k, g }) => { const kk = ctx.costco ? keyOf(k, di) : k; sum[kk] = (sum[kk] || 0) + g; }));
     renderHidden();
     if (ctx.costco) { $("haveItems").hidden = true; return renderCostco(sum); }
     $("cost").hidden = true; $("leftSec").hidden = true;
@@ -4326,7 +4326,7 @@ button.btn { border-radius: 0; }
   function gRow(k, on, title, sub, acts, copy, find = "") {
     const plain = title.replace(/<[^>]+>/g, "").trim();
     return `<div class="gi" data-copy="${esc(copy || plain)}"><label class="gl"><input type="checkbox" data-k="${k}" ${on ? "checked" : ""}><span>${title}${sub}</span></label>${find}`
-      + `<details class="gm"><summary aria-label="More for ${plain.replace(/"/g, "&quot;")}" title="More"><span aria-hidden="true">⋯</span></summary><div class="gpop">${acts.join("")}</div></details></div>`;
+      + (acts.some(Boolean) ? `<details class="gm"><summary aria-label="More for ${plain.replace(/"/g, "&quot;")}" title="More"><span aria-hidden="true">⋯</span></summary><div class="gpop">${acts.join("")}</div></details>` : "") + `</div>`;
   }
   function gCount() {
     const all = $("grocery").querySelectorAll(".gl input"), n = [...all].filter((i) => i.checked).length;
@@ -4362,16 +4362,18 @@ button.btn { border-radius: 0; }
   // Costco list: whole packs, what they cost in the warehouse, and what's left after the week
   function renderCostco(sum) {
     const checked = new Set(ls.get("ad-checked") || []);
-    const rows = Object.entries(sum).map(([k, g]) => {
+    // Two-week plans: fresh food for days 8 to 14 is keyed "k@2" and bought on a top-up trip around day 8
+    const rows = Object.entries(sum).map(([kk, g]) => {
+      const k = baseK(kk), top = kk !== k;
       const { prod, size, price, keep, nf, other, est } = pk(k);
-      const used = buyUnits(k, g), inPantry = Math.min(used, pantry[k] || 0);
+      const used = buyUnits(k, g), inPantry = Math.min(used, ownedK(kk));
       // A few grams over a pack from rounding portions doesn't mean opening another one
       const packs = used - inPantry > 0 ? Math.max(1, Math.ceil((used - inPantry) / size - 0.05)) : 0;
-      return { k, prod, size, price, keep, nf, other, est, used, inPantry, packs, cost: packs * price, eaten: (used / size) * price };
+      return { k, kk, top, prod, size, price, keep, nf, other, est, used, inPantry, packs, cost: packs * price, eaten: (used / size) * price };
     });
     // Pantry items this week's menu doesn't touch still carry forward
-    Object.entries(pantry).forEach(([k, q]) => { const P = pk(k); if (!sum[k] && P && q > 0) rows.push({ k, prod: P.prod, size: P.size, price: P.price, keep: P.keep, nf: P.nf, other: P.other, est: P.est, used: 0, inPantry: 0, packs: 0, cost: 0, eaten: 0, idle: q }); });
-    const shop = rows.reduce((a, r) => a + r.cost, 0), shopNF = rows.filter((r) => r.nf || r.other).reduce((a, r) => a + r.cost, 0), eaten = rows.reduce((a, r) => a + r.eaten, 0);
+    Object.entries(pantry).forEach(([k, q]) => { const P = pk(k); if (!sum[k] && !sum[k + "@2"] && P && q > 0) rows.push({ k, kk: k, prod: P.prod, size: P.size, price: P.price, keep: P.keep, nf: P.nf, other: P.other, est: P.est, used: 0, inPantry: 0, packs: 0, cost: 0, eaten: 0, idle: q }); });
+    const shop = rows.reduce((a, r) => a + r.cost, 0), topUp = rows.filter((r) => r.top).reduce((a, r) => a + r.cost, 0), shopNF = rows.filter((r) => !r.top && (r.nf || r.other)).reduce((a, r) => a + r.cost, 0), eaten = rows.reduce((a, r) => a + r.eaten, 0);
     const unit = (k) => ((ING[k][8] || {}).ml ? "ml" : "g");
     const mass = (v, u) => (v >= 1000 ? `${(v / 1000).toFixed(1)} ${u === "ml" ? "L" : "kg"}` : `${fmt(v)} ${u}`);
     const dry = (k) => ((ING[k][8] || {}).dry ? " dry" : "");
@@ -4385,36 +4387,39 @@ button.btn { border-radius: 0; }
     // "Carries over" is what this week's new packs leave behind; food you already had in the pantry isn't part of this shop
     const carryVal = rows.filter((r) => r.packs && r.keep !== "x" && !(r.keep === "z" && fcap === 0))
       .reduce((a, r) => a + (Math.max(0, r.packs * r.size - (r.used - r.inPantry)) / r.size) * r.price, 0);
-    const nDays = week.days.length || 7;
+    const nDays = week.days.length || 7, two = nDays > 7;
+    const nextW = two ? "your next plan" : "next week", endW = two ? "the plan's end" : "week's end";
+    const split = [shopNF || topUp > 0.5 ? `${money(shop - shopNF - topUp)} Costco${two ? " on day 1" : ""}` : "", shopNF ? `${money(shopNF)} other stores` : "", topUp > 0.5 ? `${money(topUp)} fresh top-up on day 8` : ""].filter(Boolean).join(" · ");
     const kit = rows.filter((r) => r.packs && isStaple(r.k)).reduce((a, r) => a + r.cost, 0);
 
     $("cost").hidden = false;
     $("cost").innerHTML = `
-      <div class="lead"><span>What you eat costs</span><b>${money(eaten / nDays)}<small> a day</small></b><span>${money(eaten)} of food over ${nDays} days${shop > eaten * 1.25 && carryVal > 1 ? `. The shop costs more because Costco packs are big: ${money(carryVal)} of it carries into next week.` : "."}</span></div>
-      <div><span>This week's shop, in-store</span><b>${money(shop)}</b><span>${Number.isFinite(ctx.cap) && shop - kit > ctx.cap + 0.5 ? `<em class="over">Closest we can get this week is ${money(shop - kit)}, over your $${Math.round(ctx.cap)} cap.</em>` : ""}${kit > 0.5 ? `${money(kit)} pantry setup, bought once · ${money(shop - kit)} this week's food<br>` : ""}${shopNF ? `${money(shop - shopNF)} Costco · ${money(shopNF)} other stores` : `${money(shop * INSTORE)} on Costco Same-Day`}</span></div>
-      <div><span>Carries over to next week</span><b>${money(carryVal)}</b><span>${wasteVal > 0.5 ? money(wasteVal) + " of fresh food won't keep" : "Mostly pantry and freezer"}</span></div>
-      <div><span>Freezer, busiest day</span><b>${(fzPeak / 1000).toFixed(1)} kg</b><span>${fcap === Infinity ? `No limit set · ${(fzLeft / 1000).toFixed(1)} kg left at week's end` : fcap === 0 ? "No freezer, so no frozen packs" : `of ${fcap / 1000} kg${fzPeak > fcap ? ". Over your space: try Shuffle" : ""} · ${(fzLeft / 1000).toFixed(1)} kg left at week's end`}</span></div>`;
+      <div class="lead"><span>What you eat costs</span><b>${money(eaten / nDays)}<small> a day</small></b><span>${money(eaten)} of food over ${nDays} days${shop > eaten * 1.25 && carryVal > 1 ? `. The shop costs more because Costco packs are big: ${money(carryVal)} of it carries into ${nextW}.` : "."}</span></div>
+      <div><span>${two ? "Your shop, both trips, in-store" : "This week's shop, in-store"}</span><b>${money(shop)}</b><span>${Number.isFinite(ctx.cap) && shop - kit > ctx.cap + 0.5 ? `<em class="over">Closest we can get ${two ? "for two weeks" : "this week"} is ${money(shop - kit)}, over your $${Math.round(ctx.cap)} cap.</em>` : ""}${kit > 0.5 ? `${money(kit)} pantry setup, bought once · ${money(shop - kit)} ${two ? "food for both weeks" : "this week's food"}<br>` : ""}${split || `${money(shop * INSTORE)} on Costco Same-Day`}</span></div>
+      <div><span>Carries over to ${nextW}</span><b>${money(carryVal)}</b><span>${wasteVal > 0.5 ? money(wasteVal) + " of fresh food won't keep" : "Mostly pantry and freezer"}</span></div>
+      <div><span>Freezer, busiest day</span><b>${(fzPeak / 1000).toFixed(1)} kg</b><span>${fcap === Infinity ? `No limit set · ${(fzLeft / 1000).toFixed(1)} kg left at ${endW}` : fcap === 0 ? "No freezer, so no frozen packs" : `of ${fcap / 1000} kg${fzPeak > fcap ? ". Over your space: try Shuffle" : ""} · ${(fzLeft / 1000).toFixed(1)} kg left at ${endW}`}</span></div>`;
     $("groceryNote").textContent = ctx.mostly
       ? `Costco packs at warehouse prices, plus No Frills for what Costco doesn't carry or where a Costco pack would mostly go to waste${NF_DATE ? ` (No Frills prices from ${NF_DATE})` : ""}. Tick items off as you shop.`
       : "Costco packs for the week above, at warehouse prices (Same-Day runs about 7.5% higher). Tick items off as you shop.";
+    if (two) $("groceryNote").textContent = $("groceryNote").textContent.replace("for the week above", "for both weeks") + " One Costco trip on day 1 covers both weeks. Fresh food for the second week is a short top-up around day 8, so nothing sits and spoils.";
 
     const bySec = {};
-    rows.filter((r) => !r.idle).forEach((r) => (bySec[r.nf || r.other ? OTHER : r.packs && isStaple(r.k) ? KIT : ING[r.k][6]] ||= []).push(r));
+    rows.filter((r) => !r.idle).forEach((r) => (bySec[r.top ? TOP : r.nf || r.other ? OTHER : r.packs && isStaple(r.k) ? KIT : ING[r.k][6]] ||= []).push(r));
     const box = $("grocery");
     box.innerHTML = "";
-    [KIT, ...Object.values(S), OTHER].filter((sec) => bySec[sec]).forEach((sec) => {
+    [KIT, ...Object.values(S), OTHER, TOP].filter((sec) => bySec[sec]).forEach((sec) => {
       const div = document.createElement("div");
-      div.className = "gsec" + (sec === KIT ? " kit" : sec === OTHER ? " kit other" : "");
-      div.innerHTML = `<h3>${sec}</h3>${sec === KIT ? `<p class="note">Staples that keep for months. Buy them once and they're in your pantry for next week.</p>` : sec === OTHER ? `<p class="note">Not at Costco, or a smaller size beats the Costco pack. A separate stop.</p>` : ""}` + bySec[sec].sort((a, b) => b.cost - a.cost || a.prod.localeCompare(b.prod)).map((r) => {
+      div.className = "gsec" + (sec === KIT ? " kit" : sec === OTHER ? " kit other" : sec === TOP ? " kit topup" : "");
+      div.innerHTML = `<h3>${sec}</h3>${sec === KIT ? `<p class="note">Staples that keep for months. Buy them once and they're in your pantry for next week.</p>` : sec === OTHER ? `<p class="note">Not at Costco, or a smaller size beats the Costco pack. A separate stop.</p>` : sec === TOP ? `<p class="note">Fresh food for days 8 to 14, bought around day 8 so it's still good when you eat it. Any grocery store works.</p>` : ""}` + bySec[sec].sort((a, b) => b.cost - a.cost || a.prod.localeCompare(b.prod)).map((r) => {
         const u = unit(r.k);
         const need = `uses ${mass(r.used, u)}${dry(r.k)}`;
         const buy = r.packs ? `${r.packs > 1 ? r.packs + " packs · " : ""}${need}${r.inPantry ? `, ${mass(r.inPantry, u)} from your pantry` : ""}` : `<span class="pantry">In your pantry</span> · ${need}`;
         const alt = r.nf && week.alt?.[r.k] ? `<span class="why">Smaller size beats the Costco pack (${COSTCO[r.k][0]}, ${money(week.alt[r.k].cost)}), which would leave ${mass(week.alt[r.k].left, u)}${dry(r.k)} over.</span>` : r.nf ? `<span class="why">Not at Costco.</span>` : r.other ? `<span class="why">Not at Costco${!r.packs ? "" : r.est ? ". Price is a guess, not a store scan" : `. Instacart price, ${ELSE_DATE.replace(/, \d{4}$/, "")}`}.</span>` : "";
-        return gRow(r.k, checked.has(r.k) || !r.packs, `<span class="row2"><span>${r.nf ? `<span class="store-nf">No Frills</span> ` : ""}${r.prod}</span><span class="price">${r.packs ? (r.est ? "~" : "") + money(r.cost) : ""}</span></span>`,
+        return gRow(r.kk, checked.has(r.kk) || !r.packs, `<span class="row2"><span>${r.nf ? `<span class="store-nf">No Frills</span> ` : ""}${r.prod}</span><span class="price">${r.packs ? (r.est ? "~" : "") + money(r.cost) : ""}</span></span>`,
           `<small>${buy}<span class="keep ${r.keep}" title="${KEEP[r.keep][1]}">${KEEP[r.keep][0]}</span>${alt}</small>`,
-          [r.packs ? `<button type="button" data-have="${r.k}">Already have it</button>` : `<button type="button" data-unhave="${r.k}">Don't have it</button>`,
+          r.top ? [] : [r.packs ? `<button type="button" data-have="${r.k}">Already have it</button>` : `<button type="button" data-unhave="${r.k}">Don't have it</button>`,
            r.nf || r.other ? "" : `<button type="button" data-nostock="${r.k}">Not at my Costco</button>`],
-          `${r.packs > 1 ? r.packs + " × " : ""}${r.prod}${r.nf ? " (No Frills)" : r.other ? " (other store)" : ""}${r.packs ? ", " + (r.est ? "about " : "") + money(r.cost) : ""}`, shopLink(r.nf || r.other ? "nf" : "costco", r.prod));
+          `${r.packs > 1 ? r.packs + " × " : ""}${r.prod}${r.nf ? " (No Frills)" : r.other ? " (other store)" : ""}${r.packs ? ", " + (r.est ? "about " : "") + money(r.cost) : ""}`, shopLink(r.top || r.nf || r.other ? "nf" : "costco", r.prod));
       }).join("");
       box.append(div);
     });
@@ -4445,6 +4450,8 @@ button.btn { border-radius: 0; }
   const KIT = "Pantry setup, buy once";
   // Anything not bought at Costco gets its own list, whatever aisle it would sit in: it's a separate trip
   const OTHER = "Other stores";
+  // Two-week plans: the second week's fresh food, a short trip around day 8
+  const TOP = "Top-up shop, day 8";
   const isStaple = (k) => { try { return STAPLES.some(([, ks]) => ks.includes(k)); } catch { return false; } };
 
   function renderHidden() {
