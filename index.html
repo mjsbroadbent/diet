@@ -1068,6 +1068,11 @@ button.btn { border-radius: 0; }
     nutbar:      ["Nut bars", 500, 14, 33, 36, 5, S.N, "treenut peanut", { each: 40, full: true, whole: true, unit: ["nut bar", "nut bars"] }],
     rxbar:       ["RXBAR protein bars", 380, 23, 44, 15, 9, S.N, "egg treenut peanut", { each: 52, full: true, whole: true, unit: ["RXBAR", "RXBARs"] }],
     ycup:        ["Greek yogurt cups, flavoured", 95, 8, 11, 2.5, 0, S.D, "dairy", { each: 100, full: true, whole: true, unit: ["Greek yogurt cup", "Greek yogurt cups"] }],
+    // Round 6: plant-based (Nov 22 2026)
+    beyond:      ["Beyond Burger patties", 230, 17.7, 4.4, 15.9, 1.8, S.M, "", { each: 113, full: true, whole: true, unit: ["Beyond Burger patty", "Beyond Burger patties"] }],
+    impnug:      ["Impossible nuggets (frozen)", 230, 14, 18, 11, 3, S.F, "soy gluten", { each: 18, full: true, unit: ["nugget", "nuggets"] }],
+    cocoyog:     ["Dairy-free protein yogurt", 105, 8.5, 6, 5.5, 1, S.D, ""],
+    oatmilk:     ["Oat milk", 50, 1, 7, 1.5, 0.8, S.D, "oats", { ml: 1 }],
   };
 
   // ---------- Costco ----------
@@ -1258,6 +1263,10 @@ button.btn { border-radius: 0; }
     nutbar: ["Kirkland Signature nut bars, 24 × 40 g", 960, 19.79, "p"],
     rxbar: ["RXBAR protein bar variety pack, 14 × 52 g", 728, 26.39, "p"],
     ycup: ["3% Greek yogurt variety pack, 24 × 100 g", 2400, 18.14, "r"],
+    beyond: ["Beyond Meat Beyond Burger family pack, 8 × 113 g", 904, 20.89, "z"],
+    impnug: ["Impossible nuggets, 1 kg", 1000, 18.69, "p"],
+    cocoyog: ["cocojune dairy-free protein yogurt, 2 × 476 g", 952, 18.14, "r"],
+    oatmilk: ["Kirkland Signature oat beverage, 6 × 946 ml", 5676, 14.29, "p"],
   };
   // Library items Costco doesn't carry, and what replaces them (grams × factor)
   const SUB = { blackbeans: ["chickpeas", 1], lentils: ["chickpeas", 1], tempeh: ["tofu", 1.3], corntort: ["tortilla", 0.75], ricenoodle: ["riceramen", 1], ricecake: ["bread", 1.5], pasta: ["spaghetti", 1], tamari: ["soysauce", 1], coco: ["cocofull", 0.36], darkchoc: ["darkbites", 1.25] };
@@ -1267,11 +1276,11 @@ button.btn { border-radius: 0; }
     pb: 1000, honey: 750, salsa: 1050, marinara: 1250, icebar: 70,
     bbq: 480, hotsauce: 740, tzatziki: 454, saladkit: 340, lasagna: 1500, pizza: 555, yakisoba: 255, yakitori: 255, ctsoup: 830, lentsoup: 398, pita: 390, emuffin: 342, tortelloni: 500, shake: 340, protbar: 50, beefstick: 32, cheesestr: 21, bwrap: 128,
     ravioli: 1250, gnocchi: 480, butterch: 650, kalekit: 397, bcsoup: 830, bagel: 660, tunapoke: 125, chparm: 150, sfrice: 300, mush: 172, bsand: 137, ewwrap: 165, chimi: 142,
-    ham: 500, cchicken: 255, texmex: 625, chickpasta: 227, broth: 946, buns: 480, ketotort: 326, ycup: 100, nutbar: 40, rxbar: 52 };
+    ham: 500, cchicken: 255, texmex: 625, chickpasta: 227, broth: 946, buns: 480, ketotort: 326, ycup: 100, nutbar: 40, rxbar: 52, beyond: 452, cocoyog: 476, oatmilk: 946 };
   // Freezer: frozen-aisle packs always need it; fresh meat, bread and the like go in to keep past a few days
   const FROZEN = new Set(["berries", "broccoli", "edamame", "cauli", "stirfry", "corn", "shrimp", "strawberries", "icecream", "icebar",
     "frittata", "bwrap", "lasagna", "pizza", "yakisoba", "yakitori", "gyoza", "chstrips", "salmonburger", "meatballs", "mango",
-    "pinksalmon", "haddock", "tunapoke", "wedges", "peas", "mixveg", "roastveg", "chparm", "chimi", "taquito", "mandu", "sfrice", "bchstrips", "dumpling"]);
+    "pinksalmon", "haddock", "tunapoke", "wedges", "peas", "mixveg", "roastveg", "chparm", "chimi", "taquito", "mandu", "sfrice", "bchstrips", "dumpling", "impnug"]);
   const FREEZER = { all: Infinity, std: 10000, low: 5000, none: 0 };
   // No Frills (Vancouver, in-store prices from nofrills.ca): key: [product, size in purchase units, price]
   const NOFRILLS = /*NF*/{
@@ -1598,6 +1607,18 @@ button.btn { border-radius: 0; }
     ["h", "Frozen grapes", [["grapes",150]], "Freeze a bunch of grapes the night before for a sorbet-like snack.", 1],
     ["i", "Pita chips and tzatziki", [["pitachips",45],["tzatziki",45]], "A bowl of pita chips with tzatziki to dip.", 1],
     ["i", "Pork dumplings with sweet chili", [["dumpling",150],["sweetchili",20]], "Pan-fry the dumplings from frozen with a splash of water under a lid, about 8 minutes. Dip in sweet chili.", 10],
+    // Round 6: plant-based and keto (Nov 22 2026)
+    ["b", "Tofu scramble wrap", [["tofu",150],["tortilla",60],["spinach",30],["salsa",30]], "Crumble the tofu into a hot pan with turmeric, salt and pepper, add spinach for a minute, and roll up with salsa.", 10],
+    ["b", "Oat milk overnight oats with peanut butter", [["oats",60],["oatmilk",200],["chia",10],["pb",16],["berries",80]], "Mix oats, oat milk and chia in a jar the night before. Top with berries and peanut butter.", 5],
+    ["b", "Coconut protein yogurt bowl", [["cocoyog",200],["berries",80],["granola",30],["pepitas",10]], "Top the yogurt with berries, granola and pumpkin seeds.", 2],
+    ["b", "Ham, egg and avocado plate", [["egg",150],["ham",60],["avocado",75]], "Fry 3 eggs and serve with warm ham and sliced avocado.", 8],
+    ["b", "Beyond sausage-style breakfast hash", [["beyond",113],["wedges",100],["pepper",80],["spinach",30]], "Crisp the wedges, crumble in the Beyond patty with pepper until browned, and wilt in the spinach.", 15],
+    ["s", "Coconut protein yogurt", [["cocoyog",150]], "Straight from the fridge.", 1],
+    ["s", "Crispy roasted chickpeas", [["chickpeas",100],["oil",5]], "Roast drained, dried chickpeas with oil and salt at 220°C / 425°F for 25 minutes. Make a batch.", 25],
+    ["s", "Celery, cheddar and almonds", [["celery",100],["cheddar",25],["almonds",15]], "A keto-friendly plate.", 2],
+    ["l", "Beyond burger lettuce wraps", [["beyond",113],["romaine",80],["tomato",60],["avocado",40],["dijon",8]], "Cook the patty 4 minutes a side, slice, and wrap in romaine leaves with tomato, avocado and mustard.", 10],
+    ["d", "Chickpea coconut curry with rice", [["chickpeas",150],["cocofull",60],["cantom",120],["spinach",50],["wrice",150]], "Simmer chickpeas, tomatoes and coconut milk with curry powder 12 minutes, stir in spinach, and serve over rice.", 18],
+    ["d", "Tofu and broccoli in peanut satay", [["tofu",180],["broccoli",150],["satay",35],["brice",150]], "Crisp cubed tofu 8 minutes, add broccoli and a splash of water for 3 minutes, then toss with satay sauce. Serve over brown rice.", 15],
   ].map(([type, name, items, how, min, max], i) => mkMeal("m" + i, type, name, items, how, min, max));
   // max: the biggest portion multiplier that still makes sense (no one drinks three shakes for breakfast)
   function mkMeal(id, type, name, items, how, min, max) {
@@ -1796,6 +1817,38 @@ button.btn { border-radius: 0; }
     ricottapizza: ["Spinach ricotta", [["ricotta",60],["spinach",30],["mozz",25],["mushroom",40]], "Spread with ricotta, top with spinach, sliced mushrooms and mozzarella, and bake at 220°C / 425°F for 8 to 10 minutes.", 12, ["naan", "pita", "tortilla", "ketotort"], true],
     hawaiian: ["Hawaiian", [["ham",70],["pineapple",50],["marinara",50],["mozz",30]], "Spread with marinara, top with ham, pineapple and mozzarella, and bake at 220°C / 425°F for 8 to 10 minutes.", 12, ["naan", "pita", "tortilla", "ketotort"], true],
     sausagepizza: ["Sausage and pepper", [["sausage",70],["pepper",40],["marinara",50],["mozz",25]], "Spread with marinara, top with crumbled sausage, pepper and mozzarella, and bake at 220°C / 425°F for 10 to 12 minutes.", 14, ["naan", "pita", "tortilla"], true],
+  });
+  // Round 6 parts: plant-based and keto (Nov 22 2026)
+  Object.assign(PARTS.protein, {
+    beyond: ["Beyond burgers", [["beyond",113]], "Cook the Beyond patty 4 minutes a side.", 10],
+    impnug: ["Impossible nuggets", [["impnug",150]], "Bake the nuggets from frozen at 220°C / 425°F for 12 minutes.", 14, ["greek", "caesar"]],
+    chickedam: ["Roasted chickpeas and edamame", [["chickpeas",120],["edamame",100],["oil",5]], "Roast chickpeas and edamame with oil and smoked paprika at 220°C / 425°F for 20 minutes.", 22, ["mash", "gnocchi", "caesar", "naanveg"]],
+  });
+  Object.assign(PARTS.side, {
+    zucmush: ["zucchini and mushrooms", [["zucchini",200],["mushroom",120],["oil",8]], "Sauté sliced zucchini and mushrooms with garlic for 8 minutes.", 10],
+    asparavo: ["asparagus and avocado", [["asparagus",150],["avocado",60],["oil",5]], "Roast the asparagus 10 minutes and serve with sliced avocado.", 12],
+    cheesybroc: ["cheesy broccoli", [["broccoli",200],["cheddar",25]], "Steam the broccoli and melt the cheddar over it.", 8],
+  });
+  Object.entries({ teriyaki: ["romaine"], bbq: ["cauli"] }).forEach(([k, bs]) => PARTS.topping[k][4].push(...bs));
+  Object.assign(PARTS.topping, {
+    tofutaco: ["Taco tofu", [["tofu",160],["corn",50],["salsa",40],["avocado",40]], "Crumble the tofu into a hot pan with taco spice until browned, and top with corn, salsa and avocado.", 12, ["rice", "brice", "greens", "romaine", "cauli", "potato", "quinoa"]],
+    tofuscram: ["Tofu scramble", [["tofu",180],["spinach",40],["salsa",30]], "Crumble the tofu into a hot pan with turmeric, add the spinach, and finish with salsa.", 10, ["potato", "rice", "brice", "quinoa"]],
+    edamsatay: ["Edamame satay crunch", [["edamame",120],["cucumber",60],["pepper",60],["satay",25]], "Toss thawed edamame, cucumber and pepper with the satay sauce.", 5, ["greens", "romaine", "noodle", "quinoa", "rice"]],
+    chickcurry: ["Chickpea coconut curry", [["chickpeas",150],["cocofull",60],["cantom",100],["spinach",40]], "Simmer chickpeas, tomatoes and coconut milk with curry powder 12 minutes and stir in the spinach.", 15, ["rice", "brice", "quinoa", "cauli"]],
+    burger: ["Burger", [["beyond",113],["romaine",40],["tomato",50],["dijon",8]], "Cook the Beyond patty 4 minutes a side, slice, and top with tomato, romaine and mustard.", 10, ["romaine", "greens", "potato", "cauli"]],
+    nugget: ["BBQ nugget", [["impnug",120],["corn",50],["bbq",20]], "Bake the nuggets from frozen 12 minutes and toss with corn and barbecue sauce.", 14, ["rice", "romaine", "greens", "potato"]],
+    eggcurry: ["Egg and pea curry", [["egg",150],["butterch",100],["peas",50]], "Simmer halved hard-boiled eggs and peas in the butter chicken sauce for 5 minutes.", 15, ["rice", "brice", "quinoa", "cauli"]],
+    caprese: ["Caprese", [["mozz",60],["cherry",80],["pesto",12],["spinach",30]], "Toss halved tomatoes, torn mozzarella and spinach with the pesto.", 5, ["pasta", "chickpasta", "quinoa", "greens", "pastasal"]],
+    steakcobb: ["Steak and avocado", [["steak",120],["avocado",50],["cherry",50],["feta",15]], "Sear the steak 3 minutes a side, rest, slice, and top with avocado, tomatoes and feta.", 15, ["greens", "romaine", "cauli"]],
+  });
+  Object.entries({ hamcheddar: ["buns"], hummus: ["ciabatta"] }).forEach(([k, bs]) => PARTS.filling[k][4].push(...bs));
+  Object.assign(PARTS.filling, {
+    beyond: ["Beyond burger", [["beyond",113],["tomato",40],["romaine",20],["dijon",8]], "Cook the Beyond patty 4 minutes a side and stack with tomato, romaine and mustard.", 10, ["buns", "ciabatta", "emuffin"]],
+    sritofu: ["Sriracha tofu", [["tofu",130],["cucumber",40],["carrot",40],["sriracha",8],["soysauce",8]], "Crisp sliced tofu 8 minutes with soy sauce, and fill with it, cucumber, shredded carrot and sriracha.", 12, ["ciabatta", "bread", "tortilla"]],
+    roastveg: ["Roast veg and hummus", [["hummus",50],["roastveg",100],["feta",20]], "Roast the vegetables from frozen 20 minutes and fill with them, hummus and feta.", 22, ["pita", "naan", "tortilla", "ciabatta"]],
+    nugget: ["BBQ nugget", [["impnug",110],["romaine",20],["bbq",15],["tomato",40]], "Bake the nuggets from frozen 12 minutes, toss in barbecue sauce, and fill with romaine and tomato.", 14, ["tortilla", "buns"]],
+    caprese: ["Caprese", [["mozz",60],["tomato",60],["pesto",12],["spinach",15]], "Layer mozzarella, tomato and spinach with pesto.", 3, ["ciabatta", "bread", "bagel"]],
+    eggcheese: ["Fried egg and cheddar", [["egg",100],["cheddar",20],["spinach",15]], "Fry 2 eggs and stack with cheddar and spinach.", 6, ["emuffin", "bagel", "buns", "bread"]],
   });
   const COMBOS = (() => {
     const out = [];
