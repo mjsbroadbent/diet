@@ -61,6 +61,7 @@ const RULES = [
     ...d.bad.map((n) => `${o.name} day ${i + 1}: ${n}`)])) },
   { id: "portion-label", hard: true, desc: "portion labels in plain words", check: (w) => (w.labels.filter((t) => /\d×/.test(t)).slice(0, 3)) },
   { id: "budget", hard: false, desc: "first shop under $300 a person", check: (w) => (w.shop && w.shop.shop > 300 * w.hh ? [`$${Math.round(w.shop.shop)}`] : []) },
+  { id: "freezer", hard: true, desc: "frozen food fits the freezer on its busiest day", check: (w) => (w.fz && w.fz.peak > w.fz.cap + 1 ? [`${(w.fz.peak / 1000).toFixed(1)} kg of ${(w.fz.cap / 1000).toFixed(0)} kg`] : []) },
   { id: "waste", hard: true, desc: "no fresh food wasted ($0)", check: (w) => (w.shop && w.shop.waste > 0.005 ? [`$${Math.round(w.shop.waste)}`] : []) },
 ];
 
@@ -111,7 +112,7 @@ for (const prof of PROFILES) for (let k = 0; k < SEEDS; k++) {
       own?.meals.forEach((x) => x.items.forEach(({ k: ing, g }) => { k += (B.ING[ing][1] * g) / 100; p += (B.ING[ing][2] * g) / 100; }));
       return { k, p, tk: own?.tk ?? o.T.k, own: own?.meals.map((x) => x.m.name) || [], bad: (own?.meals || []).filter((x) => !B.allowed(x.m, o.diets, o.avoid)).map((x) => x.m.name) };
     }) }));
-    return { hh: (ctx.house?.n || 1) + (ctx.house?.others.length || 0), others, never, T: ctx.T, days, protein, shop: B.shopStats(), labels, daily, quickDinner: ctx.course.d.effort <= 10 };
+    return { hh: (ctx.house?.n || 1) + (ctx.house?.others.length || 0), others, never, T: ctx.T, days, protein, shop: B.shopStats(), fz: { peak: B.freezerPeak(), cap: ctx.fcap }, labels, daily, quickDinner: ctx.course.d.effort <= 10 };
   }, { s: { ...base, ...prof.s }, seed });
   const fails = RULES.map((rule) => ({ rule, probs: rule.check(w) })).filter((x) => x.probs.length);
   results.push({ prof: prof.name, seed, w, fails });
