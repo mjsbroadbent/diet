@@ -60,7 +60,7 @@ const RULES = [
     ...d.bad.map((n) => `${o.name} day ${i + 1}: ${n}`)])) },
   { id: "portion-label", hard: true, desc: "portion labels in plain words", check: (w) => (w.labels.filter((t) => /\d×/.test(t)).slice(0, 3)) },
   { id: "budget", hard: false, desc: "first shop under $300 a person", check: (w) => (w.shop && w.shop.shop > 300 * w.hh ? [`$${Math.round(w.shop.shop)}`] : []) },
-  { id: "waste", hard: false, desc: "no fresh food wasted ($0)", check: (w) => (w.shop && w.shop.waste > 0.005 ? [`$${Math.round(w.shop.waste)}`] : []) },
+  { id: "waste", hard: true, desc: "no fresh food wasted ($0)", check: (w) => (w.shop && w.shop.waste > 0.005 ? [`$${Math.round(w.shop.waste)}`] : []) },
 ];
 
 const browser = await chromium.launch();
