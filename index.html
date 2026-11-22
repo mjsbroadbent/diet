@@ -1894,6 +1894,39 @@ button.btn { border-radius: 0; }
     }
     return out;
   })();
+  // ---------- Meal tags for the planner rules ----------
+  // m.main: the main protein family (the one giving the most grams of protein): chicken, turkey, beef, pork, fish,
+  // shellfish, egg, dairy, tofu, legume, plant-meat, or "none" (nuts and grains only count as none).
+  // m.dinner: true if it eats like a dinner (a hot plate, bowl, curry, pasta, pizza or casserole),
+  // false for sandwiches, wraps, salads and salad bowls, soups, breakfasts and snacks. Hand-written dinners count as dinners.
+  const PROTEIN_GROUP = Object.fromEntries(Object.entries({
+    chicken: "chicken thigh rchicken chstrips chipchick drumstick cchicken bchstrips chparm gyoza potpie penne chimi taquito yakitori ctsoup",
+    turkey: "turkey turkeyslice tsausage",
+    beef: "beef steak bulgogi beefstick meatballs lasagna mandu shepherd stuffpep",
+    pork: "pork porkchop bacon ham sausage dumpling tortelloni bsand bwrap pizza",
+    fish: "salmon pinksalmon smsalmon salmonburger cod tilapia haddock tuna tunapoke",
+    shellfish: "shrimp sfrice",
+    egg: "egg eggwhite frittata eggbites ewwrap",
+    tofu: "tofu tempeh edamame",
+    legume: "chickpeas blackbeans lentils hummus chickpasta lentsoup",
+    dairy: "yogurt cottage cheddar feta parm mozz ricotta texmex cheesestr ycup milk shake whey ravioli mush cocoyog",
+    "plant-meat": "beyond impnug pea",
+    nuts: "pb ab almonds walnuts pepitas nutbar protbar rxbar",
+  }).flatMap(([grp, keys]) => keys.split(" ").map((k) => [k, grp])));
+  const NOT_DINNER = /sandwich|wrap|pita|toast|salad|soup|bagel|melt|roll-up|lettuce|quesadilla|rice cakes|English muffin|ciabatta|on a bun|sub$/i;
+  const SALAD_BASE = new Set(["bowl.greens", "bowl.romaine", "bowl.quinsal", "bowl.pastasal", "bowl.chickpea"]);
+  function tagMeal(m) {
+    const by = {};
+    m.items.forEach(([k, g]) => { const grp = PROTEIN_GROUP[k]; if (grp) by[grp] = (by[grp] || 0) + (ING[k][2] * g) / 100; });
+    const ranked = Object.keys(by).sort((a, b) => by[b] - by[a]);
+    // Cheese, yogurt or nuts on top of a real protein don't make it the main one
+    const side = (g) => g === "dairy" || g === "nuts";
+    const top = (side(ranked[0]) && ranked.find((g) => !side(g) && by[g] >= by[ranked[0]] / 2)) || ranked[0];
+    m.main = !top || top === "nuts" ? "none" : top;
+    m.dinner = m.style === "sand" ? /pizza$/.test(m.name) : m.style === "bowl" ? !SALAD_BASE.has(m.anchor) : m.style ? true
+      : m.type === "d" || (m.type === "l" && !NOT_DINNER.test(m.name));
+  }
+  [...MEALS, ...COSTCO_MEALS, ...COMBOS].forEach(tagMeal);
   // Eating out replaces dinner with a loose estimate
   const OUT = {
     h: { id: "oh", type: "o", out: true, name: "Eating out: salad with protein", items: [], min: 0, n: [650, 45, 35, 38, 8], tags: new Set(), text: "",
