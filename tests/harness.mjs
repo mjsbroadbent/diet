@@ -1,4 +1,5 @@
-// Planner test harness: builds 70 plans (14 profiles x 5 seeds) in headless Chromium and checks the menu rules.
+// Planner test harness: builds 82 plans (16 profiles x 5 seeds, plus 2 fixed first-visit seeds) in headless Chromium and checks the menu rules,
+// then chains the default profile over 4 weeks (5 seeds) to check the pantry gets eaten down.
 // Run from the repo root:  node tests/harness.mjs   (--verbose prints every week, --seeds=N changes the count)
 // Needs Playwright with Chromium (npm i -D playwright && npx playwright install chromium).
 import { createRequire } from "node:module";
@@ -24,12 +25,15 @@ const PROFILES = [
   { name: "Keto man", s: { diets: ["Keto"], weightKg: 95, age: 45 } },
   { name: "Gluten-free, nut allergy", s: { diets: ["Gluten-free"], avoid: "nut", prots: { beef: 0, pork: 0 }, sex: "female", heightCm: 160, weightKg: 70, age: 52 } },
   { name: "Pescatarian, treats", s: { diets: ["Pescatarian"], treat: "h", sex: "female", heightCm: 168, weightKg: 58, goal: "maintain" } },
+  { name: "Small woman, lose fast (1,200 kcal)", low: true, s: { sex: "female", age: 45, heightCm: 155, weightKg: 52, activity: 1.2, goal: "lose_fast" } },
   { name: "Athlete bulk, 110 kg", tight: true, s: { heightCm: 188, weightKg: 110, age: 28, goal: "gain", activity: 1.9, snacks: "1" } },
   { name: "Big man, gain, 2 snacks", s: { heightCm: 190, weightKg: 92, age: 24, goal: "gain", activity: 1.725, snacks: "2", treat: "i" } },
   { name: "Any store, eats out Fri/Sat, dirty snack", s: { store: "any", out: { days: [4, 5], style: "i" }, treat: "j" } },
   { name: "Mostly Costco, no freezer", s: { store: "mostly", freezer: "none", sex: "female", age: 33, heightCm: 172, weightKg: 75 } },
   { name: "Two weeks, default man", s: { weeks: 2 } },
   { name: "Two weeks, household of 2", s: { weeks: 2, hh: { n: 2, people: [{}, { name: "Jo", sex: "female", age: 33, heightCm: 165, weightKg: 60, activity: 1.55, goal: "maintain", diets: [] }] } } },
+  // A fresh visit with the page's defaults and no shuffle; the extra seeds are first loads that once left fresh food over or went over the cap
+  { name: "First visit, page defaults", defaults: true, s: {}, seeds: [365372622, 504794043] },
   { name: "Mix and match, quick dinners", s: { mix: true, course: { d: { effort: 25, variety: 3 }, l: { effort: 10, variety: 2 } } } },
 ];
 
@@ -39,6 +43,11 @@ const RULES = [
   { id: "slots", hard: true, desc: "every day fills every slot", check: (w) => w.days.flatMap((d, i) => (d.meals.length === d.slots.length ? [] : [`day ${i + 1}: ${d.meals.length} meals for ${d.slots.length} slots`])) },
   { id: "diet", hard: true, desc: "every meal fits the diet and avoid list", check: (w) => w.days.flatMap((d, i) => d.meals.filter((m) => !m.ok).map((m) => `day ${i + 1}: ${m.name}`)) },
   { id: "kcal", hard: true, desc: "each day within 15% of its calorie target", check: (w) => w.days.flatMap((d, i) => (Math.abs(d.kcal - d.tk) / d.tk > 0.15 ? [`day ${i + 1}: ${Math.round(d.kcal)} vs ${d.tk}`] : [])) },
+  { id: "kcal-low", hard: true, desc: "1,200 kcal profile: week averages within 5% of target, at most one day more than 10% over", check: (w) => {
+    if (!w.low) return [];
+    const avg = w.days.reduce((a, d) => a + d.kcal / d.tk, 0) / w.days.length, over = w.days.map((d, i) => [d, i]).filter(([d]) => d.kcal > 1.1 * d.tk);
+    return [...(Math.abs(avg - 1) > 0.05 ? [`average ${Math.round(avg * 100)}% of target`] : []), ...(over.length > 1 ? over.map(([d, i]) => `day ${i + 1}: ${Math.round(d.kcal)} vs ${d.tk}`) : [])];
+  } },
   { id: "kcal-10", hard: true, desc: "big-appetite profile: every day within 10% of its calorie target", check: (w) => (w.tight ? w.days.flatMap((d, i) => (Math.abs(d.kcal - d.tk) / d.tk > 0.1 ? [`day ${i + 1}: ${Math.round(d.kcal)} vs ${d.tk}`] : [])) : []) },
   { id: "treat-kind", hard: true, desc: "treats are good or cheat treats, dirty snacks sit in their own slot, and a daily one is there every day", check: (w) => w.days.flatMap((d, i) => [
     ...d.meals.filter((m) => (m.slot === "Treat" && m.type !== "h" && m.type !== "i") || (m.slot === "Dirty snack") !== (m.type === "j")).map((m) => `day ${i + 1}: ${m.slot} ${m.name} (${m.type})`),
@@ -74,7 +83,7 @@ const RULES = [
     return Object.entries(n).filter(([, c]) => c > (2 * w.days.length) / 7).map(([k, c]) => `${k} x${c}`);
   } },
   { id: "prots-never", hard: true, desc: "no protein the person never eats", check: (w) => w.days.flatMap((d, i) => d.meals.filter((m) => !m.out && w.never.includes(m.main)).map((m) => `day ${i + 1}: ${m.name} [${m.main}]`)) },
-  { id: "portion-size", hard: true, desc: "meal and snack portions between 3/4 and 1 1/2", check: (w) => [...w.days.flatMap((d, i) => d.meals.filter((m) => "blds".includes(m.type) && !m.out && (m.mult < 0.75 || m.mult > 1.5)).map((m) => `day ${i + 1}: ${m.name} x${m.mult}`)),
+  { id: "portion-size", hard: true, desc: "meal and snack portions between 3/4 and 1 1/2 (snacks from half on a target under 1,500 kcal)", check: (w) => [...w.days.flatMap((d, i) => d.meals.filter((m) => "blds".includes(m.type) && !m.out && (m.mult < (d.tk < 1500 && m.type === "s" ? 0.5 : 0.75) || m.mult > 1.5)).map((m) => `day ${i + 1}: ${m.name} x${m.mult}`)),
     ...(w.others || []).flatMap((o) => o.days.flatMap((d, i) => (d.ms || []).filter((x) => x < 0.75 || x > 1.5).map((x) => `${o.name} day ${i + 1}: own meal x${x}`)))] },
   { id: "household", hard: true, desc: "everyone in a household gets within 15% of their calories, from meals they can eat", check: (w) => (w.others || []).flatMap((o) => o.days.flatMap((d, i) => [
     ...(Math.abs(d.k - d.tk) / d.tk > 0.15 ? [`${o.name} day ${i + 1}: ${Math.round(d.k)} vs ${d.tk}`] : []),
@@ -94,9 +103,11 @@ await page.waitForFunction(() => window.__bbd);
 
 const results = [];
 const only = args.find((a) => a.startsWith("--only="))?.split("=")[1];
-for (const prof of PROFILES) for (let k = 0; k < SEEDS; k++) {
+for (const prof of PROFILES) for (let k = 0; k < SEEDS + (prof.seeds?.length || 0); k++) {
   if (only && !prof.name.toLowerCase().includes(only.toLowerCase())) continue;
-  const seed = 1000 + k * 7919;
+  const seed = k < SEEDS ? 1000 + k * 7919 : prof.seeds[k - SEEDS];
+  // A first visit runs on the page's own defaults (read()), not the harness base
+  const S = prof.defaults ? { ...prof.s } : { ...base, ...prof.s };
   const w = await page.evaluate(({ s, seed }) => {
     const B = window.__bbd;
     const { ctx, week } = B.run(s, seed);
@@ -135,10 +146,11 @@ for (const prof of PROFILES) for (let k = 0; k < SEEDS; k++) {
       return { k, p, tk: own?.tk ?? o.T.k, ms: (d.own || []).find((y) => y.who === o.who)?.ms || [], own: own?.meals.map((x) => x.m.name) || [], bad: (own?.meals || []).filter((x) => !B.allowed(x.m, o.diets, o.avoid)).map((x) => x.m.name) };
     }) }));
     return { hh: (ctx.house?.n || 1) + (ctx.house?.others.length || 0), others, never, T: ctx.T, days, protein, shop: B.shopStats(), fz: { peak: B.freezerPeak(), cap: ctx.fcap }, cv: Object.fromEntries(Object.entries(ctx.course).map(([k, c]) => [k, c.variety])), labels, daily, quickDinner: ctx.course.d.effort <= 10 };
-  }, { s: { ...base, ...prof.s }, seed });
+  }, { s: S, seed });
   w.tight = !!prof.tight;
-  w.nDays = { ...base, ...prof.s }.weeks === 2 ? 14 : 7;
-  w.treat = { ...base, ...prof.s }.treat;
+  w.low = !!prof.low;
+  w.nDays = S.weeks === 2 ? 14 : 7;
+  w.treat = S.treat;
   const fails = RULES.map((rule) => ({ rule, probs: rule.check(w) })).filter((x) => x.probs.length);
   results.push({ prof: prof.name, seed, w, fails });
   if (verbose) {
@@ -147,10 +159,30 @@ for (const prof of PROFILES) for (let k = 0; k < SEEDS; k++) {
     fails.forEach((f) => console.log(`  ${f.rule.hard ? "FAIL" : "warn"} ${f.rule.id}: ${f.probs.join("; ")}`));
   }
 }
+// Chained weeks: the default profile planned 4 weeks in a row, each starting with "Start next week with these".
+// From week 3 the pantry should be eaten down: the shop near what's eaten, and food stock (pantry setup aside) not growing.
+const chains = [];
+if (!only || "chained".includes(only.toLowerCase())) for (let k = 0; k < SEEDS; k++) {
+  let pan = {};
+  const wk = [];
+  for (let n = 0; n < 4; n++) {
+    const o = await page.evaluate(({ s, seed, pan }) => {
+      const B = window.__bbd;
+      const { week } = B.run(s, seed, pan);
+      if (week.error) return { error: week.error };
+      const st = B.shopStats(), nx = B.carry();
+      return { shop: st.shop, eaten: st.eaten, waste: st.waste, kit: st.kit, restock: st.restock, nx, stock: B.stockValue(nx, true) };
+    }, { s: base, seed: 1000 + k * 7919 + n * 31, pan });
+    if (o.error) { wk.push(o); break; }
+    wk.push(o); pan = o.nx;
+  }
+  chains.push({ seed: 1000 + k * 7919, wk });
+}
+
 await browser.close();
 
 const weeks = results.length;
-console.log(`\nBuilt ${weeks} weeks (${PROFILES.length} profiles x ${SEEDS} seeds)\n`);
+console.log(`\nBuilt ${weeks} weeks (${PROFILES.length} profiles x ${SEEDS} seeds, plus fixed first-visit seeds)\n`);
 let hardFail = errors.length;
 for (const rule of RULES) {
   const bad = results.filter((r) => r.fails.some((f) => f.rule === rule));
@@ -167,6 +199,21 @@ if (shops.length) {
   // The weekly cap covers this week's food; pantry setup is bought once and sits outside it. Goal: one-person weeks at least 80% under.
   const solo = results.filter((r) => r.w.shop && r.w.hh === 1), under = solo.filter((r) => r.w.shop.food <= r.w.shop.cap + 0.5);
   if (solo.length) console.log(`One-person weeks within the cap: ${under.length}/${solo.length} (${Math.round((100 * under.length) / solo.length)}%, goal 80%)`);
+}
+if (chains.length) {
+  console.log(`\nChained weeks (default profile, 4 weeks starting from what's left): shop / eaten, and food stock carried on`);
+  let badShop = 0, badStock = 0;
+  chains.forEach(({ seed, wk }) => {
+    if (wk.some((w) => w.error)) { hardFail++; console.log(`  FAIL seed ${seed}: ${wk.find((w) => w.error).error}`); return; }
+    const sh = wk[2].shop + wk[3].shop, ea = wk[2].eaten + wk[3].eaten;
+    const shopOk = sh <= 1.3 * ea, stockOk = wk[3].stock <= 1.1 * wk[1].stock + 5, waste = wk.reduce((a, w) => a + w.waste, 0);
+    if (!shopOk) badShop++;
+    if (!stockOk) badStock++;
+    if (waste > 0.005) hardFail++;
+    console.log(`  seed ${seed}: ${wk.map((w) => `$${Math.round(w.shop)} / $${Math.round(w.eaten)}${w.kit + w.restock > 0.5 ? ` (setup $${Math.round(w.kit)}, restock $${Math.round(w.restock)})` : ""}`).join(" · ")}  stock $${wk.map((w) => Math.round(w.stock)).join(", $")}${waste > 0.005 ? `  FAIL waste $${waste.toFixed(2)}` : ""}`);
+  });
+  console.log(`${badShop ? "warn" : " ok "}  chain-shop   ${chains.length - badShop}/${chains.length}  weeks 3 and 4 shop at most 1.3x what's eaten`);
+  console.log(`${badStock ? "warn" : " ok "}  chain-stock  ${chains.length - badStock}/${chains.length}  food stock after week 4 no more than 10% above week 2's`);
 }
 if (errors.length) console.log(`\nPage errors:\n  ${[...new Set(errors)].join("\n  ")}`);
 process.exit(hardFail ? 1 : 0);
