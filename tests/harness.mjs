@@ -185,6 +185,28 @@ if (!only || "chained".includes(only.toLowerCase())) for (let k = 0; k < SEEDS; 
   chains.push({ seed: 1000 + k * 7919, wk });
 }
 
+// Saved weeks from earlier releases: a site update must not change a week the person already planned (and maybe shopped for).
+// Fixtures are localStorage dumps from first visits on older builds; a meal id this release lacks is replaced on its own, with a note.
+const saved = [];
+if (!only || "saved".includes(only.toLowerCase())) {
+  const fs = await import("node:fs");
+  const dir = path.join(here, "fixtures");
+  for (const f of fs.readdirSync(dir).filter((f) => f.startsWith("saved-")).sort()) {
+    const st = JSON.parse(fs.readFileSync(path.join(dir, f), "utf8"));
+    const ctx2 = await browser.newContext(), p2 = await ctx2.newPage();
+    await p2.addInitScript((st) => { if (!sessionStorage.getItem("seeded")) { sessionStorage.setItem("seeded", "1"); localStorage.clear(); for (const k in st) localStorage.setItem(k, st[k]); } }, st);
+    await p2.goto(pageUrl);
+    await p2.waitForFunction(() => window.__bbd);
+    await p2.waitForTimeout(500);
+    const now = await p2.evaluate(() => JSON.parse(localStorage.getItem("ad-week") || "null"));
+    const old = JSON.parse(st["ad-week"]);
+    const changed = old.days.flatMap((d, i) => d.ids.map((id, j) => (now?.days?.[i]?.ids[j] === id ? null : `day ${i + 1} meal ${j + 1}: ${id} -> ${now?.days?.[i]?.ids[j]}`)).filter(Boolean));
+    const gone = old.days.flatMap((d) => d.ids).filter((id) => /m99999/.test(id)).length;
+    saved.push({ f, changed, gone, note: now?.mendNote || "" });
+    await ctx2.close();
+  }
+}
+
 await browser.close();
 
 const weeks = results.length;
@@ -220,6 +242,14 @@ if (chains.length) {
   });
   console.log(`${badShop ? "warn" : " ok "}  chain-shop   ${chains.length - badShop}/${chains.length}  weeks 3 and 4 shop at most 1.3x what's eaten`);
   console.log(`${badStock ? "warn" : " ok "}  chain-stock  ${chains.length - badStock}/${chains.length}  food stock after week 4 no more than 10% above week 2's`);
+}
+if (saved.length) {
+  console.log(`\nSaved weeks from earlier builds, loaded by this one:`);
+  saved.forEach(({ f, changed, gone, note }) => {
+    const ok = changed.length === gone && (!gone || note);
+    if (!ok) hardFail++;
+    console.log(`${ok ? " ok " : "FAIL"}  ${f}: ${changed.length ? changed.join("; ") : "unchanged"}${gone ? ` (${gone} meal no longer on the menu${note ? ", noted" : ", no note"})` : ""}`);
+  });
 }
 if (errors.length) console.log(`\nPage errors:\n  ${[...new Set(errors)].join("\n  ")}`);
 process.exit(hardFail ? 1 : 0);

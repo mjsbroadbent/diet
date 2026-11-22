@@ -2294,14 +2294,77 @@ button.btn { border-radius: 0; }
   let leftovers = null;
   const skipped = {};
 
-  function inputsKey(s, r) { return JSON.stringify([r.target, r.protein, r.carbs, r.fat, r.keto, s.diets, s.avoid, s.likes, s.meals, s.snacks, s.treat, s.out, s.start, s.course, s.store, s.packs, s.freezer, [...nostock], s.premade, s.styles, s.mix, s.cap, s.prots, s.hh, s.weeks]); }
+  // What a saved week was planned from, by name, so a release that adds a setting doesn't throw the week away
+  const INPUT_FIELDS = ["target", "protein", "carbs", "fat", "keto", "diets", "avoid", "likes", "meals", "snacks", "treat", "out", "start", "course", "store", "packs", "freezer", "nostock", "premade", "styles", "mix", "cap", "prots", "hh", "weeks"];
+  function inputsOf(s, r) {
+    const o = { target: r.target, protein: r.protein, carbs: r.carbs, fat: r.fat, keto: r.keto, nostock: [...nostock] };
+    INPUT_FIELDS.forEach((f) => { if (!(f in o)) o[f] = s[f]; });
+    return JSON.parse(JSON.stringify(o, (k, v) => (v === undefined ? null : v)));
+  }
+  function inputsKey(s, r) { return JSON.stringify(inputsOf(s, r)); }
+  // Saved weeks from earlier releases kept their inputs as an array; these are the layouts it has had (newest first)
+  const LEGACY_KEYS = [
+    ["target", "protein", "carbs", "fat", "keto", "diets", "avoid", "likes", "meals", "snacks", "treat", "out", "start", "course", "store", "packs", "freezer", "nostock", "premade", "styles", "mix", "cap", "prots", "hh", "weeks"],
+    ["target", "protein", "carbs", "fat", "keto", "diets", "avoid", "likes", "meals", "snacks", "treat", "out", "start", "course", "store", "packs", "freezer", "nostock", "premade", "styles", "mix", "cap", "prots", "hh"],
+    ["target", "protein", "carbs", "fat", "keto", "diets", "avoid", "likes", "meals", "snacks", "treat", "flav", "out", "start", "course", "store", "packs", "freezer", "nostock", "premade", "styles", "mix", "cap", "prots", "hh"],
+    ["target", "protein", "carbs", "fat", "keto", "diets", "avoid", "likes", "meals", "snacks", "treat", "flav", "out", "start", "course", "store", "packs", "freezer", "nostock", "premade", "styles", "mix", "cap", "prots"],
+    ["target", "protein", "carbs", "fat", "keto", "diets", "avoid", "likes", "meals", "snacks", "treat", "flav", "out", "start", "course", "store", "packs", "freezer", "nostock", "premade", "styles", "mix", "cap"],
+  ];
+  function savedInputs(saved) {
+    if (saved.inputs) return saved.inputs;
+    let a;
+    try { a = JSON.parse(saved.key); } catch { return null; }
+    if (!Array.isArray(a)) return null;
+    // "out" is always an object ({ days, style }); that tells layouts of the same length apart
+    const L = LEGACY_KEYS.find((L) => L.length === a.length && a[L.indexOf("out")] && typeof a[L.indexOf("out")] === "object");
+    if (!L) return null;
+    const o = Object.fromEntries(L.map((f, i) => [f, a[i]]));
+    // Builds before the 1 or 2 weeks setting saved it empty: it was a one-week plan
+    if (o.weeks == null) o.weeks = 1;
+    return o;
+  }
+  // The same inputs: every setting both versions know about matches (a setting only one of them has is a release change, not the person's)
+  function sameInputs(saved, cur) {
+    const old = savedInputs(saved);
+    return !!old && Object.keys(cur).every((f) => !(f in old) || JSON.stringify(old[f] ?? null) === JSON.stringify(cur[f] ?? null));
+  }
+  // A saved meal this release no longer has: swap in the closest fit for that slot, keep the rest of the day, and say so
+  function mendWeek(w) {
+    const gone = [], fix = new Set();
+    w.days.forEach((d, di) => d.ids.forEach((id, si) => {
+      if (MEAL[id]) return;
+      const type = SLOT_TYPE[(d.slots || ctx.slots)[si]] || "s", T = d.tk ? { ...ctx.T, k: d.tk } : ctx.T, sc = makeScorer(T);
+      const today = new Set(d.ids.filter((x) => MEAL[x]).map((x) => dishOf(MEAL[x])));
+      let best = null;
+      for (const m of (ctx.pools[type] || []).filter((m) => !today.has(dishOf(m)))) {
+        const ms = d.ids.map((x, j) => (j === si ? m : MEAL[x] || null)).filter(Boolean);
+        const v = optimize(ms, T, sc).s;
+        if (!best || v < best.v) best = { m, v };
+      }
+      if (!best) return;
+      d.ids[si] = best.m.id; fix.add(di);
+      if (d.sauce?.[si]) delete d.sauce[si];
+      gone.push(best.m.name);
+    }));
+    // Only the days that changed are re-portioned
+    fix.forEach((di) => { const d = w.days[di]; if (d.ids.every((id) => MEAL[id])) { const T = d.tk ? { ...ctx.T, k: d.tk } : ctx.T; d.ms = optimize(d.ids.map((id) => MEAL[id]), T, makeScorer(T)).ms; } });
+    if (gone.length) w.mendNote = `${gone.length === 1 ? "One meal in your saved week is" : gone.length + " meals in your saved week are"} no longer on the menu, so ${gone.length === 1 ? "it was" : "they were"} swapped for ${gone.join(", ")}. The rest of the week is as you saved it.`;
+    return gone.length;
+  }
 
   function refreshMenu(s, r, force) {
     ctx = context(s, r);
     const key = inputsKey(s, r);
     const saved = ls.get("ad-week");
     saved?.days?.forEach((d) => d.ids.forEach((id) => id[0] === "x" && customMeal(+id.slice(1))));
-    if (!force && saved && saved.key === key && saved.seed === seed && saved.days?.every((d) => d.ids.every((id) => MEAL[id]))) { week = saved; if (!week.extra || !!week.sauceOn !== !!ctx.sauce) { finishUp(); ls.set("ad-week", week); } }
+    // A saved week survives a site update unchanged unless the person changed their inputs or shuffled
+    if (!force && saved?.days && saved.seed === seed && (saved.key === key || sameInputs(saved, inputsOf(s, r)))) {
+      week = saved;
+      const migrated = week.key !== key, mended = mendWeek(week);
+      week.key = key; week.inputs = inputsOf(s, r);
+      if (mended || !week.extra || !!week.sauceOn !== !!ctx.sauce) { finishUp(); ls.set("ad-week", week); }
+      else if (migrated) ls.set("ad-week", week);
+    }
     else {
       const prev = week?.days ? week : saved;
       if (week) week.src = {};
@@ -2311,7 +2374,7 @@ button.btn { border-radius: 0; }
         const b2 = buildWeek(ctx, seed + k * 7919);
         if (!b2.error && weekShop(ctx, b2.days).waste < weekShop(ctx, b.days).waste) b = b2;
       }
-      week = b.error ? { error: b.error } : { key, seed, days: b.days };
+      week = b.error ? { error: b.error } : { key, inputs: inputsOf(s, r), seed, days: b.days };
       if (!b.error) {
         // Days marked done stay exactly as eaten
         prev?.days?.forEach((d, i) => { if (d.passed && d.ids.every((id) => MEAL[id])) week.days[i] = d; });
@@ -3108,6 +3171,7 @@ button.btn { border-radius: 0; }
     const unmatched = ctx.likes.filter((t) => !ctx.library.some((m) => m.text.includes(t)));
     if (unmatched.length) notes.push(`No built-in recipes use ${unmatched.join(", ")} yet.`);
     if (week.note) notes.push(week.note);
+    if (week.mendNote) notes.push(week.mendNote);
     if (week.finished?.length) notes.push(`You'd nearly finish the ${week.finished.map((k) => ING[k][0].toLowerCase().replace(/ \(.*\)/, "").split(",")[0]).join(", ").replace(/, ([^,]*)$/, " and $1")} this week, so the last bit is spread over the meals that use it and those calories are counted.`);
     warn.hidden = !notes.length; warn.textContent = notes.join(" ");
 
