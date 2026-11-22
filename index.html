@@ -120,6 +120,10 @@ fieldset { min-inline-size: 0; }
 .fold summary b { color: var(--ink); font-weight: 700; margin-left: 4px; }
 .fold[open] summary { margin-bottom: 6px; }
 .fold > .seg, .fold > .chips { margin-bottom: 8px; }
+.tune > .tune-sec { display: grid; gap: 8px; padding: 12px 0 4px; border-top: 1px dashed var(--line); }
+.tune > .tune-sec:first-of-type { border-top: 0; padding-top: 4px; }
+.tune-h { margin: 0; font-size: 13px; font-weight: 700; color: var(--ink); }
+.tune-h b { margin-left: 4px; color: var(--accent); }
 .msplit:empty { display: none; }
 .mini { position: fixed; left: 0; right: 0; top: 0; z-index: 40; display: grid; gap: 3px; padding: calc(env(safe-area-inset-top) + 7px) 16px 8px; background: var(--surface); color: var(--ink); border-bottom: 1px solid var(--line); box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12); transform: translateY(-110%); visibility: hidden; transition: transform .2s ease, visibility 0s .2s; font-variant-numeric: tabular-nums; }
 .mini.show { transform: none; visibility: visible; transition: transform .2s ease; }
@@ -671,6 +675,13 @@ button.btn { border-radius: 0; }
   .steps b { width: 24px; height: 24px; font-size: 15px; }
   .steps button[aria-current="step"] { background: linear-gradient(var(--red), var(--red)) var(--mx) var(--my) / 100% 100% no-repeat, var(--surface); }
 }
+
+/* Fine-tune: one fold for the knobs; sections inside are labelled like the panel headings */
+.fold.tune > summary { font-size: 16px; }
+.tune > .tune-sec { border-top: 2px dashed var(--ink); }
+.tune > .tune-sec:first-of-type { border-top: 0; }
+.tune-h { font-family: var(--label); text-transform: uppercase; letter-spacing: 0.04em; font-size: 12px; font-weight: 800; }
+.tune-h b { font-family: var(--slant); font-style: italic; font-weight: 900; color: var(--red); }
 </style>
 <script>
   (function () { var k; try { k = JSON.parse(localStorage.getItem("ad-skin")); } catch (e) {} k = k === "light" || k === "dark" ? k : "cereal";
@@ -807,34 +818,49 @@ button.btn { border-radius: 0; }
         <details class="fold"><summary>Week starts on <b id="startSum">Monday</b></summary>
           <div class="seg" role="radiogroup" aria-label="Week starts on" id="startSeg"></div>
         </details>
-        <details class="fold"><summary>Eating out (replaces dinner) <b id="outSum">None</b></summary>
-          <div class="chips" id="outDays"></div>
-          <div class="seg" role="radiogroup" aria-label="Eating out style" id="outStyleSeg">
-            <label><input type="radio" name="outStyle" id="out-h" value="h" checked><span>Healthy</span></label>
-            <label><input type="radio" name="outStyle" id="out-i" value="i"><span>Indulgent</span></label>
-          </div>
-          <p class="hint" id="outHint"></p>
-        </details>
-        <div class="courses" id="courses"></div>
-        <details class="fold" id="styleFold"><summary>Lunch and dinner styles <b id="styleSum">All</b></summary>
-          <div class="chips" id="styleChips">
-            <label class="chip"><input type="checkbox" name="style" value="bowl" checked><span>Bowls</span></label>
-            <label class="chip"><input type="checkbox" name="style" value="sand" checked><span>Sandwiches and pizza</span></label>
-            <label class="chip"><input type="checkbox" name="style" value="plate" checked><span>Protein and a side</span></label>
-            <label class="chip"><input type="checkbox" name="style" value="classic" checked><span>Recipes</span></label>
-          </div>
-          <label class="check"><input type="checkbox" id="mix">
-            <span>Mix and match<small>Keep the same protein, bowl base or bread and change what goes with it. Variety sets how many you keep: Same means one all week.</small></span></label>
-        </details>
         <label class="check"><input type="checkbox" id="premade" checked>
           <span>Premade meals and salad kits<small>Frozen entrées, soups, egg bites and bagged salads with their dressing. Turn off to cook everything from ingredients.</small></span></label>
-        <label class="check"><input type="checkbox" id="sauce">
-          <span>Sauce it up<small>Adds a spoonful of barbecue, teriyaki, sweet chili, sriracha, hot sauce, tzatziki, Dijon, pesto or salsa to meals it suits, for variety with no extra work. Calories included.</small></span></label>
         <label class="f">Foods you'd like to see more of (optional)
           <div class="say"><input type="text" id="likes" placeholder="Type a food and press Enter, e.g. salmon"></div>
           <div class="tags" id="likesTags"></div>
           <p class="hint">Meals containing these get picked more often.</p>
         </label>
+        <details class="fold tune" id="tuneFold"><summary>Fine-tune <b id="tuneSum">Defaults</b></summary>
+          <div class="tune-sec"><h3 class="tune-h">Effort and variety</h3>
+            <div class="courses" id="courses"></div>
+          </div>
+          <div class="tune-sec" id="styleFold"><h3 class="tune-h">Lunch and dinner styles <b id="styleSum">All</b></h3>
+            <div class="chips" id="styleChips">
+              <label class="chip"><input type="checkbox" name="style" value="bowl" checked><span>Bowls</span></label>
+              <label class="chip"><input type="checkbox" name="style" value="sand" checked><span>Sandwiches and pizza</span></label>
+              <label class="chip"><input type="checkbox" name="style" value="plate" checked><span>Protein and a side</span></label>
+              <label class="chip"><input type="checkbox" name="style" value="classic" checked><span>Recipes</span></label>
+            </div>
+            <label class="check"><input type="checkbox" id="mix">
+              <span>Mix and match<small>Keep the same protein, bowl base or bread and change what goes with it. Variety sets how many you keep: Same means one all week.</small></span></label>
+          </div>
+          <div class="tune-sec"><h3 class="tune-h">Eating out (replaces dinner) <b id="outSum">None</b></h3>
+            <div class="chips" id="outDays"></div>
+            <div class="seg" role="radiogroup" aria-label="Eating out style" id="outStyleSeg">
+              <label><input type="radio" name="outStyle" id="out-h" value="h" checked><span>Healthy</span></label>
+              <label><input type="radio" name="outStyle" id="out-i" value="i"><span>Indulgent</span></label>
+            </div>
+            <p class="hint" id="outHint"></p>
+          </div>
+          <div class="tune-sec">
+            <label class="check"><input type="checkbox" id="sauce">
+              <span>Sauce it up<small>Adds a spoonful of barbecue, teriyaki, sweet chili, sriracha, hot sauce, tzatziki, Dijon, pesto or salsa to meals it suits, for variety with no extra work. Calories included.</small></span></label>
+          </div>
+          <div class="tune-sec" id="freezerRow"><h3 class="tune-h">Freezer space for this shop</h3>
+            <div class="seg" role="radiogroup" aria-label="Freezer space">
+              <label><input type="radio" name="freezer" id="fz-all" value="all"><span>Unlimited</span></label>
+              <label><input type="radio" name="freezer" id="fz-std" value="std" checked><span>Standard</span></label>
+              <label><input type="radio" name="freezer" id="fz-low" value="low"><span>Not much</span></label>
+              <label><input type="radio" name="freezer" id="fz-none" value="none"><span>None</span></label>
+            </div>
+            <p class="hint" id="freezerHint"></p>
+          </div>
+        </details>
       </fieldset>
 
       <fieldset data-step="shop">
@@ -846,15 +872,6 @@ button.btn { border-radius: 0; }
         </div>
         <label class="check" id="packsRow"><input type="checkbox" id="packs" checked>
           <span>Plan around big packs<small>Favours recipes that reuse what you already bought, so less of each Costco pack goes to waste.</small></span></label>
-        <div class="f" id="freezerRow">Freezer space for this shop
-          <div class="seg" role="radiogroup" aria-label="Freezer space">
-            <label><input type="radio" name="freezer" id="fz-all" value="all"><span>Unlimited</span></label>
-            <label><input type="radio" name="freezer" id="fz-std" value="std" checked><span>Standard</span></label>
-            <label><input type="radio" name="freezer" id="fz-low" value="low"><span>Not much</span></label>
-            <label><input type="radio" name="freezer" id="fz-none" value="none"><span>None</span></label>
-          </div>
-          <p class="hint" id="freezerHint"></p>
-        </div>
         <p class="hint" id="storeHint"></p>
       </fieldset>
     </form>
@@ -2086,6 +2103,19 @@ button.btn { border-radius: 0; }
     $("outHint").textContent = !any ? "Pick the days you'll eat dinner out." : radio("outStyle") === "h"
       ? "Counted as a big salad with grilled protein: about 650 kcal and 45 g protein. The rest of the day adjusts."
       : "Counted as a burger and fries: about 1,350 kcal and 45 g protein. The rest of that day gets lighter.";
+    showTune();
+  }
+  // Fine-tune summary: what differs from the defaults
+  function showTune() {
+    const parts = [];
+    if (COURSES.some((c) => $("effort-" + c.t) && (EFFORT[+$("effort-" + c.t).value][0] !== c.effort || VARIETY[+$("variety-" + c.t).value][0] !== c.variety))) parts.push("effort and variety");
+    if (document.querySelectorAll('input[name="style"]:not(:checked)').length) parts.push("styles");
+    if ($("mix").checked) parts.push("mix and match");
+    const od = document.querySelectorAll('input[name="out"]:checked').length;
+    if (od) parts.push(`eating out ${od} ${od > 1 ? "days" : "day"}`);
+    if ($("sauce").checked) parts.push("sauce it up");
+    if (!$("freezerRow").hidden && radio("freezer") !== "std") parts.push("freezer");
+    $("tuneSum").textContent = parts.length ? parts.join(", ").replace(/^./, (x) => x.toUpperCase()) : "Defaults";
   }
   $("courses").innerHTML = `<div class="course head"><span>Course</span><span>Effort</span><span>Variety</span></div>` +
     COURSES.map((c) => `<div class="course" id="row-${c.t}"><b>${c.name}</b>
