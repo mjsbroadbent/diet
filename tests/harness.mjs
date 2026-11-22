@@ -21,7 +21,7 @@ const PROFILES = [
   { name: "Woman, maintain, vegetarian", s: { sex: "female", age: 29, heightCm: 165, weightKg: 62, goal: "maintain", diets: ["Vegetarian"], snacks: "2" } },
   { name: "Vegan, 2 meals", s: { diets: ["Vegan"], meals: "2", snacks: "1", sex: "female", heightCm: 170, weightKg: 68, age: 41 } },
   { name: "Keto man", s: { diets: ["Keto"], weightKg: 95, age: 45 } },
-  { name: "Gluten-free, nut allergy", s: { diets: ["Gluten-free"], avoid: "nut", sex: "female", heightCm: 160, weightKg: 70, age: 52 } },
+  { name: "Gluten-free, nut allergy", s: { diets: ["Gluten-free"], avoid: "nut", prots: { beef: 0, pork: 0 }, sex: "female", heightCm: 160, weightKg: 70, age: 52 } },
   { name: "Pescatarian, treats", s: { diets: ["Pescatarian"], treat: "h", sex: "female", heightCm: 168, weightKg: 58, goal: "maintain" } },
   { name: "Big man, gain, 2 snacks", s: { heightCm: 190, weightKg: 92, age: 24, goal: "gain", activity: 1.725, snacks: "2", treat: "i" } },
   { name: "Any store, eats out Fri/Sat", s: { store: "any", out: { days: [4, 5], style: "i" } } },
@@ -53,6 +53,8 @@ const RULES = [
     w.days.forEach((d) => d.meals.forEach((m) => { if (!m.out && w.daily[m.type]) { const k = m.type + m.dish + m.sauce; n[k] = (n[k] || 0) + 1; } }));
     return Object.entries(n).filter(([, c]) => c > 2).map(([k, c]) => `${k} x${c}`);
   } },
+  { id: "prots-never", hard: true, desc: "no protein the person never eats", check: (w) => w.days.flatMap((d, i) => d.meals.filter((m) => !m.out && w.never.includes(m.main)).map((m) => `day ${i + 1}: ${m.name} [${m.main}]`)) },
+  { id: "portion-size", hard: true, desc: "meal portions between 3/4 and 1 1/2", check: (w) => w.days.flatMap((d, i) => d.meals.filter((m) => "bld".includes(m.type) && !m.out && (m.mult < 0.75 || m.mult > 1.5)).map((m) => `day ${i + 1}: ${m.name} x${m.mult}`)) },
   { id: "portion-label", hard: true, desc: "portion labels in plain words", check: (w) => (w.labels.filter((t) => /\d×/.test(t)).slice(0, 3)) },
   { id: "budget", hard: false, desc: "first shop under $300", check: (w) => (w.shop && w.shop.shop > 300 ? [`$${Math.round(w.shop.shop)}`] : []) },
   { id: "waste", hard: false, desc: "no fresh food wasted ($0)", check: (w) => (w.shop && w.shop.waste > 0.005 ? [`$${Math.round(w.shop.waste)}`] : []) },
@@ -90,12 +92,13 @@ for (const prof of PROFILES) for (let k = 0; k < SEEDS; k++) {
         slots, kcal: dd.tot[0], tk: d.tk ?? ctx.T.k,
         meals: dd.meals.map((x, i) => ({ id: x.m.id, name: x.m.name, slot: slots[i], type: x.m.type, out: !!x.m.out, ok: !!x.m.out || B.allowed(x.m, ctx.diets, ctx.avoid),
           dish: x.m.id.replace(/^k[ld]\./, "k.").replace(/^c/, "m"), dinner: x.m.dinner ?? (x.m.style === "sand" ? false : undefined), main: x.m.out ? "none" : mainOf(x.m),
-          kcal: x.n[0], mult: x.mult, sauce: x.items.find((it) => it.sauce)?.k || "" })),
+          kcal: x.n[0], mult: x.mult, appeal: x.m.appeal, sauce: x.items.find((it) => it.sauce)?.k || "" })),
       };
     });
     const labels = [...document.querySelectorAll("#days .mt")].map((e) => e.textContent);
     const daily = Object.fromEntries(Object.entries(ctx.course).map(([t, c]) => [t, c.variety >= 7 && "bld".includes(t)]));
-    return { T: ctx.T, days, protein, shop: B.shopStats(), labels, daily, quickDinner: ctx.course.d.effort <= 10 };
+    const never = Object.entries(s.prots || {}).filter(([, v]) => v === 0).map(([k]) => k);
+    return { never, T: ctx.T, days, protein, shop: B.shopStats(), labels, daily, quickDinner: ctx.course.d.effort <= 10 };
   }, { s: { ...base, ...prof.s }, seed });
   const fails = RULES.map((rule) => ({ rule, probs: rule.check(w) })).filter((x) => x.probs.length);
   results.push({ prof: prof.name, seed, w, fails });
@@ -116,6 +119,8 @@ for (const rule of RULES) {
   const ex = bad[0] ? `  e.g. ${bad[0].prof}: ${bad[0].fails.find((f) => f.rule === rule).probs.slice(0, 2).join("; ")}` : "";
   console.log(`${bad.length ? (rule.hard ? "FAIL" : "warn") : " ok "}  ${rule.id.padEnd(12)} ${String(weeks - bad.length).padStart(3)}/${weeks}  ${rule.desc}${ex}`);
 }
+const ap = results.flatMap((r) => r.w.days.flatMap((d) => d.meals.filter((m) => (m.slot === "Lunch" || m.slot === "Dinner") && m.appeal).map((m) => m.appeal)));
+console.log(`\nAverage appeal of lunches and dinners: ${(ap.reduce((a, b) => a + b, 0) / ap.length).toFixed(2)} (1 to 5)`);
 const shops = results.filter((r) => r.w.shop).map((r) => r.w.shop);
 if (shops.length) {
   const st = (k) => { const v = shops.map((x) => x[k]).sort((a, b) => a - b); return `$${Math.round(v[0])} to $${Math.round(v[v.length - 1])}, median $${Math.round(v[v.length >> 1])}`; };
