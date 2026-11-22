@@ -1234,6 +1234,7 @@ button.btn { border-radius: 0; }
       <div>
         <h2 class="sec" id="menuTitle">Your week</h2>
         <p id="menuSummary"></p>
+        <p id="planning" class="hint" role="status" hidden></p>
       </div>
       <button type="button" class="btn" id="shuffle">Shuffle menu</button>
     </div>
@@ -2223,7 +2224,7 @@ button.btn { border-radius: 0; }
     // Pantry first: with stock at home, once the week is waste-free and under the cap, a few more swaps take out
     // new long-life packs that would mostly sit in the pantry (meals from what's owned or already on the list come in)
     const stockMode = isStocked();
-    let trims = 0;
+    let trims = 0, stall = 0;
     for (let it = 0; it < (days.length > 7 ? 160 : 80) && (st.waste > 0.01 || st.food > ctx.cap || st.fz > 0 || (stockMode && trims < TRIM_MAX)); it++) {
       const leftOf = {};
       for (const kk in st.left) leftOf[baseK(kk)] = (leftOf[baseK(kk)] || 0) + st.left[kk];
@@ -2330,7 +2331,12 @@ button.btn { border-radius: 0; }
         save.forEach((ids, di) => (days[di].ids = ids));
         if (j < cur - 1e-6 && (!best || j < best.j)) best = { multi: chg, nds, j, st: st2 };
       }
-      if (!best) { if (trim) break; continue; }
+      // Ten tries in a row that don't cut the waste, the cap overrun or the freezer: what's left is for the passes
+      // after this (finishing, the repair, a redraw), rather than polishing the rest while the page waits
+      if (!best) { if (trim || ++stall >= 10) break; continue; }
+      const gain = st.waste - best.st.waste > 0.01 || st.fz - best.st.fz > 1e-3 || Math.max(0, st.food - ctx.cap) - Math.max(0, best.st.food - ctx.cap) > 0.5;
+      stall = gain || trim ? 0 : stall + 1;
+      if (stall >= 10) break;
       const apply = (di, c, nd) => { const d = days[di]; sSum += c.s - d.s; Object.assign(d, { ids: c.ids, ms: c.ms, s: c.s }); needs[di] = nd; };
       if (best.multi) best.multi.forEach((c, di) => apply(di, c, best.nds.get(di)));
       else apply(best.di, best, best.nd);
@@ -2541,7 +2547,14 @@ button.btn { border-radius: 0; }
     return gone.length;
   }
 
-  function refreshMenu(s, r, force) {
+  // A newer plan (or a change of inputs) cancels a redraw still waiting to run
+  let redrawTok = 0, syncRedraw = false;
+  // now: build right away (a new plan first lets the page paint a "Planning your week" line, since building can take a
+  // few seconds on a phone)
+  function refreshMenu(s, r, force, now) {
+    redrawTok++;
+    const busy = (txt) => { const el = $("planning"); if (!el) return; el.hidden = !txt; if (txt) el.textContent = txt; };
+    busy("");
     ctx = context(s, r);
     const key = inputsKey(s, r);
     const saved = ls.get("ad-week");
@@ -2558,14 +2571,16 @@ button.btn { border-radius: 0; }
       else if (migrated) ls.set("ad-week", week);
     }
     else {
+      if (!now && !syncRedraw) {
+        const tok = redrawTok;
+        busy("Planning your week…");
+        setTimeout(() => requestAnimationFrame(() => setTimeout(() => { if (tok === redrawTok) refreshMenu(s, r, force, true); }, 0)), 0);
+        return;
+      }
       const prev = week?.days ? week : saved;
       if (week) week.src = {};
       let b = buildWeek(ctx, seed);
-      // Zero waste comes first: if the swaps couldn't clear every leftover, try up to two more draws and keep the least wasteful
-      for (let k = 1; k <= 2 && ctx.costco && !b.error && weekShop(ctx, b.days).waste > 0.01; k++) {
-        const b2 = buildWeek(ctx, seed + k * 7919);
-        if (!b2.error && weekShop(ctx, b2.days).waste < weekShop(ctx, b.days).waste) b = b2;
-      }
+      // (Zero waste: a week that still wastes once it's finished is planned again below, from other draws)
       const plan = (b) => {
         week = b.error ? { error: b.error } : { key, inputs: inputsOf(s, r), seed, days: b.days, rulesV: RULES_V, ...(broke ? { replanNote: "Your week was planned again to fit your protein and household settings. Days you've marked done stay as they were." } : {}) };
         if (b.error) return;
@@ -2586,9 +2601,11 @@ button.btn { border-radius: 0; }
         if (ctx.fcap < Infinity && freezerPeak() > ctx.fcap) over += 1;
         return 100 * over + (shopStats()?.waste || 0);
       };
-      if (ctx.costco && !b.error && cost() > 0.005) {
+      // The redraws can take a few seconds on a phone: the first plan shows straight away with a "still planning" line,
+      // and the redraws run once the page has painted (the test hook runs them at once)
+      const redraw = () => {
         let best = { w: cost(), week };
-        for (let k = 3; k <= 6 && best.w > 0.005; k++) {
+        for (let k = 1; k <= 5 && best.w > 0.005; k++) {
           const b2 = buildWeek(ctx, seed + k * 7919);
           if (b2.error) continue;
           plan(b2);
@@ -2606,6 +2623,21 @@ button.btn { border-radius: 0; }
           ctx.pools = pools0;
         }
         week = best.week;
+      };
+      const tok = ++redrawTok;
+      if (ctx.costco && !b.error && cost() > 0.005) {
+        if (syncRedraw) redraw();
+        else {
+          const first = week, stamp = JSON.stringify(week.days.map((d) => [d.ids, !!d.passed]));
+          busy("Still planning: finding a week that leaves nothing to throw away…");
+          setTimeout(() => requestAnimationFrame(() => setTimeout(() => {
+            if (tok !== redrawTok || week !== first || JSON.stringify(week.days.map((d) => [d.ids, !!d.passed])) !== stamp) { $("planning").hidden = true; return; }
+            redraw();
+            $("planning").hidden = true;
+            ls.set("ad-week", week);
+            renderMenu();
+          }, 0)), 0);
+        }
       }
       if (!b.error) ls.set("ad-week", week);
       Object.keys(skipped).forEach((k) => delete skipped[k]);
@@ -2683,7 +2715,7 @@ button.btn { border-radius: 0; }
       const s = { ...read(), ...over, course: { ...read().course, ...(over.course || {}) } };
       const r = compute(s);
       seed = sd; pantry = { ...(pan || {}) }; openStock = { ...(opn || {}) }; week = null; nostock.clear();
-      refreshMenu(s, r, true);
+      syncRedraw = true; refreshMenu(s, r, true); syncRedraw = false;
       return { s, r, ctx, week };
     },
     // What "Start next week with these" would put in the pantry, and what it's worth
