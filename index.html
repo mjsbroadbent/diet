@@ -192,6 +192,8 @@ button.btn:hover { filter: brightness(1.08); }
 .wk2 span { font-size: 14px; font-weight: 700; color: var(--accent); }
 .nm .topping { display: block; font-size: 14px; font-weight: 500; color: var(--muted); }
 .meal .tw { font-size: 14px; font-weight: 600; color: var(--accent); }
+.wk2 .d8 { flex-basis: 100%; margin: 0; font-size: 14px; color: var(--muted); }
+.keep2 { display: inline-block; margin-left: 6px; font-size: 12px; font-weight: 700; color: var(--accent); }
 .topup-tag { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 999px; font-size: 11px; font-weight: 800; vertical-align: 3px; background: var(--accent-soft); color: var(--accent); }
 .day { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px; display: grid; gap: 10px; align-content: start; min-width: 0; }
 .day-h { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
@@ -1107,7 +1109,7 @@ button.btn { border-radius: 0; }
             <label><input type="radio" name="weeks" id="weeks-2" value="2"><span>2 weeks</span></label>
           </div>
         </div>
-        <p class="hint" id="weeksHint" hidden>One big Costco shop for 14 days, plus a short top-up for fresh food on day 8.</p>
+        <p class="hint" id="weeksHint" hidden>One big Costco shop for 14 days. Most fresh food keeps two weeks stored well; a short top-up on day 8 only if tender greens are on the menu.</p>
         <details class="fold"><summary>Week starts on <b id="startSum">Monday</b></summary>
           <div class="seg" role="radiogroup" aria-label="Week starts on" id="startSeg"></div>
         </details>
@@ -1304,7 +1306,7 @@ button.btn { border-radius: 0; }
   const DIETS = ["Vegetarian", "Vegan", "Pescatarian", "Keto", "Gluten-free", "Halal", "Kosher"];
 
   // Menu data (ingredients, packs, recipes, parts, ratings, measures, sauces, rocket) lives in data.js
-  const { S, ING, INSTORE, COSTCO, SUB, UNIT, FROZEN, STAPLE, FREEZER, NOFRILLS, NF_DATE, NF_KEEP, ELSE_DATE, ELSEWHERE, KEEP, APPEAL, SWEET, MEASURE, SAUCE, PLANETS, ABOUT, MEAL_ROWS, PARTS } = window.BBD_DATA;
+  const { S, ING, INSTORE, COSTCO, SUB, UNIT, FROZEN, STAPLE, FREEZER, NOFRILLS, NF_DATE, NF_KEEP, ELSE_DATE, ELSEWHERE, KEEP, FRIDGE = { days: {}, tip: {} }, APPEAL, SWEET, MEASURE, SAUCE, PLANETS, ABOUT, MEAL_ROWS, PARTS } = window.BBD_DATA;
 
 
   // The pack you'd buy for k: Costco by default; No Frills when Costco doesn't have it or the smaller size wins this week.
@@ -1984,7 +1986,7 @@ button.btn { border-radius: 0; }
     const N = ctx.nDays || 7;
     const famLD = {}, vegHalf = ctx.diets.includes("Vegetarian") || ctx.diets.includes("Vegan") ? Math.ceil((N * slots.filter((x) => x === "Lunch" || x === "Dinner").length) / 2) : 0;
     for (d = 0; d < N; d++) {
-      if (d === 7) { for (const k in have) if (fresh(k)) have[k] = 0; hotUsed = {}; }
+      if (d === 7) { for (const k in have) if (shortLived(k)) have[k] = 0; hotUsed = {}; }
       let best = null;
       // Pick weights only change between days, so each slot's pool and weights are worked out once per day
       const outToday = ctx.out.days.includes((ctx.start + d) % 7);
@@ -2021,6 +2023,8 @@ button.btn { border-radius: 0; }
         let capX = 0;
         { const f = {}; picked.forEach((m) => { if (m.out || (m.type !== "l" && m.type !== "d")) return; f[m.main] = (f[m.main] || 0) + 1; });
           for (const p in f) { const n = (famLD[p] || 0) + f[p]; if (ctx.prots?.[p] === 1 && n > ctx.protCeil) capX += 5 * (n - ctx.protCeil); if (vegHalf && n > vegHalf) capX += 0.3 * (n - vegHalf); } }
+        // Week 2 of a two-week plan: food that needs the day-8 top-up (tender greens) costs a little, so sturdier food wins and the top-up is often skipped
+        if (d >= 7) { const sl = new Set(); picked.forEach((m) => m.items?.forEach(([k]) => { if (shortLived(k)) sl.add(k); })); capX += 0.15 * sl.size; }
         let s = capX + o.s + ctx.appealScore(picked) + picked.reduce((a, m) => a + (ctx.course[m.type].variety >= 7 ? 0.05 * (uses[m.id] || 0) : ctx.mix && m.anchor ? 0.03 * (uses[m.id] || 0) : 0.03 * Math.max(0, (uses[m.id] || 0) + 1 - share[m.type]) + overShare(m)) - (liked(m) ? 0.01 : 0), 0);
         // One rotisserie chicken's worth per shop
         const hu = hotOf(picked, o.ms);
@@ -2079,10 +2083,13 @@ button.btn { border-radius: 0; }
   // The whole week's shop from total amounts needed: whole packs, cost, and fresh food left in an open pack (waste)
   // Amounts as the menu will show them (rounded portions), so the waste check matches the grocery list
   const portionOf = (m, x) => ((m._rp ||= {})[x] ||= portion(m, x));
-  // Two-week plan: one Costco shop, plus a top-up on day 8 for fresh food that won't keep that long.
-  // Fresh food eaten in week 2 is its own purchase, keyed "k@2", so each fresh purchase is finished on its own.
+  // Two-week plan: one Costco shop for everything that keeps two weeks in the fridge (most produce does, stored well),
+  // plus a day-8 top-up only for what doesn't (tender greens, deli salads, soft fruit). That food eaten in week 2
+  // is its own purchase, keyed "k@2", so each purchase is finished on its own.
+  const fridgeDays = (k) => FRIDGE.days[k] ?? 14;
+  const shortLived = (k) => isFresh(k, ctx.fcap) && fridgeDays(k) < 14;
   const baseK = (k) => (k.endsWith("@2") ? k.slice(0, -2) : k);
-  const keyOf = (k, di) => (di >= 7 && isFresh(k, ctx.fcap) ? k + "@2" : k);
+  const keyOf = (k, di) => (di >= 7 && shortLived(k) ? k + "@2" : k);
   const ownedK = (k) => (k.endsWith("@2") ? 0 : pantry[k] || 0);
   const dayNeed = (d, di) => { const n = {}; d.ids.forEach((id, i) => servings(di, MEAL[id], i, d).forEach(([mm, pl]) => portionOf(mm, twinMult(mm, MEAL[id], d.ms[i])).forEach(({ k, g }) => { const kk = keyOf(k, di); n[kk] = (n[kk] || 0) + buyUnits(k, g * pl); }))); return n; };
   function weekShop(ctx, days, need) {
@@ -2147,7 +2154,10 @@ button.btn { border-radius: 0; }
       const f = {};
       days.forEach((d) => d.ids.forEach((id) => { const m = MEAL[id]; if (!m.out && (m.type === "l" || m.type === "d") && ctx.prots?.[m.main] === 1) f[m.main] = (f[m.main] || 0) + 1; }));
       const ceil = Object.values(f).reduce((a, c) => a + 5 * Math.max(0, c - ctx.protCeil), 0);
-      return ceil + pile + Object.entries(n).reduce((a, [t, set]) => a + 0.004 * Math.max(0, set.size - (cap[t] || Infinity)), 0);
+      // A day-8 top-up trip for tender greens costs a little: week 2 leans on food the first shop still holds
+      const top = new Set();
+      days.forEach((d, di) => { if (di >= 7) d.ids.forEach((id) => MEAL[id].items?.forEach(([k]) => { if (shortLived(k)) top.add(k); })); });
+      return ceil + 0.15 * top.size + pile + Object.entries(n).reduce((a, [t, set]) => a + 0.004 * Math.max(0, set.size - (cap[t] || Infinity)), 0);
     };
     // Freezer: kilograms over its space on the busiest day; a hard limit, so it outweighs everything else
     const withFz = (st, nds) => ((st.fz = ctx.fcap === Infinity ? 0 : Math.max(0, freezerPeak(nds) - fzPlan()) / 1000), st);
@@ -2508,7 +2518,7 @@ button.btn { border-radius: 0; }
   }
   // Test hook for tests/harness.mjs: build a week from given settings and seed, without touching saved data
   window.__bbd = {
-    MEAL, ING, pieceStep, compute, context, dayData, shopStats, freezerPeak, allowed, read, buildWeek, optimize, weekShop,
+    MEAL, ING, pieceStep, fridge: (k) => (isFresh(k, ctx.fcap) ? fridgeDays(k) : Infinity), keyOf: (k, di) => keyOf(k, di), compute, context, dayData, shopStats, freezerPeak, allowed, read, buildWeek, optimize, weekShop,
     // pan: what's already in the pantry (a chained week starts from carry())
     run(over, sd, pan) {
       const s = { ...read(), ...over, course: { ...read().course, ...(over.course || {}) } };
@@ -3355,7 +3365,11 @@ button.btn { border-radius: 0; }
         const st = typeof shopStats === "function" ? shopStats() : null;
         const div = document.createElement("div");
         div.className = "wk2"; div.dataset.w = "1";
-        div.innerHTML = `<h3>Week 2</h3><span>Top-up shop today${st?.topUp > 0.5 ? `: ${money(st.topUp)} of fresh food` : " for fresh food"}</span>`;
+        // Day 8: the fresh food the first shop is still holding for week 2 gets a look-over
+        const held = [...new Set(all.slice(7).flatMap((x) => x.meals.flatMap((y) => y.items.map((it) => it.k))))].filter((k) => isFresh(k, ctx.fcap) && !shortLived(k));
+        const nm = (k) => ING[k][0].toLowerCase().replace(/ \(.*\)/, "").split(",")[0];
+        const look = held.length ? `<p class="d8">Day 8: look over your ${held.slice(0, 5).map(nm).join(", ").replace(/, ([^,]*)$/, " and $1")}${held.length > 5 ? " and the rest of the fresh food" : ""}, and pull out anything going soft.</p>` : "";
+        div.innerHTML = `<h3>Week 2</h3><span>${st?.topUp > 0.5 ? `Top-up shop today: ${money(st.topUp)} of fresh food` : "No top-up needed"}</span>${look}`;
         days.append(div);
       }
       const el = document.createElement("article");
@@ -3363,7 +3377,7 @@ button.btn { border-radius: 0; }
       el.className = "day" + (wd.passed ? " passed" : "") + (wd.passed && stampDay === di ? " stamp-in" : "");
       const SL = slotsOf(wd);
       el.innerHTML = `
-        <div class="day-h"><h3>${dayName(di)}${di === 7 ? ' <span class="topup-tag">Top-up shop</span>' : ""}${wd.passed ? ' <span class="logged">Done</span>' : ""}</h3><span class="pill ${cls}" title="${dev >= 0 ? "+" : ""}${Math.round(dev * 100)}% vs target">${fmt(d.tot[0])} kcal</span></div>
+        <div class="day-h"><h3>${dayName(di)}${di === 7 && (typeof shopStats === "function" ? shopStats() : null)?.topUp > 0.5 ? ' <span class="topup-tag">Top-up shop</span>' : ""}${wd.passed ? ' <span class="logged">Done</span>' : ""}</h3><span class="pill ${cls}" title="${dev >= 0 ? "+" : ""}${Math.round(dev * 100)}% vs target">${fmt(d.tot[0])} kcal</span></div>
         ${wd.tk != null ? `<p class="tk">Target ${wd.tk < T.k ? "trimmed" : "raised"} to ${fmt(wd.tk)} kcal to balance the rest of the week.</p>` : ""}
         <div class="macros">
           <span${d.tot[1] < DT.p * 0.85 ? ' class="off"' : ""}><b>P</b> ${fmt(d.tot[1])}/${DT.p} g</span>
@@ -3648,8 +3662,12 @@ button.btn { border-radius: 0; }
     $("groceryNote").textContent = ctx.mostly
       ? `Costco packs at warehouse prices, plus No Frills for what Costco doesn't carry or where a Costco pack would mostly go to waste${NF_DATE ? ` (No Frills prices from ${NF_DATE})` : ""}. Tick items off as you shop.`
       : "Costco packs for the week above, at warehouse prices (Same-Day runs about 7.5% higher). Tick items off as you shop.";
-    if (two) $("groceryNote").textContent = $("groceryNote").textContent.replace("for the week above", "for both weeks") + " One Costco trip on day 1 covers both weeks. Fresh food for the second week is a short top-up around day 8, so nothing sits and spoils.";
+    if (two) $("groceryNote").textContent = $("groceryNote").textContent.replace("for the week above", "for both weeks") + " One Costco trip on day 1 covers both weeks. Most fresh food keeps two weeks stored well; anything that won't (tender greens) is a short top-up around day 8, so nothing spoils.";
 
+    // Fresh food from the first shop that's still on the menu in week 2: it keeps if it was kept cold and stored well
+    const lastUse = {};
+    if (two) week.days.forEach((d, di) => dayData(d, di).meals.forEach((x) => x.items.forEach((it) => { if (di >= 7) lastUse[it.k] = di; })));
+    const held2 = (r) => two && !r.top && isFresh(r.k, fcap) && !shortLived(r.k) && lastUse[r.k] >= 7;
     const bySec = {};
     rows.filter((r) => !r.idle).forEach((r) => (bySec[r.top ? TOP : r.nf || r.other ? OTHER : r.packs && isStaple(r.k) ? KIT : ING[r.k][6]] ||= []).push(r));
     const box = $("grocery");
@@ -3657,13 +3675,13 @@ button.btn { border-radius: 0; }
     [KIT, ...Object.values(S), OTHER, TOP].filter((sec) => bySec[sec]).forEach((sec) => {
       const div = document.createElement("div");
       div.className = "gsec" + (sec === KIT ? " kit" : sec === OTHER ? " kit other" : sec === TOP ? " kit topup" : "");
-      div.innerHTML = `<h3>${sec === KIT && !first ? "Pantry staples" : sec}</h3>${sec === KIT ? `<p class="note">${first ? "Staples that keep for months. Buy them once and they're in your pantry for next week." : restock > 0.5 ? "Staples that keep for months: new ones this week's recipes need, and restocks of ones that ran short." : "Staples that keep for months, new for this week's recipes. They stay in your pantry after."}</p>` : sec === OTHER ? `<p class="note">Not at Costco, or a smaller size beats the Costco pack. A separate stop.</p>` : sec === TOP ? `<p class="note">Fresh food for days 8 to 14, bought around day 8 so it's still good when you eat it. Any grocery store works.</p>` : ""}` + bySec[sec].sort((a, b) => b.cost - a.cost || a.prod.localeCompare(b.prod)).map((r) => {
+      div.innerHTML = `<h3>${sec === KIT && !first ? "Pantry staples" : sec}</h3>${bySec[sec].some(held2) ? `<p class="note">The ones marked "Keeps 2 weeks" do if they were kept cold before you bought them and you store them well. Check each pack and pull out any bad pieces, because one spoils the rest.</p>` : ""}${sec === KIT ? `<p class="note">${first ? "Staples that keep for months. Buy them once and they're in your pantry for next week." : restock > 0.5 ? "Staples that keep for months: new ones this week's recipes need, and restocks of ones that ran short." : "Staples that keep for months, new for this week's recipes. They stay in your pantry after."}</p>` : sec === OTHER ? `<p class="note">Not at Costco, or a smaller size beats the Costco pack. A separate stop.</p>` : sec === TOP ? `<p class="note">Fresh food for days 8 to 14, bought around day 8 so it's still good when you eat it. Any grocery store works.</p>` : ""}` + bySec[sec].sort((a, b) => b.cost - a.cost || a.prod.localeCompare(b.prod)).map((r) => {
         const u = unit(r.k);
         const need = `uses ${mass(r.used, u)}${dry(r.k)}`;
         const buy = r.packs ? `${r.packs > 1 ? r.packs + " packs · " : ""}${need}${r.inPantry ? `, ${mass(r.inPantry, u)} from your pantry` : ""}` : `<span class="pantry">In your pantry</span> · ${need}`;
         const alt = r.nf && week.alt?.[r.k] ? `<span class="why">Smaller size beats the Costco pack (${COSTCO[r.k][0]}, ${money(week.alt[r.k].cost)}), which would leave ${mass(week.alt[r.k].left, u)}${dry(r.k)} over.</span>` : r.nf ? `<span class="why">Not at Costco.</span>` : r.other ? `<span class="why">Not at Costco${!r.packs ? "" : r.est ? ". Price is a guess, not a store scan" : `. Instacart price, ${ELSE_DATE.replace(/, \d{4}$/, "")}`}.</span>` : "";
         return gRow(r.kk, checked.has(r.kk) || !r.packs, `<span class="row2"><span>${r.nf ? `<span class="store-nf">No Frills</span> ` : ""}${r.prod}</span><span class="price">${r.packs ? (r.est ? "~" : "") + money(r.cost) : ""}</span></span>`,
-          `<small>${buy}<span class="keep ${r.keep}" title="${KEEP[r.keep][1]}">${KEEP[r.keep][0]}</span>${alt}${r.packs && r.inPantry && !r.top && isStaple(r.k) ? `<span class="why">Restock: what's in your pantry won't last the ${two ? "two weeks" : "week"}.</span>` : ""}</small>`,
+          `<small>${buy}<span class="keep ${r.keep}" title="${KEEP[r.keep][1]}">${KEEP[r.keep][0]}</span>${held2(r) ? `<span class="keep2">Keeps 2 weeks${FRIDGE.tip[r.k] ? `: ${FRIDGE.tip[r.k]}` : ""}. Pick the freshest pack.</span>` : ""}${alt}${r.packs && r.inPantry && !r.top && isStaple(r.k) ? `<span class="why">Restock: what's in your pantry won't last the ${two ? "two weeks" : "week"}.</span>` : ""}</small>`,
           r.top ? [] : [r.packs ? `<button type="button" data-have="${r.k}">Already have it</button>` : `<button type="button" data-unhave="${r.k}">Don't have it</button>`,
            r.nf || r.other ? "" : `<button type="button" data-nostock="${r.k}">Not at my Costco</button>`],
           `${r.packs > 1 ? r.packs + " × " : ""}${r.prod}${r.nf ? " (No Frills)" : r.other ? " (other store)" : ""}${r.packs ? ", " + (r.est ? "about " : "") + money(r.cost) : ""}`, shopLink(r.top || r.nf || r.other ? "nf" : "costco", r.prod));
