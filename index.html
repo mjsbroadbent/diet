@@ -4082,13 +4082,13 @@ button.btn { border-radius: 0; }
       : "Costco packs for the week above, at warehouse prices (Same-Day runs about 7.5% higher). Tick items off as you shop.";
 
     const bySec = {};
-    rows.filter((r) => !r.idle).forEach((r) => (bySec[r.packs && isStaple(r.k) ? KIT : ING[r.k][6]] ||= []).push(r));
+    rows.filter((r) => !r.idle).forEach((r) => (bySec[r.nf ? OTHER : r.packs && isStaple(r.k) ? KIT : ING[r.k][6]] ||= []).push(r));
     const box = $("grocery");
     box.innerHTML = "";
-    [KIT, ...Object.values(S)].filter((sec) => bySec[sec]).forEach((sec) => {
+    [KIT, ...Object.values(S), OTHER].filter((sec) => bySec[sec]).forEach((sec) => {
       const div = document.createElement("div");
-      div.className = "gsec" + (sec === KIT ? " kit" : "");
-      div.innerHTML = `<h3>${sec}</h3>${sec === KIT ? `<p class="note">Staples that keep for months. Buy them once and they're in your pantry for next week.</p>` : ""}` + bySec[sec].sort((a, b) => b.cost - a.cost || a.prod.localeCompare(b.prod)).map((r) => {
+      div.className = "gsec" + (sec === KIT ? " kit" : sec === OTHER ? " kit other" : "");
+      div.innerHTML = `<h3>${sec}</h3>${sec === KIT ? `<p class="note">Staples that keep for months. Buy them once and they're in your pantry for next week.</p>` : sec === OTHER ? `<p class="note">Not at Costco, or a smaller size beats the Costco pack. A separate stop.</p>` : ""}` + bySec[sec].sort((a, b) => b.cost - a.cost || a.prod.localeCompare(b.prod)).map((r) => {
         const u = unit(r.k);
         const need = `uses ${mass(r.used, u)}${dry(r.k)}`;
         const buy = r.packs ? `${r.packs > 1 ? r.packs + " packs · " : ""}${need}${r.inPantry ? `, ${mass(r.inPantry, u)} from your pantry` : ""}` : `<span class="pantry">In your pantry</span> · ${need}`;
@@ -4126,6 +4126,8 @@ button.btn { border-radius: 0; }
 
   // Pantry staples (the Pantry step's list) that this week's shop has to buy get their own "buy once" group
   const KIT = "Pantry setup, buy once";
+  // Anything not bought at Costco gets its own list, whatever aisle it would sit in: it's a separate trip
+  const OTHER = "Other stores";
   const isStaple = (k) => { try { return STAPLES.some(([, ks]) => ks.includes(k)); } catch { return false; } };
 
   function renderHidden() {
