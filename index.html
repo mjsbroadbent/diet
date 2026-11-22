@@ -6,7 +6,7 @@
 <title>Big Box Dietitian</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Titan+One&family=Anton&family=Archivo:ital,wght@0,400;0,600;0,700;0,800;0,900;1,800;1,900&family=Nunito:wght@400;600;700;800&family=Libre+Franklin:wght@400;500;600;800;900&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Titan+One&family=Caveat:wght@600;700&family=Anton&family=Archivo:ital,wght@0,400;0,600;0,700;0,800;0,900;1,800;1,900&family=Nunito:wght@400;600;700;800&family=Libre+Franklin:wght@400;500;600;800;900&display=swap">
 <style>
 /* Layout: a cereal box. Box-front hero with a starburst, the stats form as a printed panel beside a side-panel nutrition label, then the week and grocery list as cut-out panels. Light mode only, by request. */
 :root {
@@ -255,6 +255,7 @@ button.btn:hover { filter: brightness(1.08); }
 .day-tools button { display: grid; justify-items: center; gap: 2px; line-height: 1.15; }
 .day-tools .emo { font-size: 20px; line-height: 1; }
 .day-tools .cut { display: none; }
+.stampc { display: none; }
 .day-tools .w { display: inline; }
 .day-tools .treat-h { background: var(--ok-soft); color: var(--ok); }
 .day-tools .treat-i { background: var(--bad-soft); color: var(--bad); }
@@ -579,6 +580,23 @@ button.btn { border-radius: 0; }
 .day-tools .treat-i .emo { background-size: auto 150%; background-position: 50% 8%; }
 .day-tools .treat-h, .day-tools .treat-i { color: #FFFFFF; font-size: 16px; line-height: .9; padding-top: 22%;
   text-shadow: 2px 2px 0 var(--ink), -1.5px -1.5px 0 var(--ink), 1.5px -1.5px 0 var(--ink), -1.5px 1.5px 0 var(--ink), 0 2px 0 var(--ink), 2px 0 0 var(--ink), 0 -1.5px 0 var(--ink), -1.5px 0 0 var(--ink); }
+/* Treats: back the art off so the whole picture sits inside the star */
+.day-tools .treat-h .emo { background-size: 96% auto; background-position: 50% 50%; }
+.day-tools .treat-i .emo { background-size: auto 96%; background-position: 50% 50%; }
+/* COMPLETED stamp: hollow double-line letters with the day and calories written in by hand */
+.day.passed::after { content: none; }
+.stampc { display: block; position: absolute; left: 50%; top: 40%; z-index: 3; width: min(88%, 290px); pointer-events: none; translate: -50% -50%; rotate: -11deg; opacity: .95; mix-blend-mode: multiply;
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='3' seed='7'/%3E%3CfeColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -2.2 2.05'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)'/%3E%3C/svg%3E"), linear-gradient(100deg, #000 30%, rgba(0, 0, 0, .75) 62%, #000 88%); mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='3' seed='7'/%3E%3CfeColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -2.2 2.05'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)'/%3E%3C/svg%3E"), linear-gradient(100deg, #000 30%, rgba(0, 0, 0, .75) 62%, #000 88%);
+  -webkit-mask-size: 160px 160px, 100% 100%; mask-size: 160px 160px, 100% 100%; -webkit-mask-composite: source-in; mask-composite: intersect; }
+.stampc svg { display: block; width: 100%; height: auto; overflow: visible; }
+.stampc text { font-family: "Archivo", var(--body); font-weight: 900; }
+.stampc .ol text, .stampc .ol rect { fill: none; stroke: #C41E2A; stroke-width: 8; stroke-linejoin: round; }
+.stampc .il text, .stampc .il rect { fill: none; stroke: var(--surface); stroke-width: 2.4; stroke-linejoin: round; }
+.stampc .hand { font-family: "Caveat", cursive; font-weight: 700; font-size: 30px; fill: #1F3F8F; stroke: none; }
+@media (prefers-reduced-motion: no-preference) {
+  .day.stamp-in .stampc { animation: stampc .35s cubic-bezier(.2, 1.6, .4, 1) both; }
+  @keyframes stampc { 0% { scale: 2.2; opacity: 0; } 100% { scale: 1; opacity: .9; } }
+}
 </style>
 <script>
   (function () { var k; try { k = JSON.parse(localStorage.getItem("ad-skin")); } catch (e) {} k = k === "light" || k === "dark" ? k : "cereal";
@@ -2189,6 +2207,17 @@ button.btn { border-radius: 0; }
         setTimeout(() => togglePassed(di), 420);
       });
       el.append(tools);
+      if (wd.passed) {
+        const st = document.createElement("div");
+        st.className = "stampc"; st.setAttribute("aria-hidden", "true");
+        const ink = (t) => `<g class="ol">${t}</g><g class="il">${t}</g>`;
+        st.innerHTML = `<svg viewBox="0 0 320 120">${ink(`<text x="4" y="112" font-size="128" textLength="62" lengthAdjust="spacingAndGlyphs">C</text>
+          <text x="70" y="58" font-size="58" textLength="182" lengthAdjust="spacingAndGlyphs">OMPLETE</text>
+          <text x="256" y="112" font-size="128" textLength="60" lengthAdjust="spacingAndGlyphs">D</text>
+          <rect x="70" y="68" width="182" height="40" rx="20"/>`)}
+          <text class="hand" x="161" y="97" text-anchor="middle" textLength="${Math.min(168, 12 + (dayName(di).length + fmt(d.tot[0]).length) * 9)}" lengthAdjust="spacingAndGlyphs">${dayName(di)} · ${fmt(d.tot[0])} kcal</text></svg>`;
+        el.append(st);
+      }
       days.append(el);
     });
     renderGrocery(all);
