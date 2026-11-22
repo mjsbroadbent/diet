@@ -32,6 +32,7 @@ const PROFILES = [
   { name: "Any store, eats out Fri/Sat, dirty snack", s: { store: "any", out: { days: [4, 5], style: "i" }, treat: "j" } },
   { name: "Mostly Costco, no freezer", s: { store: "mostly", freezer: "none", sex: "female", age: 33, heightCm: 172, weightKg: 75 } },
   { name: "Two weeks, default man", s: { weeks: 2 } },
+  { name: "Meat eater + vegetarian partner, 2 meals", mixed: true, s: { meals: "2", snacks: "1", prots: { "plant-meat": 0 }, hh: { n: 2, people: [{}, { name: "Sam", sex: "female", age: 33, heightCm: 165, weightKg: 60, activity: 1.55, goal: "maintain", diets: ["Vegetarian"] }] } } },
   { name: "Two weeks, household of 2", s: { weeks: 2, hh: { n: 2, people: [{}, { name: "Jo", sex: "female", age: 33, heightCm: 165, weightKg: 60, activity: 1.55, goal: "maintain", diets: [] }] } } },
   // A fresh visit with the page's defaults and no shuffle; the extra seeds are first loads that once left fresh food over or went over the cap
   { name: "First visit, page defaults", defaults: true, s: {}, seeds: [365372622, 504794043, 319187, 1695664] },
@@ -94,6 +95,9 @@ const RULES = [
   { id: "freezer", hard: true, desc: "frozen food fits the freezer on its busiest day", check: (w) => (w.fz && w.fz.peak > w.fz.cap + 1 ? [`${(w.fz.peak / 1000).toFixed(1)} kg of ${(w.fz.cap / 1000).toFixed(0)} kg`] : []) },
   { id: "pick-one", hard: true, desc: "one of each pick-one group in a plan: protein powder (whey or plant), milk (dairy, soy or oat), rice (white or brown)", check: (w) =>
     [["whey", "pea"], ["milk", "soymilk", "oatmilk"], ["wrice", "brice"]].map((g) => g.filter((k) => w.ings.has(k))).filter((g) => g.length > 1).map((g) => g.join(" + ")) },
+  { id: "hh-diet", hard: true, desc: "everyone in a household is served a version of each shared meal that fits their own diet", check: (w) => w.hhBad.slice(0, 4) },
+  { id: "hh-mixed", hard: true, desc: "meat eater sharing with a vegetarian: the meat eater still gets meat or fish in at least a third of lunches and dinners", check: (w) => (w.mixed && w.meatShare < 1 / 3 ? [`${Math.round(w.meatShare * 100)}% of lunches and dinners`] : []) },
+  { id: "sometimes", hard: true, desc: "a protein set to Sometimes is in at most 3 lunches and dinners a week (unless the page says the settings leave too few proteins)", check: (w) => w.ceil.slice(0, 3) },
   { id: "pieces", hard: true, desc: "food eaten by the piece is served whole (halves only for banana, avocado, naan, scoops)", check: (w) => w.pieces.slice(0, 4) },
   { id: "waste", hard: true, desc: "no fresh food wasted ($0)", check: (w) => (w.shop && w.shop.waste > 0.005 ? [`$${Math.round(w.shop.waste)}`] : []) },
 ];
@@ -144,7 +148,7 @@ for (const prof of PROFILES) for (let k = 0; k < SEEDS + (prof.seeds?.length || 
     const others = (ctx.house?.others || []).map((o) => ({ name: o.name, T: o.T, avoid: o.avoid, days: week.days.map((d, di) => {
       const dd = B.dayData(d, di), wd = (ctx.start + di) % 7;
       let k = 0, p = 0;
-      dd.meals.forEach((x) => { if ((x.m.type === "l" || x.m.type === "d") && o.home?.[x.m.type]?.[wd] !== false) { k += x.n[0] * o.ratio; p += x.n[1] * o.ratio; } });
+      dd.meals.forEach((x) => { if ((x.m.type === "l" || x.m.type === "d") && o.home?.[x.m.type]?.[wd] !== false) { const n = x.m.out ? x.n : x.nOf?.[o.who] || x.n; k += n[0] * o.ratio; p += n[1] * o.ratio; } });
       const own = (dd.own || []).find((y) => y.who === o.who);
       own?.meals.forEach((x) => x.items.forEach(({ k: ing, g }) => { k += (B.ING[ing][1] * g) / 100; p += (B.ING[ing][2] * g) / 100; }));
       return { k, p, tk: own?.tk ?? o.T.k, ms: (d.own || []).find((y) => y.who === o.who)?.ms || [], own: own?.meals.map((x) => x.m.name) || [], bad: (own?.meals || []).filter((x) => !B.allowed(x.m, o.diets, o.avoid)).map((x) => x.m.name) };
@@ -158,12 +162,30 @@ for (const prof of PROFILES) for (let k = 0; k < SEEDS + (prof.seeds?.length || 
       const n = (g / x.each) * (HALF.includes(k) && !x.whole ? 2 : 1);
       if (Math.abs(n - Math.round(n)) > 0.01 || n < 0.99) pieces.push(`${where}: ${+(g / x.each).toFixed(2)} ${x.unit ? x.unit[1] : k}`);
     };
-    week.days.forEach((d, di) => { const dd = B.dayData(d, di); dd.meals.forEach((x) => x.items.forEach((it) => { chk(it.k, it.g, `day ${di + 1} ${x.m.name}`); if (it.hg != null && x.plates !== 1) chk(it.k, it.hg, `day ${di + 1} ${x.m.name} (cooked for ${x.plates.toFixed(1)} plates)`); })); (dd.own || []).forEach((o) => o.meals.forEach((x) => x.items.forEach((it) => chk(it.k, it.g, `day ${di + 1} person ${o.who + 1} ${x.m.name}`)))); });
+    week.days.forEach((d, di) => { const dd = B.dayData(d, di); dd.meals.forEach((x) => x.items.forEach((it) => { if (!it.other) chk(it.k, it.g, `day ${di + 1} ${x.m.name}`); if (it.hg != null && x.plates !== 1) chk(it.k, it.hg, `day ${di + 1} ${x.m.name} (cooked for ${x.plates.toFixed(1)} plates)`); })); (dd.own || []).forEach((o) => o.meals.forEach((x) => x.items.forEach((it) => chk(it.k, it.g, `day ${di + 1} person ${o.who + 1} ${x.m.name}`)))); });
+    // Household diets: the version each person is served; how often the main person gets meat or fish; Sometimes ceilings
+    const hhBad = [], ld = [];
+    week.days.forEach((d, di) => B.dayData(d, di).meals.forEach((x) => {
+      if (x.m.out || (x.m.type !== "l" && x.m.type !== "d")) return;
+      ld.push(x.m);
+      (ctx.house?.others || []).forEach((o) => {
+        if (o.home?.[x.m.type]?.[(ctx.start + di) % 7] === false) return;
+        const v = (x.twins || []).find((tw) => tw.who.some((y) => y.who === o.who))?.t || x.m;
+        if (!B.allowed(v, o.diets, ctx.avoid)) hhBad.push(`day ${di + 1} ${o.name}: ${v.name}`);
+      });
+    }));
+    const meatShare = ld.filter((m) => ["chicken", "turkey", "beef", "pork", "fish", "shellfish"].includes(m.main)).length / Math.max(1, ld.length);
+    const fam = {};
+    ld.forEach((m) => (fam[m.main] = (fam[m.main] || 0) + 1));
+    const told = /too few proteins/.test(document.querySelector("#days")?.closest("section")?.textContent || document.body.textContent);
+    const ceil = told ? [] : Object.keys(fam).filter((f) => ctx.prots?.[f] === 1 && fam[f] > ctx.protCeil).map((f) => `${f} x${fam[f]}`);
     const ings = new Set();
     week.days.forEach((d, di) => { const dd = B.dayData(d, di); dd.meals.forEach((x) => x.items.forEach((it) => ings.add(it.k))); (dd.own || []).forEach((o) => o.meals.forEach((x) => x.items.forEach((it) => ings.add(it.k)))); });
-    return { pieces, ings: [...ings], hh: (ctx.house?.n || 1) + (ctx.house?.others.length || 0), others, never, T: ctx.T, days, protein, shop: B.shopStats(), fz: { peak: B.freezerPeak(), cap: ctx.fcap }, cv: Object.fromEntries(Object.entries(ctx.course).map(([k, c]) => [k, c.variety])), labels, daily, quickDinner: ctx.course.d.effort <= 10 };
+    return { hhBad, meatShare, ceil, pieces, ings: [...ings], hh: (ctx.house?.n || 1) + (ctx.house?.others.length || 0), others, never, T: ctx.T, days, protein, shop: B.shopStats(), fz: { peak: B.freezerPeak(), cap: ctx.fcap }, cv: Object.fromEntries(Object.entries(ctx.course).map(([k, c]) => [k, c.variety])), labels, daily, quickDinner: ctx.course.d.effort <= 10 };
   }, { s: S, seed });
   w.tight = !!prof.tight;
+  w.mixed = !!prof.mixed;
+  w.hhBad ||= []; w.ceil ||= []; w.pieces ||= [];
   w.ings = new Set(w.ings || []);
   w.low = !!prof.low;
   w.nDays = S.weeks === 2 ? 14 : 7;
