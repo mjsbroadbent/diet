@@ -5,7 +5,14 @@
 (function () {
   "use strict";
   // Firebase web config is public by design (security comes from Auth + the Firestore rules in firestore.rules)
-  var CONFIG = null;
+  var CONFIG = {
+    apiKey: "AIzaSyABD2Wvn8EAry_HESpQoS1wfkAD_83a-rc",
+    authDomain: "bigboxdiet-43c80.firebaseapp.com",
+    projectId: "bigboxdiet-43c80",
+    storageBucket: "bigboxdiet-43c80.firebasestorage.app",
+    messagingSenderId: "305122564785",
+    appId: "1:305122564785:web:b316645b0876368be7e090",
+  };
   var HOSTS = /^(bigboxdiet\.com|www\.bigboxdiet\.com|mjsbroadbent\.github\.io|localhost|127\.0\.0\.1)$/;
   var SDK = "https://www.gstatic.com/firebasejs/11.0.2/";
   if (window.BBD_SYNC_TEST) { CONFIG = window.BBD_SYNC_TEST.config; SDK = window.BBD_SYNC_TEST.sdk; HOSTS = /./; }
