@@ -734,6 +734,16 @@ button.btn { border-radius: 0; }
           <p class="hint" id="outHint"></p>
         </details>
         <div class="courses" id="courses"></div>
+        <details class="fold" id="styleFold"><summary>Lunch and dinner styles <b id="styleSum">All</b></summary>
+          <div class="chips" id="styleChips">
+            <label class="chip"><input type="checkbox" name="style" value="bowl" checked><span>Bowls</span></label>
+            <label class="chip"><input type="checkbox" name="style" value="sand" checked><span>Sandwiches and pizza</span></label>
+            <label class="chip"><input type="checkbox" name="style" value="plate" checked><span>Protein and a side</span></label>
+            <label class="chip"><input type="checkbox" name="style" value="classic" checked><span>Recipes</span></label>
+          </div>
+          <label class="check"><input type="checkbox" id="mix">
+            <span>Mix and match<small>Keep the same protein, bowl base or bread and change what goes with it. Variety sets how many you keep: Same means one all week.</small></span></label>
+        </details>
         <label class="check"><input type="checkbox" id="premade" checked>
           <span>Premade meals and salad kits<small>Frozen entrées, soups, egg bites and bagged salads with their dressing. Turn off to cook everything from ingredients.</small></span></label>
         <label class="check"><input type="checkbox" id="sauce">
@@ -978,6 +988,42 @@ button.btn { border-radius: 0; }
     beefstick:   ["Grass-fed beef sticks", 312, 28, 3, 22, 0, S.N, "meat", { each: 32, full: true, unit: ["beef stick", "beef sticks"] }],
     protbar:     ["Protein bars", 400, 40, 34, 12, 4, S.N, "dairy soy peanut", { each: 50, full: true, whole: true, unit: ["protein bar", "protein bars"] }],
     shake:       ["Ready-to-drink protein shakes", 44, 8.8, 1.2, 0.7, 0, S.N, "dairy", { ml: 1, each: 340, full: true, whole: true, unit: ["bottle protein shake", "bottles protein shake"] }],
+    // Round 4: more Costco Same-Day items (Nov 22 2026), label values rounded
+    tilapia:     ["Tilapia fillets", 96, 20, 0, 1.7, 0, S.M, "fish"],
+    pinksalmon:  ["Wild pink salmon fillets (frozen)", 127, 20.5, 0, 4.4, 0, S.F, "fish"],
+    haddock:     ["Battered haddock (frozen)", 220, 12, 18, 11, 1, S.F, "fish gluten egg", { each: 105, full: true, unit: ["battered haddock fillet", "battered haddock fillets"] }],
+    tunapoke:    ["Tuna poke portions (frozen)", 110, 24, 0, 1, 0, S.F, "fish", { each: 125, full: true, unit: ["tuna poke portion", "tuna poke portions"] }],
+    bulgogi:     ["Korean barbecue beef bulgogi (marinated)", 190, 17, 9, 9, 0.5, S.M, "meat soy gluten sesame"],
+    chipchick:   ["Grilled chipotle chicken (cooked)", 150, 24, 2, 5, 0, S.M, "poultry"],
+    tsausage:    ["Turkey breakfast sausages (cooked)", 190, 16, 3, 13, 0, S.M, "poultry", { each: 25, unit: ["sausage", "sausages"] }],
+    bagel:       ["Bagels", 255, 10, 50, 1.5, 2.5, S.G, "gluten", { each: 110, full: true, unit: ["bagel", "bagels"] }],
+    gnocchi:     ["Skillet gnocchi", 190, 4, 36, 3, 2, S.D, "gluten dairy"],
+    ravioli:     ["Spinach and cheese ravioli", 240, 10, 33, 7.5, 2, S.D, "gluten dairy egg"],
+    wedges:      ["Seasoned potato wedges (frozen)", 150, 2.5, 22, 6, 2.5, S.F, ""],
+    peas:        ["Green peas (frozen)", 81, 5.4, 14.5, 0.4, 5.1, S.F, ""],
+    mixveg:      ["Mixed vegetables (frozen)", 65, 3, 13, 0.4, 4, S.F, ""],
+    roastveg:    ["Fire-roasted root vegetables (frozen)", 80, 1.5, 12, 3, 2.5, S.F, ""],
+    brussels:    ["Brussels sprouts", 43, 3.4, 9, 0.3, 3.8, S.P, ""],
+    celery:      ["Celery sticks", 14, 0.7, 3, 0.2, 1.6, S.P, ""],
+    butterch:    ["Butter chicken sauce", 110, 1.5, 8, 8, 1, S.N, "dairy", { ml: 1 }],
+    satay:       ["Peanut satay sauce", 220, 5, 18, 15, 1, S.N, "peanut soy", { tbsp: 17 }],
+    kalekit:     ["Sweet kale salad kit with dressing", 140, 4, 13, 9, 3.5, S.P, "premade", { each: 397, full: true, unit: ["bag kale salad kit", "bags kale salad kit"] }],
+    grsalad:     ["Greek salad (deli)", 130, 3, 6, 11, 2, S.D, "premade dairy"],
+    caesar:      ["Caesar salad (deli)", 180, 4, 7, 15, 2, S.D, "premade dairy egg gluten fish"],
+    quinsal:     ["Quinoa salad (deli)", 170, 5, 20, 8, 3, S.D, "premade soy"],
+    shepherd:    ["Shepherd's pie (deli)", 130, 7, 11, 6.5, 1.5, S.D, "premade meat dairy"],
+    stuffpep:    ["Stuffed bell peppers (deli)", 120, 7, 9, 6, 1.5, S.D, "premade meat dairy"],
+    penne:       ["Chicken penne alfredo (deli)", 170, 9, 15, 8, 1, S.D, "premade poultry dairy gluten"],
+    chparm:      ["Chicken parmesan (frozen)", 180, 13, 12, 9, 1, S.F, "premade poultry dairy gluten egg", { each: 150, full: true, whole: true, unit: ["chicken parmesan", "chicken parmesans"] }],
+    chimi:       ["Chicken chimichangas (frozen)", 230, 8, 30, 8.5, 2, S.F, "premade poultry dairy gluten", { each: 142, full: true, whole: true, unit: ["chimichanga", "chimichangas"] }],
+    taquito:     ["Chicken taquitos (frozen)", 240, 8, 28, 10.5, 2, S.F, "premade poultry dairy gluten", { each: 57, full: true, unit: ["taquito", "taquitos"] }],
+    mandu:       ["Beef bulgogi mandu (frozen)", 210, 8, 27, 7.5, 1.5, S.F, "premade meat gluten soy sesame", { each: 34, full: true, unit: ["mandu", "mandu"] }],
+    sfrice:      ["Shrimp fried rice (frozen)", 150, 5, 25, 3, 1, S.F, "premade shellfish gluten soy egg", { each: 300, full: true, whole: true, unit: ["shrimp fried rice pouch", "shrimp fried rice pouches"] }],
+    udon:        ["Teriyaki stir-fry udon kit", 150, 4, 30, 1.5, 1, S.D, "premade soy gluten"],
+    bcsoup:      ["Broccoli cheddar soup", 85, 3, 6, 5.5, 1, S.D, "premade dairy", { ml: 1 }],
+    mush:        ["MUSH protein overnight oats", 125, 8.8, 17.5, 2.6, 2.3, S.D, "premade oats dairy", { each: 172, full: true, whole: true, unit: ["cup MUSH overnight oats", "cups MUSH overnight oats"] }],
+    bsand:       ["Breakfast sandwiches", 255, 13, 20, 13.5, 1, S.D, "premade egg dairy pork gluten", { each: 137, full: true, whole: true, unit: ["breakfast sandwich", "breakfast sandwiches"] }],
+    ewwrap:      ["Spinach and egg white wraps (deli)", 170, 11, 18, 6, 2, S.D, "premade egg dairy gluten", { each: 165, full: true, whole: true, unit: ["egg white wrap", "egg white wraps"] }],
   };
 
   // ---------- Costco ----------
@@ -1098,6 +1144,41 @@ button.btn { border-radius: 0; }
     beefstick: ["Kirkland Signature grass-fed beef sticks, 12", 384, 20.89, "p"],
     protbar: ["Pure Protein bars variety pack, 18", 900, 30.79, "p"],
     shake: ["fairlife protein shakes, 18 × 340 ml", 6120, 54.99, "p"],
+    tilapia: ["Farmed tilapia fillets, ~1.33 kg", 1330, 29.16, "z"],
+    pinksalmon: ["Aqua Star wild pink salmon fillets, 1.81 kg frozen", 1810, 41.79, "p"],
+    haddock: ["Janes battered haddock, 1.26 kg", 1260, 27.49, "p"],
+    tunapoke: ["DOM Reserve frozen tuna poke portions, 5", 625, 21.99, "p"],
+    bulgogi: ["Korean barbecue beef bulgogi, ~1.5 kg", 1500, 39.58, "z"],
+    chipchick: ["Grilled chipotle chicken, 1 kg", 1000, 18.69, "z"],
+    tsausage: ["Ready Cuisine turkey breakfast sausage, 1.4 kg", 1400, 21.99, "z"],
+    bagel: ["Costco bakery bagels, 2 × 6", 1320, 8.79, "z"],
+    gnocchi: ["Olivieri skillet gnocchi, 2 × 480 g", 960, 14.29, "r"],
+    ravioli: ["Kirkland Signature organic spinach and cheese ravioli, 2 × 1.25 kg", 2500, 20.89, "z"],
+    wedges: ["Bistro Gourmand potato wedges, 1.36 kg frozen", 1360, 10.97, "p"],
+    peas: ["Kirkland Signature frozen green peas, 2.5 kg", 2500, 13.19, "p"],
+    mixveg: ["Kirkland Signature frozen mixed vegetables, 2.5 kg", 2500, 15.39, "p"],
+    roastveg: ["Puravida fire roasted root vegetables, 1.8 kg frozen", 1800, 21.99, "p"],
+    brussels: ["Brussels sprouts, 907 g", 907, 7.54, "x"],
+    celery: ["Celery sticks, 1.13 kg", 1130, 7.69, "r"],
+    butterch: ["KFI butter chicken sauce, 2 × 650 ml", 1300, 10.99, "r"],
+    satay: ["Naked & Saucy peanut satay sauce, 902 ml", 1000, 10.99, "r"],
+    kalekit: ["Eat Smart sweet kale chopped salad kits, 2 × 397 g", 794, 9.89, "x"],
+    grsalad: ["Kirkland Signature Greek salad, ~1.36 kg", 1360, 23.17, "x"],
+    caesar: ["Kirkland Signature Caesar salad, ~0.99 kg", 990, 15.24, "x"],
+    quinsal: ["Kirkland Signature quinoa salad, ~1.13 kg", 1130, 13.64, "x"],
+    shepherd: ["Kirkland Signature shepherd's pie, ~1.77 kg", 1770, 28.15, "z"],
+    stuffpep: ["Kirkland Signature stuffed bell peppers, ~1.51 kg", 1510, 27.43, "z"],
+    penne: ["Kirkland Signature chicken penne alfredo, ~1.5 kg", 1500, 26.22, "x"],
+    chparm: ["Hampton House chicken parmesan, 8 × 150 g", 1200, 16.19, "p"],
+    chimi: ["El Monterey chicken and Monterey Jack chimichangas, 12 × 142 g", 1704, 24.74, "p"],
+    taquito: ["El Monterey chicken taquitos, 1.7 kg", 1700, 24.19, "p"],
+    mandu: ["Bibigo beef bulgogi mandu, 1.36 kg", 1360, 21.99, "p"],
+    sfrice: ["Hanwoomul shrimp fried rice, 7 × 300 g", 2100, 25.29, "p"],
+    udon: ["Pulmuone teriyaki stir fry udon, 877 g", 877, 13.74, "r"],
+    bcsoup: ["Kirkland Signature broccoli cheddar soup, 2 × 830 ml", 1660, 12.09, "r"],
+    mush: ["MUSH 15 g protein overnight oats, 12 × 172 ml", 2064, 23.64, "r"],
+    bsand: ["Kirkland Signature breakfast sandwiches, 8 × 137 g", 1096, 27.49, "z"],
+    ewwrap: ["Kirkland Signature spinach and egg white wraps, 6 × 165 g", 990, 21.99, "x"],
   };
   // Library items Costco doesn't carry, and what replaces them (grams × factor)
   const SUB = { blackbeans: ["chickpeas", 1], lentils: ["chickpeas", 1], tempeh: ["tofu", 1.3], corntort: ["tortilla", 0.75], ricenoodle: ["wrice", 3], ricecake: ["bread", 1.5], pasta: ["spaghetti", 1], tamari: ["soysauce", 1], coco: ["cocofull", 0.36], darkchoc: ["darkbites", 1.25] };
@@ -1105,10 +1186,12 @@ button.btn { border-radius: 0; }
   const UNIT = { chicken: 580, thigh: 560, turkey: 1000, turkeyslice: 300, beef: 600, steak: 400, pork: 670, bacon: 500, tuna: 130, eggwhite: 500, tofu: 454,
     yogurt: 650, cottage: 750, feta: 600, soymilk: 946, cocofull: 400, chickpeas: 300, spaghetti: 500, bread: 675, tortilla: 600, cantom: 796, cauli: 500,
     pb: 1000, honey: 750, salsa: 1050, marinara: 1250, icebar: 70,
-    bbq: 480, hotsauce: 740, tzatziki: 454, saladkit: 340, lasagna: 1500, pizza: 555, yakisoba: 255, yakitori: 255, ctsoup: 830, lentsoup: 398, pita: 390, emuffin: 342, tortelloni: 500, shake: 340, protbar: 50, beefstick: 32, cheesestr: 21, bwrap: 128 };
+    bbq: 480, hotsauce: 740, tzatziki: 454, saladkit: 340, lasagna: 1500, pizza: 555, yakisoba: 255, yakitori: 255, ctsoup: 830, lentsoup: 398, pita: 390, emuffin: 342, tortelloni: 500, shake: 340, protbar: 50, beefstick: 32, cheesestr: 21, bwrap: 128,
+    ravioli: 1250, gnocchi: 480, butterch: 650, kalekit: 397, bcsoup: 830, bagel: 660, tunapoke: 125, chparm: 150, sfrice: 300, mush: 172, bsand: 137, ewwrap: 165, chimi: 142 };
   // Freezer: frozen-aisle packs always need it; fresh meat, bread and the like go in to keep past a few days
   const FROZEN = new Set(["berries", "broccoli", "edamame", "cauli", "stirfry", "corn", "shrimp", "strawberries", "icecream", "icebar",
-    "frittata", "bwrap", "lasagna", "pizza", "yakisoba", "yakitori", "gyoza", "chstrips", "salmonburger", "meatballs", "mango"]);
+    "frittata", "bwrap", "lasagna", "pizza", "yakisoba", "yakitori", "gyoza", "chstrips", "salmonburger", "meatballs", "mango",
+    "pinksalmon", "haddock", "tunapoke", "wedges", "peas", "mixveg", "roastveg", "chparm", "chimi", "taquito", "mandu", "sfrice"]);
   const FREEZER = { all: Infinity, std: 10000, low: 5000, none: 0 };
   // No Frills (Vancouver, in-store prices from nofrills.ca): key: [product, size in purchase units, price]
   const NOFRILLS = /*NF*/{
@@ -1351,6 +1434,38 @@ button.btn { border-radius: 0; }
     ["h", "Mango soft serve", [["mango",150],["yogurt",50]], "Blend frozen mango with the yogurt until it looks like soft serve. Eat right away.", 3],
     ["h", "Mango and dark chocolate", [["mango",120],["darkchoc",10]], "Let the mango thaw 10 minutes and have it with a square of chocolate.", 1],
     ["i", "Slice of pizza", [["pizza",140]], "A quarter of a frozen pizza, baked crisp.", 15],
+    // Round 4 (Nov 22 2026)
+    ["b", "MUSH oats with berries", [["mush",172],["berries",80]], "Grab a cup from the fridge and stir in a handful of thawed berries.", 1, 2],
+    ["b", "Breakfast sandwich and an apple", [["bsand",137],["apple",180]], "Microwave the sandwich per the label, about a minute. Have an apple on the side.", 3, 2],
+    ["b", "Egg white wrap and yogurt", [["ewwrap",165],["yogurt",150]], "Warm the wrap in a dry pan or the microwave. Have the yogurt on the side.", 4, 2],
+    ["b", "Sausage and egg bagel", [["bagel",110],["tsausage",50],["egg",100],["cheddar",15]], "Toast the bagel, warm the sausages and fry 2 eggs, then stack with the cheddar.", 10],
+    ["b", "Smoked salmon bagel", [["bagel",110],["smsalmon",60],["cottage",60],["cucumber",40]], "Toast the bagel, spread with cottage cheese and top with smoked salmon and sliced cucumber.", 5],
+    ["b", "Peanut butter banana bagel", [["bagel",110],["pb",24],["banana",100],["milk",250]], "Toast the bagel, spread with peanut butter and top with sliced banana. A glass of milk on the side.", 3],
+    ["b", "Sausage, egg and potato scramble", [["tsausage",75],["egg",100],["eggwhite",100],["wedges",100],["spinach",30]], "Crisp the wedges from frozen in a pan or air fryer, then add sliced sausage, spinach and the beaten eggs and scramble.", 15],
+    ["l", "Broccoli cheddar soup and turkey sandwich", [["bcsoup",300],["bread",80],["turkeyslice",80],["dijon",8]], "Heat the soup. Make a turkey sandwich with Dijon.", 6],
+    ["l", "Chicken Caesar salad", [["caesar",200],["chstrips",120]], "Toss warm or cold chicken strips through the Caesar salad.", 2],
+    ["l", "Greek salad with chicken and pita", [["grsalad",200],["chstrips",120],["pita",65]], "Top the Greek salad with chicken and have a warm pita on the side.", 3],
+    ["l", "Quinoa salad with pink salmon", [["quinsal",200],["pinksalmon",120]], "Bake a pink salmon fillet from frozen at 220°C / 425°F for 15 minutes and flake it over the quinoa salad.", 18],
+    ["l", "Kale salad kit with chipotle chicken", [["kalekit",200],["chipchick",120]], "Warm the chicken and toss it through half a bag of kale salad.", 5],
+    ["l", "Chimichanga with salsa and greens", [["chimi",142],["salsa",40],["greens",60],["cherry",60]], "Microwave the chimichanga about 2 minutes (or bake 20 minutes for crisp). Salsa and a handful of greens and tomatoes on the side.", 4, 2],
+    ["l", "Shrimp fried rice with edamame", [["sfrice",300],["edamame",80]], "Pan-fry a pouch of fried rice about 6 minutes and steam the edamame.", 8, 1.5],
+    ["l", "Teriyaki udon with chicken", [["udon",292],["chstrips",100],["stirfry",100]], "Stir-fry the vegetables 3 minutes, add the udon, its sauce and the chicken, and toss 3 minutes more.", 10],
+    ["l", "Mandu vegetable soup", [["mandu",170],["stirfry",120],["soysauce",10],["egg",50]], "Simmer the mandu and vegetables in 2 cups of water or broth for 6 minutes, then swirl in a beaten egg and the soy sauce.", 12],
+    ["d", "Shepherd's pie with peas", [["shepherd",400],["peas",100]], "Bake the tray per the label, then reheat portions 3 minutes. Peas on the side.", 8],
+    ["d", "Stuffed peppers with a side salad", [["stuffpep",350],["greens",60],["oil",5]], "Bake the peppers per the label, or reheat one 4 minutes. Dressed greens on the side.", 8],
+    ["d", "Chicken penne alfredo with broccoli", [["penne",350],["broccoli",150]], "Reheat a portion 3 minutes and stir in steamed broccoli.", 6],
+    ["d", "Chicken parmesan with spaghetti", [["chparm",150],["spaghetti",60],["marinara",100],["greenbeans",100]], "Bake the chicken parmesan from frozen per the box, about 25 minutes. Toss the spaghetti in warm marinara and steam the green beans.", 28, 2],
+    ["d", "Fish and chips with peas", [["haddock",210],["wedges",150],["peas",100]], "Bake the haddock and wedges together at 220°C / 425°F, about 20 minutes. Heat the peas.", 22],
+    ["d", "Chicken taquitos with corn salsa", [["taquito",171],["corn",80],["salsa",40],["avocado",40]], "Bake the taquitos 15 minutes. Mix thawed corn, salsa and diced avocado to go with them.", 17],
+    ["d", "Butter chicken with rice and naan", [["chicken",150],["butterch",150],["wrice",150],["naan",50]], "Simmer cubed chicken in the sauce for 15 minutes. Serve over rice with half a naan.", 20],
+    ["d", "Spinach ravioli with marinara", [["ravioli",200],["marinara",120],["spinach",50],["parm",8]], "Boil the ravioli 4 to 5 minutes, then toss with warm marinara and spinach until wilted. Top with parmesan.", 10],
+    ["d", "Pesto gnocchi with chicken and peppers", [["gnocchi",200],["chstrips",100],["pepper",100],["pesto",12]], "Pan-fry the gnocchi 6 minutes until golden, add sliced pepper and chicken for 3 minutes, then stir in the pesto.", 12],
+    ["d", "Tilapia tacos", [["tilapia",150],["tortilla",120],["greens",30],["salsa",40],["avocado",40],["oil",5]], "Season the tilapia with chili and lime, pan-fry 3 minutes a side and flake into warm tortillas with greens, salsa and avocado.", 12],
+    ["d", "Peanut satay chicken noodles", [["spaghetti",80],["satay",40],["chstrips",110],["stirfry",120]], "Cook the spaghetti, then toss with the vegetables, chicken and satay sauce in a hot pan for 3 minutes.", 15],
+    ["s", "Celery with peanut butter", [["celery",120],["pb",24]], "Spread peanut butter along the celery sticks.", 2],
+    ["s", "Hummus and celery", [["hummus",60],["celery",120]], "Dip and go.", 1],
+    ["s", "MUSH oats cup", [["mush",172]], "Straight from the fridge.", 1, 1],
+    ["i", "Two chicken taquitos", [["taquito",114]], "Baked crisp, about 15 minutes.", 15],
   ].map(([type, name, items, how, min, max], i) => mkMeal("m" + i, type, name, items, how, min, max));
   // max: the biggest portion multiplier that still makes sense (no one drinks three shakes for breakfast)
   function mkMeal(id, type, name, items, how, min, max) {
@@ -1377,6 +1492,139 @@ button.btn { border-radius: 0; }
     else REWORD.slice(3).forEach(([a, b]) => (how = how.replace(a, b)));
     return mkMeal("c" + m.id.slice(1), m.type, name, items, how, m.min, m.max);
   });
+  // ---------- Build-your-own lunches and dinners ----------
+  // Three styles made from swappable parts: a bowl (base + topping), a sandwich or flatbread pizza (bread + filling),
+  // and a plate (protein + side). Every pairing becomes a recipe, for lunch and for dinner. Ids are built from the part keys,
+  // so they stay stable as parts are added. "Mix and match" keeps one part (the anchor) and rotates the other.
+  const PARTS = {
+    // Plate proteins: [name, items, how, minutes, sides it doesn't suit]
+    protein: {
+      chicken: ["Seared chicken breast", [["chicken",150],["oil",5]], "Season the chicken and pan-sear it 6 to 7 minutes a side (or bake 20 minutes at 220°C / 425°F).", 20],
+      thigh: ["Roast chicken thighs", [["thigh",150],["oil",3]], "Season the thighs and roast at 220°C / 425°F for 22 minutes.", 25],
+      rchicken: ["Rotisserie chicken", [["rchicken",140]], "Pull rotisserie chicken off the bone and warm it.", 3],
+      chipchick: ["Chipotle chicken", [["chipchick",140]], "Warm the chipotle chicken in a pan for 4 minutes.", 5],
+      salmon: ["Roast salmon", [["salmon",140]], "Season the salmon and roast at 220°C / 425°F for 12 minutes.", 15],
+      pinksalmon: ["Baked pink salmon", [["pinksalmon",150]], "Bake the pink salmon from frozen at 220°C / 425°F for 15 to 18 minutes.", 18],
+      cod: ["Pan-fried cod", [["cod",170],["oil",5]], "Season the cod and pan-fry 3 to 4 minutes a side.", 10],
+      tilapia: ["Lemon pepper tilapia", [["tilapia",170],["oil",5]], "Season the tilapia with lemon and pepper and pan-fry 3 minutes a side.", 8],
+      steak: ["Sirloin steak", [["steak",150]], "Sear the steak 3 to 4 minutes a side, rest 5 minutes and slice.", 15],
+      pork: ["Pork tenderloin", [["pork",160],["oil",3]], "Sear the tenderloin all over, then roast at 220°C / 425°F for 15 minutes and slice.", 25],
+      bulgogi: ["Beef bulgogi", [["bulgogi",150]], "Stir-fry the marinated bulgogi in a very hot pan for 4 to 5 minutes.", 8, ["mash", "gnocchi", "greek", "caesar", "mexrice", "brussels"]],
+      shrimp: ["Garlic shrimp", [["shrimp",170],["oil",5]], "Sear the shrimp with garlic 2 minutes a side.", 8, ["mash"]],
+      salmonburger: ["Salmon burgers", [["salmonburger",182]], "Cook the salmon burgers from frozen, 5 minutes a side.", 12],
+      turkey: ["Turkey burger patties", [["turkey",150],["oil",3]], "Season the turkey, shape 2 patties and pan-fry 5 minutes a side.", 12],
+      tofu: ["Crispy tofu", [["tofu",200],["oil",5],["soysauce",10]], "Press and cube the tofu, crisp it in oil for 10 minutes and finish with a splash of soy sauce.", 15, ["mash", "gnocchi", "caesar", "greek"]],
+      eggs: ["Fried eggs", [["egg",150]], "Fry 3 eggs to your liking.", 5, ["mash", "gnocchi", "caesar", "greek", "naanveg", "kale"]],
+      haddock: ["Battered haddock", [["haddock",210]], "Bake the haddock from frozen at 220°C / 425°F for about 20 minutes.", 22, ["rice", "brice", "mexrice", "naanveg", "gnocchi", "quinoa"]],
+      chparm: ["Chicken parmesan", [["chparm",150]], "Bake the chicken parmesan from frozen per the box, about 25 minutes.", 27, ["rice", "brice", "mexrice", "naanveg", "kale"]],
+      meatballs: ["Meatballs", [["meatballs",140]], "Bake the meatballs from frozen for 15 minutes.", 15, ["mexrice", "kale"]],
+    },
+    // Plate sides
+    side: {
+      potgb: ["roast potatoes and green beans", [["potato",250],["greenbeans",120],["oil",7]], "Roast cubed potatoes for 25 minutes and steam the green beans.", 30],
+      wedges: ["potato wedges and broccoli", [["wedges",150],["broccoli",150]], "Bake the wedges from frozen for 20 minutes and steam the broccoli.", 22],
+      rice: ["rice and broccoli", [["wrice",180],["broccoli",150]], "Heat the rice and steam the broccoli.", 8],
+      brice: ["brown rice and stir-fry vegetables", [["brice",180],["stirfry",150],["soysauce",8]], "Heat the rice and stir-fry the vegetables with the soy sauce.", 10],
+      sweetpot: ["sweet potato and asparagus", [["sweetpot",250],["asparagus",120],["oil",5]], "Roast sweet potato chunks for 25 minutes, adding the asparagus for the last 10.", 30],
+      quinoa: ["quinoa and roasted vegetables", [["quinoa",160],["roastveg",150]], "Heat the quinoa and roast the vegetables from frozen for 20 minutes.", 22],
+      mash: ["mashed potatoes and peas", [["potato",250],["milk",40],["peas",100]], "Boil the potatoes 15 minutes and mash with the milk. Heat the peas.", 22],
+      brussels: ["roast Brussels sprouts and potatoes", [["brussels",150],["potato",200],["oil",7]], "Roast halved sprouts and potato chunks at 220°C / 425°F for 25 minutes.", 28],
+      salad: ["a side salad and toast", [["greens",80],["cherry",80],["cucumber",80],["oil",7],["bread",80]], "Toss greens, tomatoes and cucumber with oil and vinegar, and toast the bread.", 5],
+      mexrice: ["corn rice and salsa", [["wrice",150],["corn",80],["salsa",40]], "Heat the rice with the corn and top with salsa.", 6],
+      naanveg: ["mixed vegetables and naan", [["mixveg",150],["naan",100]], "Heat the vegetables and warm the naan.", 8],
+      cauli: ["cauliflower rice and green beans", [["cauli",200],["greenbeans",120],["oil",7]], "Fry the cauliflower rice in oil 5 minutes and steam the green beans.", 10],
+      gnocchi: ["golden gnocchi and spinach", [["gnocchi",160],["spinach",50]], "Pan-fry the gnocchi 6 to 8 minutes and wilt the spinach in at the end.", 10],
+      kale: ["a kale salad kit", [["kalekit",200]], "Toss half a bag of kale salad with its dressing.", 2],
+      greek: ["Greek salad and pita", [["grsalad",180],["pita",65]], "Spoon out some Greek salad and warm a pita.", 3],
+      caesar: ["Caesar salad and toast", [["caesar",150],["bread",40]], "Spoon out some Caesar salad and toast a slice of bread.", 3],
+      saladkit: ["a chopped salad kit and pita", [["saladkit",170],["pita",65]], "Toss half a bag of salad kit and warm a pita.", 3],
+    },
+    // Bowl bases: [name, items, how, minutes]
+    base: {
+      rice: ["rice bowl", [["wrice",180]], "Heat the rice.", 3],
+      brice: ["brown rice bowl", [["brice",180]], "Heat the brown rice.", 3],
+      quinoa: ["quinoa bowl", [["quinoa",170]], "Heat the quinoa.", 3],
+      greens: ["salad bowl", [["greens",80],["cucumber",80],["cherry",60]], "Pile greens, cucumber and tomatoes in a bowl.", 3],
+      pasta: ["pasta bowl", [["spaghetti",85]], "Boil the pasta 9 to 10 minutes.", 12],
+      cauli: ["cauliflower rice bowl", [["cauli",200]], "Microwave the cauliflower rice 5 minutes.", 5],
+      chickpea: ["chickpea bowl", [["chickpeas",130],["greens",50]], "Rinse the chickpeas and pile them over greens.", 3],
+      potato: ["loaded potato", [["potato",250]], "Microwave a potato 8 to 10 minutes and split it open.", 10],
+      quinsal: ["quinoa salad bowl", [["quinsal",170]], "Spoon the quinoa salad into a bowl.", 1],
+    },
+    // Bowl toppings: [name, items, how, minutes, bases it suits]
+    topping: {
+      teriyaki: ["Teriyaki chicken", [["chicken",130],["stirfry",120],["teriyaki",25],["oil",4]], "Stir-fry sliced chicken 6 minutes, add the vegetables and teriyaki and toss 3 minutes.", 15, ["rice", "brice", "quinoa", "cauli"]],
+      taco: ["Taco beef", [["beef",110],["corn",60],["salsa",40],["cheddar",15]], "Brown the beef with taco spice, stir in the corn, and top with salsa and cheddar.", 12, ["rice", "brice", "greens", "cauli", "potato", "quinoa"]],
+      greek: ["Greek chicken", [["chstrips",120],["cucumber",60],["tomato",60],["feta",20],["tzatziki",30]], "Warm the chicken and top with cucumber, tomato, feta and tzatziki.", 5, ["rice", "brice", "quinoa", "greens", "chickpea", "potato"]],
+      poke: ["Tuna poke", [["tunapoke",125],["edamame",60],["cucumber",60],["avocado",40],["soysauce",10]], "Thaw the tuna in the fridge overnight, cube it and toss with soy sauce. Add edamame, cucumber and avocado.", 5, ["rice", "brice", "quinoa", "greens", "cauli"]],
+      bulgogi: ["Bulgogi beef", [["bulgogi",130],["stirfry",100],["sriracha",5]], "Stir-fry the bulgogi 4 minutes in a very hot pan, add the vegetables for 2 minutes, and finish with sriracha.", 10, ["rice", "brice", "cauli", "quinoa"]],
+      satay: ["Peanut satay tofu", [["tofu",160],["stirfry",120],["satay",30]], "Crisp cubed tofu in a dry nonstick pan 8 minutes, add the vegetables and satay sauce and toss.", 15, ["rice", "brice", "quinoa", "cauli", "pasta"]],
+      butter: ["Butter chicken", [["chicken",130],["butterch",120],["peas",60]], "Simmer cubed chicken in the butter chicken sauce 12 minutes, adding the peas at the end.", 18, ["rice", "brice", "cauli", "quinoa"]],
+      chili: ["Sweet chili shrimp", [["shrimp",140],["pepper",80],["sweetchili",20],["oil",4]], "Sear the shrimp and sliced pepper 4 minutes, then toss in the sweet chili sauce.", 10, ["rice", "brice", "quinoa", "cauli", "greens"]],
+      pesto: ["Pesto chicken", [["chstrips",120],["cherry",80],["pesto",15],["parm",8]], "Toss warm chicken and halved tomatoes with pesto and top with parmesan.", 5, ["pasta", "quinoa", "greens", "potato"]],
+      meatball: ["Meatball marinara", [["meatballs",112],["marinara",120],["parm",8]], "Simmer the frozen meatballs in marinara for 15 minutes and top with parmesan.", 15, ["pasta", "potato", "quinoa"]],
+      turkeychili: ["Turkey chili", [["turkey",120],["cantom",120],["chickpeas",60],["onion",40],["cheddar",12]], "Brown the turkey with onion and chili powder, add tomatoes and chickpeas, simmer 15 minutes and top with cheddar.", 25, ["rice", "brice", "potato", "cauli", "quinoa"]],
+      bbq: ["BBQ chicken", [["rchicken",120],["corn",60],["bbq",25]], "Toss pulled rotisserie chicken and corn with the barbecue sauce and warm through.", 5, ["rice", "potato", "greens", "quinoa", "brice"]],
+      smsalmon: ["Smoked salmon", [["smsalmon",80],["cucumber",60],["avocado",40],["edamame",60],["soysauce",8]], "Top with smoked salmon, cucumber, avocado and edamame, and a splash of soy sauce.", 5, ["rice", "brice", "quinoa", "greens", "cauli"]],
+      chipotle: ["Chipotle chicken", [["chipchick",120],["corn",50],["salsa",40],["avocado",40]], "Warm the chicken and top with corn, salsa and avocado.", 5, ["rice", "brice", "greens", "quinoa", "cauli", "potato", "quinsal"]],
+      eggavo: ["Fried egg and avocado", [["egg",100],["avocado",50],["spinach",40],["sriracha",5]], "Wilt the spinach, fry 2 eggs, and top with avocado and sriracha.", 6, ["rice", "brice", "quinoa", "potato"]],
+      medchick: ["Mediterranean chickpea", [["chickpeas",120],["cucumber",60],["cherry",60],["feta",25],["hummus",30]], "Toss chickpeas with cucumber, tomatoes and feta, and add a spoon of hummus.", 5, ["greens", "quinoa", "rice"]],
+      teritofu: ["Teriyaki tofu", [["tofu",160],["edamame",50],["teriyaki",25]], "Crisp cubed tofu in a dry nonstick pan 8 minutes, then toss with edamame and teriyaki.", 12, ["rice", "brice", "quinoa", "cauli"]],
+      salmon: ["Flaked pink salmon", [["pinksalmon",120],["cucumber",50],["edamame",50],["sweetchili",15]], "Bake the salmon from frozen 15 minutes, flake it and add cucumber, edamame and a drizzle of sweet chili.", 18, ["rice", "brice", "quinoa", "greens", "quinsal"]],
+    },
+    // Breads: [name, items, how, minutes, word for a sandwich, word for a pizza]
+    bread: {
+      bread: ["toast", [["bread",80]], "Toast 2 slices of bread.", 3, "sandwich"],
+      tortilla: ["tortilla", [["tortilla",60]], "Warm the tortilla and roll it up.", 2, "wrap", "tortilla pizza"],
+      pita: ["pita", [["pita",65]], "Warm the pita.", 2, "pita", "pita pizza"],
+      naan: ["naan", [["naan",100]], "Warm the naan.", 2, "naan wrap", "naan pizza"],
+      bagel: ["bagel", [["bagel",110]], "Toast the bagel.", 3, "bagel"],
+      emuffin: ["English muffins", [["emuffin",114]], "Toast 2 English muffins.", 3, "English muffin melt"],
+    },
+    // Fillings: [name, items, how, minutes, breads it suits, true if it's a pizza topping]
+    filling: {
+      turkey: ["Turkey and cheddar", [["turkeyslice",100],["cheddar",20],["spinach",20],["dijon",8]], "Layer the turkey, cheddar and spinach with Dijon.", 3, ["bread", "tortilla", "bagel", "pita"]],
+      caesar: ["Chicken Caesar", [["chstrips",110],["caesar",60]], "Fill with chicken strips and a scoop of Caesar salad.", 3, ["tortilla", "pita"]],
+      tunamelt: ["Tuna melt", [["tuna",110],["yogurt",25],["cheddar",20]], "Mix the tuna with yogurt and pepper, top with cheddar and broil 2 minutes.", 6, ["bread", "emuffin", "bagel"]],
+      eggsalad: ["Egg salad", [["egg",100],["yogurt",30],["greens",20]], "Mash 2 hard-boiled eggs with the yogurt, salt and pepper and add the greens. Boil a batch of eggs ahead.", 5, ["bread", "pita", "tortilla"]],
+      smsalmon: ["Smoked salmon", [["smsalmon",70],["cottage",50],["cucumber",40]], "Spread with cottage cheese and top with smoked salmon and cucumber.", 3, ["bagel", "bread", "emuffin"]],
+      chipotle: ["Chipotle chicken", [["chipchick",110],["avocado",40],["salsa",30],["greens",20]], "Fill with warm chicken, avocado, salsa and greens.", 5, ["tortilla", "pita", "bread"]],
+      steak: ["Steak and peppers", [["steak",110],["pepper",60],["onion",40],["mozz",20]], "Sear thin steak strips with sliced pepper and onion 5 minutes, then melt the mozzarella over.", 15, ["tortilla", "pita", "bread"]],
+      hummus: ["Hummus veggie", [["hummus",45],["chickpeas",60],["cucumber",50],["pepper",50],["feta",20]], "Spread with hummus and fill with chickpeas, cucumber, pepper and feta.", 4, ["pita", "tortilla", "naan"]],
+      pesto: ["Pesto chicken melt", [["chstrips",100],["pesto",12],["mozz",25],["tomato",50]], "Spread with pesto, add chicken, tomato and mozzarella, and broil 2 to 3 minutes.", 6, ["bread", "pita", "emuffin", "naan"]],
+      souvlaki: ["Chicken souvlaki", [["chstrips",110],["tzatziki",40],["tomato",50],["cucumber",40]], "Fill with warm chicken, tzatziki, tomato and cucumber.", 4, ["pita", "naan", "tortilla"]],
+      bulgogi: ["Bulgogi beef", [["bulgogi",120],["greens",30],["sriracha",5]], "Stir-fry the bulgogi 4 minutes and fill with it, greens and sriracha.", 8, ["tortilla", "pita"]],
+      salmonburger: ["Salmon burger", [["salmonburger",91],["greens",20],["tzatziki",20],["tomato",40]], "Cook a salmon burger from frozen, 5 minutes a side, and stack with greens, tomato and tzatziki.", 12, ["bread", "emuffin", "pita"]],
+      turkeyburger: ["Turkey burger", [["turkey",130],["cheddar",15],["tomato",40],["greens",15],["dijon",8]], "Pan-fry a turkey patty 5 minutes a side, melt the cheddar on top and stack with tomato, greens and Dijon.", 14, ["bread", "emuffin"]],
+      bbqpizza: ["BBQ chicken", [["rchicken",90],["bbq",20],["mozz",30],["onion",20]], "Spread with barbecue sauce, top with chicken, onion and mozzarella, and bake at 220°C / 425°F for 8 to 10 minutes.", 12, ["naan", "pita", "tortilla"], true],
+      margherita: ["Margherita", [["marinara",60],["mozz",55],["cherry",50],["pesto",8]], "Spread with marinara, top with mozzarella and tomatoes, bake at 220°C / 425°F for 8 to 10 minutes and dot with pesto.", 12, ["naan", "pita", "tortilla"], true],
+      meatballpizza: ["Meatball", [["meatballs",84],["marinara",60],["mozz",30]], "Spread with marinara, top with sliced thawed meatballs and mozzarella, and bake at 220°C / 425°F for 10 minutes.", 14, ["naan", "pita", "tortilla"], true],
+      chickpizza: ["Chicken and spinach", [["chstrips",90],["marinara",50],["spinach",25],["mozz",30]], "Spread with marinara, top with spinach, chicken and mozzarella, and bake at 220°C / 425°F for 8 to 10 minutes.", 12, ["naan", "pita", "tortilla"], true],
+    },
+  };
+  const COMBOS = (() => {
+    const out = [];
+    const add = (style, anchor, name, items, how, min) => ["l", "d"].forEach((t) => {
+      const m = mkMeal(`k${t}.${style}.${anchor}`, t, name, items, how, min);
+      m.style = style.split(".")[0];
+      m.anchor = style.split(".")[0] + "." + anchor.split(".")[0];
+      out.push(m);
+    });
+    const P = PARTS;
+    for (const [pk_, p] of Object.entries(P.protein)) for (const [sk, s] of Object.entries(P.side)) {
+      if ((p[4] || []).includes(sk)) continue;
+      add("plate", pk_ + "." + sk, `${p[0]} with ${s[0]}`, [...p[1], ...s[1]], `${p[2]} ${s[2]}`, Math.max(p[3], s[3]) + 2);
+    }
+    for (const [bk, b] of Object.entries(P.base)) for (const [tk, t] of Object.entries(P.topping)) {
+      if (!t[4].includes(bk)) continue;
+      add("bowl", bk + "." + tk, `${t[0]} ${b[0]}`, [...b[1], ...t[1]], `${b[2]} ${t[2]}`, Math.max(b[3], t[3]) + 1);
+    }
+    for (const [fk, f] of Object.entries(P.filling)) for (const bk of f[4]) {
+      const b = P.bread[bk];
+      add("sand", bk + "." + fk, `${f[0]} ${f[5] ? b[5] : b[4]}`, [...b[1], ...f[1]], f[5] ? f[2].replace(/^Spread/, `Spread the ${b[0]}`) : `${b[2]} ${f[2]}`, b[3] + f[3]);
+    }
+    return out;
+  })();
   // Eating out replaces dinner with a loose estimate
   const OUT = {
     h: { id: "oh", type: "o", out: true, name: "Eating out: salad with protein", items: [], min: 0, n: [650, 45, 35, 38, 8], tags: new Set(), text: "",
@@ -1386,7 +1634,7 @@ button.btn { border-radius: 0; }
   };
   OUT.p = { id: "op", type: "o", out: true, name: "Pizza, 3 slices", items: [], min: 0, n: [850, 36, 100, 33, 6], tags: new Set(), text: "",
     how: "Loose estimate for three slices of a large cheese or pepperoni pizza." };
-  const MEAL = Object.fromEntries([...MEALS, ...COSTCO_MEALS, OUT.h, OUT.i, OUT.p].map((m) => [m.id, m]));
+  const MEAL = Object.fromEntries([...MEALS, ...COSTCO_MEALS, ...COMBOS, OUT.h, OUT.i, OUT.p].map((m) => [m.id, m]));
   // A logged meal with your own calorie guess: 20% protein, 40% carbs, 40% fat
   function customMeal(kcal) {
     const id = "x" + kcal;
@@ -1486,6 +1734,9 @@ button.btn { border-radius: 0; }
     const t = radio("treat");
     if (t !== "none") SLOT_TYPE.Treat = t;
     COURSES.forEach((c) => ($("row-" + c.t).hidden = !slots.some((sl) => SLOT_TYPE[sl] === c.t)));
+    const st = [...document.querySelectorAll('input[name="style"]:checked')].map((x) => x.nextElementSibling.textContent.toLowerCase());
+    $("styleSum").textContent = (st.length === 4 || !st.length ? "All" : st.join(", ").replace(/^./, (x) => x.toUpperCase())) + ($("mix").checked ? " · mix and match" : "");
+    $("styleFold").hidden = !slots.some((sl) => sl === "Lunch" || sl === "Dinner");
     syncSliders();
     $("slotHint").textContent = "Each day: " + slots.join(", ").toLowerCase().replace(/^./, (x) => x.toUpperCase()) + "." +
       (t === "h" ? " Healthy treats are dark chocolate or fruit." : t === "i" ? " Indulgent treats are ice cream, cookies or chips." : "") + (t !== "none" ? " The treat is a fixed portion, and the rest of the day shrinks to fit it." : "");
@@ -1546,6 +1797,7 @@ button.btn { border-radius: 0; }
       out: { days: [...document.querySelectorAll('input[name="out"]:checked')].map((x) => +x.value), style: radio("outStyle") },
       course: Object.fromEntries(COURSES.map((c) => [c.t, { effort: +EFFORT[+$("effort-" + c.t).value][0], variety: +VARIETY[+$("variety-" + c.t).value][0] }])),
       store: radio("store"), packs: $("packs").checked, premade: $("premade").checked, sauce: $("sauce").checked, freezer: radio("freezer"), start: startDay(),
+      styles: [...document.querySelectorAll('input[name="style"]:checked')].map((x) => x.value), mix: $("mix").checked,
     };
   }
   const valid = (s) => s.age >= 15 && s.age <= 90 && s.heightCm >= 120 && s.heightCm <= 230 && s.weightKg >= 30 && s.weightKg <= 300;
@@ -1711,17 +1963,23 @@ button.btn { border-radius: 0; }
     const library = (mostly ? MEALS.map((m) => (m.items.every(([k]) => atAny(k)) ? m : MEAL["c" + m.id.slice(1)])).filter((m) => m.items.every(([k]) => atAny(k)))
       : costco ? COSTCO_MEALS.filter((m) => m.items.every(([k]) => atC(k))) : MEALS)
       .filter((m) => s.premade || !m.tags.has("premade"));
+    // Build-your-own bowls, sandwiches and plates, in the styles you picked
+    library.push(...COMBOS.filter((m) => (s.premade || !m.tags.has("premade")) && m.items.every(([k]) => (mostly ? atAny(k) : !costco || atC(k)))));
+    const styles = new Set(s.styles?.length ? s.styles : ["bowl", "sand", "plate", "classic"]);
     for (const type of ["b", "l", "d", "s", ...(treat ? [treat] : [])]) {
-      const fit = library.filter((m) => m.type === type && allowed(m, diets, avoid));
+      const fit = library.filter((m) => m.type === type && allowed(m, diets, avoid) && ((type !== "l" && type !== "d") || styles.has(m.style || "classic")));
       const quick = fit.filter((m) => m.min <= course[type].effort);
       if (quick.length || !fit.length) pools[type] = quick;
       else { pools[type] = [...fit].sort((a, b) => a.min - b.min).slice(0, 3); relaxed.push(type); }
     }
+    // Each style gets an equal share of the picks, so hundreds of combos don't crowd out the recipes
+    const gw = {};
+    for (const t of ["l", "d"]) if (pools[t]) { const n = {}; pools[t].forEach((m) => (n[m.style || "classic"] = (n[m.style || "classic"] || 0) + 1)); gw[t] = new Map(pools[t].map((m) => [m.id, 1 / n[m.style || "classic"]])); }
     const liked = (m) => likes.some((t) => m.text.includes(t));
     const T = { k: r.target, p: r.protein, c: r.carbs, f: r.fat, keto: r.keto };
     let treatNote = "";
     if (treat && !pools[treat].length) { slots = slots.filter((x) => x !== "Treat"); treatNote = `No ${treat === "h" ? "healthy" : "indulgent"} treats fit your diet and avoid list, so the week has none.`; }
-    return { slots, pools, liked, T, score: makeScorer(T), likes, relaxed, course, treatNote, out: s.out, start: s.start, treatPools: { h: library.filter((m) => m.type === "h" && allowed(m, diets, avoid)), i: library.filter((m) => m.type === "i" && allowed(m, diets, avoid)) }, costco, mostly, packs: costco && s.packs, library, fcap, sauce: s.sauce, diets, avoid };
+    return { slots, pools, liked, T, score: makeScorer(T), likes, relaxed, course, treatNote, out: s.out, start: s.start, treatPools: { h: library.filter((m) => m.type === "h" && allowed(m, diets, avoid)), i: library.filter((m) => m.type === "i" && allowed(m, diets, avoid)) }, costco, mostly, packs: costco && s.packs, library, fcap, sauce: s.sauce, diets, avoid, gw, mix: !!s.mix };
   }
 
   function buildWeek(ctx, seed) {
@@ -1731,6 +1989,8 @@ button.btn { border-radius: 0; }
     if (empty.length) return { error: `No ${empty.map((x) => x.toLowerCase()).join(" or ")} recipes fit your diet and avoid list. Loosen a filter to build a menu.` };
     const uses = {};
     const days = [];
+    // Mix and match: variety counts the kept part (protein, bowl base or bread), and what goes with it rotates
+    const akey = (m) => (ctx.mix && m.anchor ? m.anchor : m.id);
     // Variety: how many different recipes each course may use across the week
     const perDay = {};
     slots.forEach((sl) => (perDay[SLOT_TYPE[sl]] = (perDay[SLOT_TYPE[sl]] || 0) + 1));
@@ -1762,20 +2022,20 @@ button.btn { border-radius: 0; }
           if (sl === "Dinner" && ctx.out.days.includes((ctx.start + d) % 7)) { picked.push(OUT[ctx.out.style]); continue; }
           const type = SLOT_TYPE[sl];
           let pool = pools[type];
-          if (chosen[type].size >= cap[type]) pool = pool.filter((m) => chosen[type].has(m.id));
+          if (chosen[type].size >= cap[type]) pool = pool.filter((m) => chosen[type].has(akey(m)));
           const avail = pool.length > picked.filter((m) => m.type === type).length ? pool.filter((m) => !picked.includes(m)) : pool;
           const daily = ctx.course[type].variety >= 7;
-          const w = avail.map((m) => (liked(m) ? 3 : 1) * (daily ? ((uses[m.id] || 0) >= Math.ceil(7 / avail.length) + 1 ? 0.02 : 1 / (1 + 1.5 * (uses[m.id] || 0))) : chosen[type].has(m.id) ? 3 : 1));
+          const w = avail.map((m) => (liked(m) ? 3 : 1) * (ctx.gw?.[type]?.get(m.id) ?? 1) * (daily ? ((uses[m.id] || 0) >= Math.ceil(7 / avail.length) + 1 ? 0.02 : 1 / (1 + 1.5 * (uses[m.id] || 0))) : (chosen[type].has(akey(m)) ? 3 : 1) / (ctx.mix && m.anchor ? 1 + 2 * (uses[m.id] || 0) : 1)));
           let x = rand() * w.reduce((a, b) => a + b, 0), i = 0;
           while (i < w.length - 1 && (x -= w[i]) > 0) i++;
           picked.push(avail[i]);
         }
         const o = optimize(picked, T, score);
-        let s = o.s + picked.reduce((a, m) => a + (ctx.course[m.type].variety >= 7 ? 0.05 * (uses[m.id] || 0) : 0) - (liked(m) ? 0.01 : 0), 0);
+        let s = o.s + picked.reduce((a, m) => a + (ctx.course[m.type].variety >= 7 ? 0.05 * (uses[m.id] || 0) : ctx.mix && m.anchor ? 0.03 * (uses[m.id] || 0) : 0) - (liked(m) ? 0.01 : 0), 0);
         if (ctx.costco) { const [c, over] = packCost(picked, o.ms); if (ctx.packs) s += 0.0004 * c; if (over) s += 1; }
         if (!best || s < best.s) best = { ids: picked.map((m) => m.id), ms: o.ms, s };
       }
-      best.ids.forEach((id) => { uses[id] = (uses[id] || 0) + 1; chosen[MEAL[id].type].add(id); });
+      best.ids.forEach((id) => { uses[id] = (uses[id] || 0) + 1; chosen[MEAL[id].type].add(akey(MEAL[id])); });
       if (ctx.costco) best.ids.forEach((id, i) => MEAL[id].items.forEach(([k, g]) => {
         const u = buyUnits(k, g * best.ms[i]), short = u - (have[k] || 0);
         if (short > 0) { const z = pk(k).size; have[k] = (have[k] || 0) + Math.ceil(short / z) * z; }
@@ -1821,7 +2081,7 @@ button.btn { border-radius: 0; }
   let leftovers = null;
   const skipped = {};
 
-  function inputsKey(s, r) { return JSON.stringify([r.target, r.protein, r.carbs, r.fat, r.keto, s.diets, s.avoid, s.likes, s.meals, s.snacks, s.treat, s.out, s.start, s.course, s.store, s.packs, s.freezer, [...nostock], s.premade]); }
+  function inputsKey(s, r) { return JSON.stringify([r.target, r.protein, r.carbs, r.fat, r.keto, s.diets, s.avoid, s.likes, s.meals, s.snacks, s.treat, s.out, s.start, s.course, s.store, s.packs, s.freezer, [...nostock], s.premade, s.styles, s.mix]); }
 
   function refreshMenu(s, r, force) {
     ctx = context(s, r);
@@ -1953,15 +2213,15 @@ button.btn { border-radius: 0; }
   const SAUCE = {
     bbq:        { g: 30, goes: ["chicken", "thigh", "rchicken", "chstrips", "pork", "beef", "steak", "salmon", "salmonburger", "meatballs", "potato", "sweetpot", "tofu"] },
     teriyaki:   { g: 30, goes: ["wrice", "brice", "stirfry", "chicken", "thigh", "salmon", "tofu", "shrimp", "edamame", "steak"], no: ["soysauce", "tamari"] },
-    sweetchili: { g: 25, goes: ["shrimp", "chicken", "chstrips", "tofu", "salmon", "gyoza", "wrice", "stirfry", "salmonburger"] },
-    sriracha:   { g: 10, goes: ["wrice", "brice", "egg", "eggwhite", "tofu", "shrimp", "stirfry", "tuna", "smsalmon", "gyoza", "yakisoba", "yakitori", "avocado"] },
-    hotsauce:   { g: 10, goes: ["chicken", "chstrips", "egg", "eggwhite", "potato", "cauli", "thigh", "rchicken", "eggbites", "bwrap", "turkey"] },
-    tzatziki:   { g: 45, goes: ["pita", "naan", "chicken", "chstrips", "salmon", "potato", "cucumber", "chickpeas", "rchicken", "meatballs", "quinoa"] },
-    dijon:      { g: 10, goes: ["salmon", "pork", "chicken", "steak", "potato", "greenbeans", "turkeyslice", "smsalmon", "cod", "thigh"] },
+    sweetchili: { g: 25, goes: ["shrimp", "chicken", "chstrips", "tofu", "salmon", "gyoza", "wrice", "stirfry", "salmonburger", "tilapia", "pinksalmon", "mandu"] },
+    sriracha:   { g: 10, goes: ["wrice", "brice", "egg", "eggwhite", "tofu", "shrimp", "stirfry", "tuna", "smsalmon", "gyoza", "yakisoba", "yakitori", "avocado", "sfrice", "mandu", "bulgogi"] },
+    hotsauce:   { g: 10, goes: ["chicken", "chstrips", "egg", "eggwhite", "potato", "cauli", "thigh", "rchicken", "eggbites", "bwrap", "turkey", "tsausage", "bsand", "ewwrap", "wedges"] },
+    tzatziki:   { g: 45, goes: ["pita", "naan", "chicken", "chstrips", "salmon", "potato", "cucumber", "chickpeas", "rchicken", "meatballs", "quinoa", "pinksalmon", "tilapia"] },
+    dijon:      { g: 10, goes: ["salmon", "pork", "chicken", "steak", "potato", "greenbeans", "turkeyslice", "smsalmon", "cod", "thigh", "tilapia", "pinksalmon"] },
     pesto:      { g: 15, goes: ["spaghetti", "pasta", "chicken", "salmon", "tortelloni", "egg", "zucchini", "potato", "quinoa", "cod", "mozz"] },
     salsa:      { g: 45, goes: ["egg", "tortilla", "corntort", "chickpeas", "blackbeans", "beef", "turkey", "rchicken", "sweetpot", "eggwhite"] },
   };
-  const SAUCED = new Set([...Object.keys(SAUCE), "marinara", "coco", "cocofull", "hummus", "saladkit", "ctsoup", "lentsoup"]);
+  const SAUCED = new Set([...Object.keys(SAUCE), "marinara", "coco", "cocofull", "hummus", "saladkit", "ctsoup", "lentsoup", "butterch", "satay", "kalekit", "grsalad", "caesar", "quinsal", "bcsoup", "udon", "bulgogi", "chipchick"]);
   function sauceOptions(m) {
     if (m.out || !"bld".includes(m.type) || m.tags.has("premade")) return [];
     const ks = m.items.map(([k]) => k);
@@ -2446,6 +2706,8 @@ button.btn { border-radius: 0; }
     v.packs = $("packs").checked;
     v.premade = $("premade").checked;
     v.sauce = $("sauce").checked;
+    v.styles = read().styles;
+    v.mix = $("mix").checked;
     v.out = read().out.days;
     ["age", "heightCm", "heightFt", "heightIn", "weight", ...COURSES.flatMap((c) => ["effort-" + c.t, "variety-" + c.t])].forEach((id) => (v.fields[id] = $(id).value)); v.sliders = 1;
     v.tags = tags;
@@ -2473,6 +2735,8 @@ button.btn { border-radius: 0; }
     if (v.packs != null) $("packs").checked = v.packs;
     if (v.premade != null) $("premade").checked = v.premade;
     if (v.sauce != null) $("sauce").checked = v.sauce;
+    if (v.styles) document.querySelectorAll('input[name="style"]').forEach((el) => (el.checked = v.styles.includes(el.value)));
+    if (v.mix != null) $("mix").checked = v.mix;
     (v.out || []).forEach((d) => { const el = $("out-" + d); if (el) el.checked = true; });
   }
   function showStore() {
