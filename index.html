@@ -2347,6 +2347,8 @@ button.btn { border-radius: 0; }
     };
   }
 
+  // The same dish whether it's served as lunch or dinner, or as its Costco version
+  const dishOf = (m) => m.id.replace(/^k[ld]\./, "k.").replace(/^c(?=\d)/, "m");
   const stepsOf = (m) => (m.max ? STEPS[m.type].filter((x) => x <= m.max) : STEPS[m.type]);
   // Nutrition of a meal at a portion step, after rounding to amounts you can measure (whole bottles, pieces),
   // so the optimiser sees what the menu will actually show
@@ -2412,6 +2414,8 @@ button.btn { border-radius: 0; }
       else { pools[type] = [...fit].sort((a, b) => a.min - b.min).slice(0, 3); relaxed.push(type); }
     }
     if (treat) { const f = pools[treat].filter((m) => flavorOf(m) === (s.flav || "sweet")); if (f.length) pools[treat] = f; }
+    // Dinner is a proper dinner (no sandwiches or wraps) unless dinner effort is set to the quickest
+    if (pools.d && course.d.effort > 10) { const f = pools.d.filter((m) => m.dinner !== false); if (f.length) pools.d = f; }
     // Each style gets an equal share of the picks, so hundreds of combos don't crowd out the recipes
     const gw = {};
     for (const t of ["l", "d"]) if (pools[t]) { const n = {}; pools[t].forEach((m) => (n[m.style || "classic"] = (n[m.style || "classic"] || 0) + 1)); gw[t] = new Map(pools[t].map((m) => [m.id, 1 / n[m.style || "classic"]])); }
@@ -2436,6 +2440,8 @@ button.btn { border-radius: 0; }
     slots.forEach((sl) => (perDay[SLOT_TYPE[sl]] = (perDay[SLOT_TYPE[sl]] || 0) + 1));
     const cap = Object.fromEntries(Object.keys(perDay).map((t) => [t, ctx.course[t].variety * perDay[t]]));
     const chosen = { b: new Set(), l: new Set(), d: new Set(), s: new Set(), h: new Set(), i: new Set(), o: new Set() };
+    // A dish served as lunch isn't also served as dinner this week, so lunch and dinner always differ
+    const servedAs = {};
     // Big-pack planning: what's already open (or in the pantry) is free to use; opening a new pack costs its price
     const have = { ...(ctx.costco ? pantry : {}) };
     // Returns [price of new packs, true if they won't fit in the freezer]
@@ -2463,7 +2469,11 @@ button.btn { border-radius: 0; }
           const type = SLOT_TYPE[sl];
           let pool = pools[type];
           if (chosen[type].size >= cap[type]) pool = pool.filter((m) => chosen[type].has(akey(m)));
-          const avail = pool.length > picked.filter((m) => m.type === type).length ? pool.filter((m) => !picked.includes(m)) : pool;
+          // Never the same dish twice in a day, nor a lunch dish at dinner (or the other way round)
+          const today = new Set(picked.map(dishOf));
+          let avail = pool.filter((m) => !today.has(dishOf(m)) && (servedAs[dishOf(m)] || type) === type);
+          if (!avail.length) avail = pool.filter((m) => !today.has(dishOf(m)));
+          if (!avail.length) avail = pool;
           const daily = ctx.course[type].variety >= 7;
           const w = avail.map((m) => (liked(m) ? 3 : 1) * (ctx.gw?.[type]?.get(m.id) ?? 1) * (daily ? ((uses[m.id] || 0) >= Math.ceil(7 / avail.length) + 1 ? 0.02 : 1 / (1 + 1.5 * (uses[m.id] || 0))) : (chosen[type].has(akey(m)) ? 3 : 1) / (ctx.mix && m.anchor ? 1 + 2 * (uses[m.id] || 0) : 1)));
           let x = rand() * w.reduce((a, b) => a + b, 0), i = 0;
@@ -2475,7 +2485,7 @@ button.btn { border-radius: 0; }
         if (ctx.costco) { const [c, over] = packCost(picked, o.ms); if (ctx.packs) s += 0.0004 * c; if (over) s += 1; }
         if (!best || s < best.s) best = { ids: picked.map((m) => m.id), ms: o.ms, s };
       }
-      best.ids.forEach((id) => { uses[id] = (uses[id] || 0) + 1; chosen[MEAL[id].type].add(akey(MEAL[id])); });
+      best.ids.forEach((id) => { uses[id] = (uses[id] || 0) + 1; chosen[MEAL[id].type].add(akey(MEAL[id])); if (!MEAL[id].out) servedAs[dishOf(MEAL[id])] ||= MEAL[id].type; });
       if (ctx.costco) best.ids.forEach((id, i) => MEAL[id].items.forEach(([k, g]) => {
         const u = buyUnits(k, g * best.ms[i]), short = u - (have[k] || 0);
         if (short > 0) { const z = pk(k).size; have[k] = (have[k] || 0) + Math.ceil(short / z) * z; }
@@ -2889,6 +2899,7 @@ button.btn { border-radius: 0; }
       <div class="mm-key">${rows.map((x) => `<span><i style="background:${x.c}"></i>${x.k === "Breakfast" ? "Bkfst" : x.k} ${x.p}%</span>`).join("")}</div>` : "";
   }
 
+  const PORTION_WORDS = { 0.5: "half portion", 0.75: "smaller portion", 1.25: "bigger portion", 1.5: "1½ portions", 1.75: "1¾ portions", 2: "double portion", 2.25: "2¼ portions", 2.5: "2½ portions" };
   function renderMenu() {
     const days = $("days"), warn = $("menuWarn");
     if (!week || week.error) {
@@ -2941,7 +2952,7 @@ button.btn { border-radius: 0; }
       d.meals.forEach((x, i) => {
         const mm = document.createElement("div");
         mm.className = "meal";
-        const portionNote = x.mult === 1 ? "" : ` · ${x.mult}× portion`;
+        const portionNote = x.mult === 1 ? "" : ` · ${PORTION_WORDS[x.mult] || half(x.mult) + " portions"}`;
         mm.innerHTML = `
           <div class="slot">${SL[i]}</div>
           <div class="nm">${x.m.name}${(() => { const sc = x.items.find((it) => it.sauce); return sc ? ` <span class="sauce-tag">+ ${ING[sc.k][0].replace(/ sauce$/i, "").replace(/^Frank's RedHot$/, "hot sauce").toLowerCase()}</span>` : ""; })()}${ctx.liked(x.m) ? ' <span class="liked" title="Matches a food you asked for">★</span>' : ""}${wd.log?.[i] ? '<span class="logged">Logged</span>' : ""}</div>
@@ -3025,7 +3036,8 @@ button.btn { border-radius: 0; }
     week.days.forEach((d, j) => j !== di && d.ids.forEach((id) => (uses[id] = (uses[id] || 0) + 1)));
     let pool = ctx.pools[cur.type] || ctx.treatPools[cur.type] || [];
     if (cur.type === "h" || cur.type === "i") { const f = pool.filter((m) => flavorOf(m) === flavorOf(cur)); if (f.length > 1) pool = f; }
-    let cands = pool.filter((m) => !seen.has(m.id) && !day.ids.some((id, j) => j !== si && id === m.id));
+    const other = new Set(day.ids.filter((id, j) => j !== si).map((id) => dishOf(MEAL[id])));
+    let cands = pool.filter((m) => !seen.has(m.id) && !other.has(dishOf(m)));
     if (!cands.length) { seen.clear(); seen.add(cur.id); cands = pool.filter((m) => m.id !== cur.id); }
     if (!cands.length) return;
     let best = null;

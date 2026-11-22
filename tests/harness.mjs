@@ -37,17 +37,23 @@ const RULES = [
   { id: "kcal", hard: true, desc: "each day within 15% of its calorie target", check: (w) => w.days.flatMap((d, i) => (Math.abs(d.kcal - d.tk) / d.tk > 0.15 ? [`day ${i + 1}: ${Math.round(d.kcal)} vs ${d.tk}`] : [])) },
   { id: "kcal-tight", hard: false, desc: "each day within 8% of its calorie target", check: (w) => w.days.flatMap((d, i) => (Math.abs(d.kcal - d.tk) / d.tk > 0.08 ? [`day ${i + 1}: ${Math.round(d.kcal)} vs ${d.tk}`] : [])) },
   { id: "protein", hard: true, desc: "weekly protein at least 85% of target", check: (w) => (w.protein < 0.85 * w.T.p * 7 ? [`${Math.round(w.protein / 7)} g a day vs ${w.T.p} g`] : []) },
-  { id: "repeat-day", hard: false, desc: "no meal twice in one day", check: (w) => w.days.flatMap((d, i) => {
+  { id: "repeat-day", hard: true, desc: "no dish twice in one day", check: (w) => w.days.flatMap((d, i) => {
     const seen = new Map(), out = [];
     d.meals.forEach((m) => { if (m.out) return; if (seen.has(m.dish)) out.push(`day ${i + 1}: ${m.name} / ${seen.get(m.dish)}`); else seen.set(m.dish, m.name); });
     return out;
   }) },
-  { id: "dinner-type", hard: false, desc: "dinners are dinner-type meals", check: (w) => w.days.flatMap((d, i) => d.meals.filter((m) => m.slot === "Dinner" && !m.out && m.dinner === false).map((m) => `day ${i + 1}: ${m.name}`)) },
-  { id: "protein-cap", hard: false, desc: "one main protein at most 3 times across lunch and dinner", check: (w) => {
-    const n = {};
-    w.days.forEach((d) => d.meals.forEach((m) => { if ((m.slot === "Lunch" || m.slot === "Dinner") && m.main && m.main !== "none") n[m.main] = (n[m.main] || 0) + 1; }));
-    return Object.entries(n).filter(([, c]) => c > 3).map(([k, c]) => `${k} x${c}`);
+  { id: "lunch-dinner", hard: true, desc: "no dish served as both lunch and dinner in a week", check: (w) => {
+    const as = {}, out = new Set();
+    w.days.forEach((d) => d.meals.forEach((m) => { if (m.out || (m.slot !== "Lunch" && m.slot !== "Dinner")) return; if (as[m.dish] && as[m.dish] !== m.slot) out.add(m.name); as[m.dish] ||= m.slot; }));
+    return [...out];
   } },
+  { id: "dinner-type", hard: true, desc: "dinners are dinner-type meals (dinner effort above quickest)", check: (w) => w.quickDinner ? [] : w.days.flatMap((d, i) => d.meals.filter((m) => m.slot === "Dinner" && !m.out && m.dinner === false).map((m) => `day ${i + 1}: ${m.name}`)) },
+  { id: "daily-repeat", hard: false, desc: "a course set to Daily repeats a finished meal (dish + sauce) at most once", check: (w) => {
+    const n = {};
+    w.days.forEach((d) => d.meals.forEach((m) => { if (!m.out && w.daily[m.type]) { const k = m.type + m.dish + m.sauce; n[k] = (n[k] || 0) + 1; } }));
+    return Object.entries(n).filter(([, c]) => c > 2).map(([k, c]) => `${k} x${c}`);
+  } },
+  { id: "portion-label", hard: true, desc: "portion labels in plain words", check: (w) => (w.labels.filter((t) => /\d×/.test(t)).slice(0, 3)) },
   { id: "budget", hard: false, desc: "first shop under $300", check: (w) => (w.shop && w.shop.shop > 300 ? [`$${Math.round(w.shop.shop)}`] : []) },
   { id: "waste", hard: false, desc: "no fresh food wasted ($0)", check: (w) => (w.shop && w.shop.waste > 0.005 ? [`$${Math.round(w.shop.waste)}`] : []) },
 ];
@@ -84,10 +90,12 @@ for (const prof of PROFILES) for (let k = 0; k < SEEDS; k++) {
         slots, kcal: dd.tot[0], tk: d.tk ?? ctx.T.k,
         meals: dd.meals.map((x, i) => ({ id: x.m.id, name: x.m.name, slot: slots[i], type: x.m.type, out: !!x.m.out, ok: !!x.m.out || B.allowed(x.m, ctx.diets, ctx.avoid),
           dish: x.m.id.replace(/^k[ld]\./, "k.").replace(/^c/, "m"), dinner: x.m.dinner ?? (x.m.style === "sand" ? false : undefined), main: x.m.out ? "none" : mainOf(x.m),
-          kcal: x.n[0], mult: x.mult })),
+          kcal: x.n[0], mult: x.mult, sauce: x.items.find((it) => it.sauce)?.k || "" })),
       };
     });
-    return { T: ctx.T, days, protein, shop: B.shopStats() };
+    const labels = [...document.querySelectorAll("#days .mt")].map((e) => e.textContent);
+    const daily = Object.fromEntries(Object.entries(ctx.course).map(([t, c]) => [t, c.variety >= 7 && "bld".includes(t)]));
+    return { T: ctx.T, days, protein, shop: B.shopStats(), labels, daily, quickDinner: ctx.course.d.effort <= 10 };
   }, { s: { ...base, ...prof.s }, seed });
   const fails = RULES.map((rule) => ({ rule, probs: rule.check(w) })).filter((x) => x.probs.length);
   results.push({ prof: prof.name, seed, w, fails });
