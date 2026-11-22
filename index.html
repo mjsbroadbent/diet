@@ -1341,7 +1341,7 @@ button.btn { border-radius: 0; }
     pepper: ["Mixed bell peppers, 6", 900, 10.99, "x"],
     onion: ["Yellow onions, 4.5 kg bag", 4500, 10.99, "r"],
     tomato: ["Roma tomatoes, 907 g", 907, 6.59, "x"],
-    cherry: ["Grape tomatoes, 2 lb", 907, 9.89, "x"],
+    cherry: ["Grape tomatoes, 2 lb", 907, 9.89, "r"],
     cantom: ["Aylmer diced tomatoes, 8 × 796 ml", 6368, 16.49, "p"],
     cucumber: ["English cucumbers, 3", 900, 4.39, "x"],
     carrot: ["Carrots, 4.5 kg bag", 4500, 8.79, "r"],
@@ -1350,7 +1350,7 @@ button.btn { border-radius: 0; }
     greenbeans: ["Organic French beans, 680 g", 680, 8.79, "x"],
     mushroom: ["Cremini mushrooms, 680 g", 680, 6.59, "x"],
     stirfry: ["Kirkland Signature frozen stir-fry vegetables, 2.5 kg", 2500, 16.49, "p"],
-    avocado: ["Avocados, 6", 900, 8.79, "x"],
+    avocado: ["Avocados, 6", 900, 8.79, "r"],
     asparagus: ["Asparagus, 1 bunch (about 1 kg)", 1000, 17.59, "x"],
     corn: ["Kirkland Signature organic frozen corn, 2.5 kg", 2500, 16.49, "p"],
     oil: ["Kirkland Signature organic extra virgin olive oil, 2 L", 1840, 19.79, "p"],
@@ -1396,7 +1396,7 @@ button.btn { border-radius: 0; }
     meatballs: ["Kirkland Signature Italian-style meatballs, 2.72 kg", 2720, 32.99, "p"],
     smsalmon: ["One Ocean smoked sockeye salmon, 454 g", 454, 29.69, "z"],
     tortelloni: ["Italian sausage tortelloni, 2 × 500 g", 1000, 15.39, "z"],
-    naan: ["Bakestone Brothers naan, 12", 1200, 9.34, "z"],
+    naan: ["Bakestone Brothers naan, 12", 1200, 9.34, "r"],
     pita: ["Sunrise pita bread, 4 × 6", 1560, 5.49, "z"],
     emuffin: ["Dempster's English muffins, 4 × 6", 1368, 10.44, "z"],
     granola: ["One Degree organic classic granola, 1 kg", 1000, 10.99, "p"],
@@ -1866,6 +1866,13 @@ button.btn { border-radius: 0; }
     ["h", "Cucumber and hummus", [["cucumber",150],["hummus",45]], "Cut the cucumber into thick coins and dip.", 2],
     ["h", "Pretzel crisps and hummus", [["pretzel",25],["hummus",40]], "A small bowl of pretzel crisps with hummus to dip.", 1],
     ["h", "Cheese string and almonds", [["cheesestr",21],["almonds",15]], "One cheese string and a small handful of almonds.", 1],
+    // Snacks that use up fresh packs a little at a time (Nov 22 2026)
+    ["s", "Pita, hummus and cucumber", [["pita",60],["hummus",40],["cucumber",80]], "Warm a pita, cut it into wedges and dip with cucumber spears in hummus.", 3],
+    ["s", "Avocado toast", [["bread",40],["avocado",60]], "Toast a slice of bread and mash half an avocado on top with salt and pepper.", 3],
+    ["s", "Tomato mozzarella bites", [["cherry",120],["mozz",30]], "Halve the grape tomatoes and toss with cubed mozzarella, salt and pepper.", 3],
+    ["s", "Naan with tzatziki and cucumber", [["naan",45],["tzatziki",45],["cucumber",60]], "Warm a piece of naan and dip it with cucumber in tzatziki.", 3],
+    ["s", "Pineapple and Greek yogurt", [["pineapple",120],["yogurt",150]], "Spoon Greek yogurt into a bowl and top with pineapple chunks.", 2],
+    ["s", "Spinach and mushroom egg cup", [["egg",100],["spinach",30],["mushroom",50]], "Sauté mushrooms and spinach 3 minutes, pour in 2 beaten eggs and cook until set.", 6],
   ].map(([type, name, items, how, min, max], i) => mkMeal("m" + i, type, name, items, how, min, max));
   // max: the biggest portion multiplier that still makes sense (no one drinks three shakes for breakfast)
   function mkMeal(id, type, name, items, how, min, max) {
@@ -2109,6 +2116,12 @@ button.btn { border-radius: 0; }
   Object.assign(PARTS.base, {
     veg: ["roast vegetable bowl", [["roastveg",200],["normandy",120]], "Roast the frozen root vegetables 20 minutes and steam the vegetable blend.", 22],
   });
+  // Sides that finish fresh produce a little at a time
+  Object.assign(PARTS.side, {
+    cuketom: ["rice and a cucumber tomato salad", [["wrice",160],["cucumber",100],["cherry",80],["oil",5]], "Cook the rice and toss diced cucumber and halved grape tomatoes with oil, salt and lemon.", 18],
+    mushspin: ["garlic mushrooms, spinach and potatoes", [["littlepot",200],["mushroom",120],["spinach",50],["oil",8]], "Roast halved little potatoes for 25 minutes; sauté mushrooms with garlic, then wilt in the spinach.", 28],
+    avotom: ["corn rice with avocado and tomato", [["wrice",160],["corn",60],["avocado",60],["cherry",60]], "Cook the rice with the corn and top with diced avocado and grape tomatoes.", 18],
+  });
   // The roast vegetable bowl suits whatever suits the cauliflower rice bowl
   Object.values(PARTS.topping).forEach((t) => t[4].includes("cauli") && t[4].push("veg"));
   // Sides that don't suit Asian-style proteins
@@ -2180,7 +2193,8 @@ button.btn { border-radius: 0; }
       beyond: 2, impnug: 2, chickedam: 1 },
     side: { potgb: 5, wedges: 5, rice: 4, brice: 3, sweetpot: 4, quinoa: 3, mash: 5, brussels: 4, salad: 3, mexrice: 4, naanveg: 4, cauli: 2, gnocchi: 4,
       kale: 3, greek: 4, caesar: 4, saladkit: 3, littlepot: 5, squash: 3, caulibroc: 3, bokrice: 3, noodle: 4, kimchirice: 3, cornsalad: 3, pastasalad: 3,
-      zucmush: 3, asparavo: 3, cheesybroc: 4, ricepeas: 4, quinnorm: 3, roastveg: 4, ricemix: 4, gnocnorm: 4, potnorm: 4 },
+      zucmush: 3, asparavo: 3, cheesybroc: 4, ricepeas: 4, quinnorm: 3, roastveg: 4, ricemix: 4, gnocnorm: 4, potnorm: 4,
+      cuketom: 4, mushspin: 4, avotom: 4 },
     base: { rice: 4, brice: 3, quinoa: 3, greens: 3, pasta: 5, cauli: 2, chickpea: 2, potato: 5, quinsal: 3, noodle: 4, chickpasta: 2, romaine: 3,
       pastasal: 3, kimchirice: 3, veg: 3 },
     topping: { teriyaki: 5, taco: 5, greek: 4, poke: 3, bulgogi: 4, satay: 2, butter: 5, chili: 4, pesto: 4, meatball: 5, turkeychili: 4, bbq: 5,
@@ -2196,7 +2210,7 @@ button.btn { border-radius: 0; }
       5: "7 9 23 31 32 39 41 43 49 72 73 74 75 76 77 96 99 102 103 106 113 126 130 133 134 143 145 146 147 149 163 169 170 173",
       4: "0 1 3 5 10 11 13 14 19 21 26 28 29 30 37 38 40 45 53 54 55 57 59 66 67 68 70 80 82 83 84 85 88 89 92 94 97 98 100 104 105 107 108 109 110 " +
         "117 118 119 120 123 124 125 128 131 132 135 136 138 139 140 141 144 148 150 151 152 153 157 159 160 161 166 168 172 174 175 176 177 178 180 " +
-        "181 183 185 188 189 193",
+        "181 183 185 188 189 193 205 206 207 208 209 210",
       2: "2 4 12 16 17 22 34 36 42 48 52 58 60 65 91 93 116 155 184 190 192 194 195 196 198 199 200 201 202",
       1: "25 27 44",
     },
@@ -3099,6 +3113,7 @@ button.btn { border-radius: 0; }
   // "Sauce it up": one spoonful of something on a meal for variety, counted in the day's calories.
   // goes: ingredients it suits. Skipped on meals that already have a sauce, curries, soups and premade meals.
   // salad: also suits salads. kind: "sauce" (default), "rub" (a dry seasoning) or "top" (a topping), so one anchor can be dressed many ways.
+  // kind "fresh": a little of a fresh item to finish its pack; it doesn't block other sauces.
   const SAUCE = {
     bbq:        { g: 30, goes: ["chicken", "thigh", "rchicken", "chstrips", "pork", "beef", "steak", "salmon", "salmonburger", "meatballs", "potato", "sweetpot", "tofu", "drumstick", "porkchop", "bchstrips", "littlepot"] },
     teriyaki:   { g: 30, goes: ["wrice", "brice", "stirfry", "chicken", "thigh", "salmon", "tofu", "shrimp", "edamame", "steak"], no: ["soysauce", "tamari"] },
@@ -3132,8 +3147,14 @@ button.btn { border-radius: 0; }
     olives:     { g: 25, kind: "top", salad: true, goes: ["greens", "romaine", "chickpeas", "feta", "quinoa", "pita", "cucumber", "spaghetti", "pasta", "shortpasta", "cod", "tilapia"] },
     artichoke:  { g: 40, kind: "top", salad: true, goes: ["greens", "romaine", "spaghetti", "pasta", "shortpasta", "quinoa", "pita", "mozz", "ricotta", "chickpeas"] },
     sundried:   { g: 15, kind: "top", salad: true, goes: ["spaghetti", "pasta", "shortpasta", "greens", "quinoa", "egg", "ricotta", "mozz", "feta", "chickpeas", "gnocchi"] },
+    avocado:    { g: 50, kind: "fresh", salad: true, no: ["avocado"], goes: ["egg", "chicken", "rchicken", "tortilla", "corntort", "wrice", "brice", "salmon", "smsalmon", "tuna", "beef", "turkey", "bread", "blackbeans"] },
+    cherry:     { g: 60, kind: "fresh", salad: true, no: ["cherry", "tomato", "marinara"], goes: ["spaghetti", "pasta", "shortpasta", "egg", "chicken", "quinoa", "pita", "greens", "romaine", "mozz", "gnocchi", "tortilla"] },
+    cucumber:   { g: 60, kind: "fresh", salad: true, no: ["cucumber"], goes: ["wrice", "brice", "salmon", "chicken", "pita", "quinoa", "tuna", "smsalmon", "tofu", "naan", "greens"] },
+    spinach:    { g: 30, kind: "fresh", salad: true, no: ["spinach", "greens"], goes: ["spaghetti", "pasta", "shortpasta", "egg", "gnocchi", "tortelloni", "chickpasta", "quinoa", "tortilla", "bread"] },
+    mushroom:   { g: 60, kind: "fresh", no: ["mushroom"], goes: ["steak", "beef", "chicken", "thigh", "egg", "spaghetti", "pasta", "porkchop", "pork", "turkey", "beyond", "gnocchi"] },
+    pineapple:  { g: 50, kind: "fresh", no: ["pineapple"], goes: ["pork", "porkchop", "ham", "chicken", "thigh", "shrimp", "wrice", "salmon", "tofu"] },
   };
-  const SAUCED = new Set([...Object.keys(SAUCE), "marinara", "coco", "cocofull", "hummus", "saladkit", "ctsoup", "lentsoup", "kimchi", "broth", "butterch", "satay", "kalekit", "grsalad", "caesar", "quinsal", "bcsoup", "udon", "bulgogi", "chipchick"]);
+  const SAUCED = new Set([...Object.keys(SAUCE).filter((k) => SAUCE[k].kind !== "fresh"), "marinara", "coco", "cocofull", "hummus", "saladkit", "ctsoup", "lentsoup", "kimchi", "broth", "butterch", "satay", "kalekit", "grsalad", "caesar", "quinsal", "bcsoup", "udon", "bulgogi", "chipchick"]);
   function sauceOptions(m) {
     if (m.out || !"bld".includes(m.type) || m.tags.has("premade")) return [];
     const ks = m.items.map(([k]) => k);
