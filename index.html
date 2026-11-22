@@ -213,6 +213,21 @@ button.btn:hover { filter: brightness(1.08); }
 .prot .seg3 input:checked + span { background: var(--accent); color: var(--on-accent); }
 .prot .seg3 input[value="0"]:checked + span { background: var(--bad); color: #fff; }
 .prot .seg3 input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: -2px; }
+.people { display: grid; gap: 12px; margin-bottom: 10px; }
+.people:empty { display: none; }
+.person { border: 1px solid var(--line); border-radius: 10px; padding: 12px; display: grid; gap: 10px; background: var(--surface); min-width: 0; }
+.person-h { display: flex; gap: 8px; align-items: center; }
+.person-h input { flex: 1; min-width: 0; font: inherit; font-weight: 700; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--ink); }
+.person .row { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; }
+.person select { width: 100%; font: inherit; padding: 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--ink); }
+.person .chips .chip span { font-size: 13px; }
+.home-grid { display: grid; grid-template-columns: auto repeat(7, minmax(0, 1fr)); gap: 4px; align-items: center; font-size: 13px; max-width: 420px; }
+.home-grid b { font-weight: 600; text-align: center; color: var(--muted); font-size: 12px; }
+.home-grid label { display: grid; place-items: center; }
+.home-grid input { width: 22px; height: 22px; accent-color: var(--accent); margin: 0; }
+.own { grid-column: 1 / -1; font-size: 13px; }
+.own p { margin: 6px 0 0; color: var(--muted); }
+.own p b { color: var(--ink); }
 .rate-note { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin-top: 4px; font-size: 13px; color: var(--muted); }
 .rate-note button { font: inherit; font-weight: 600; color: var(--accent); background: none; border: 1px solid var(--line); border-radius: 6px; padding: 3px 9px; cursor: pointer; }
 .grocery { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); gap: 14px; }
@@ -726,6 +741,11 @@ button.btn { border-radius: 0; }
 /* Pantry step: shelf labels */
 .staples h3 { font-family: var(--label); color: var(--red); font-weight: 900; font-style: italic; letter-spacing: 0.03em; }
 
+/* Household builder */
+.person { border: 2px solid var(--ink); border-radius: 0; box-shadow: 4px 4px 0 var(--ink); }
+.person-h input, .person select { border: 2px solid var(--ink); border-radius: 0; background: var(--surface); }
+.home-grid b { font-family: var(--slant); font-style: italic; font-weight: 900; color: var(--ink); }
+
 /* Proteins you eat, and the "not a fan" note after a swap */
 .prot .seg3 { border: 2px solid var(--ink); border-radius: 0; box-shadow: 3px 3px 0 var(--ink); background: var(--surface); }
 .prot .seg3 label + label span { border-left: 2px solid var(--ink); }
@@ -829,8 +849,15 @@ button.btn { border-radius: 0; }
             <div class="unit-in"><input type="number" id="weight" min="30" max="300" step="0.1" value="82" inputmode="decimal"><span id="wUnit">kg</span></div>
           </label>
         </div>
+      </fieldset>
+
+      <fieldset data-step="you" id="houseSet">
+        <legend>Your household</legend>
+        <p class="hint" id="houseHint">Cooking for more than you? Add each person and lunches and dinners are scaled to everyone's calories. Breakfasts and snacks are planned for each person.</p>
+        <div class="people" id="people"></div>
+        <button type="button" class="ghost" id="addPerson">+ Add a person</button>
         <div class="row" id="hhRow">
-          <label class="f">People eating these meals
+          <label class="f">Or just a headcount, same portions each
             <div class="unit-in"><input type="number" id="hhSize" min="1" max="8" step="1" value="1" inputmode="numeric"><span>people</span></div>
           </label>
         </div>
@@ -3508,7 +3535,7 @@ button.btn { border-radius: 0; }
           <div class="slot">${SL[i]}</div>
           <div class="nm">${x.m.name}${(() => { const sc = x.items.find((it) => it.sauce); return sc ? ` <span class="sauce-tag">+ ${ING[sc.k][0].replace(/ sauce$/i, "").replace(/^Frank's RedHot$/, "hot sauce").toLowerCase()}</span>` : ""; })()}${ctx.liked(x.m) ? ' <span class="liked" title="Matches a food you asked for">★</span>' : ""}${wd.log?.[i] ? '<span class="logged">Logged</span>' : ""}</div>
           ${wd.log?.[i] ? `<button type="button" class="swap" data-undo>Undo</button>` : wd.addedTreats?.includes(i) ? `<button type="button" class="swap" data-rm aria-label="Remove treat on ${dayName(di)}">Remove</button>` : x.m.out || wd.passed ? "" : `<button type="button" class="swap" aria-label="Swap ${SL[i]} on ${dayName(di)}">Swap</button>`}
-          <div class="mt"><span class="kc">${x.m.out ? "about " : ""}${fmt(x.n[0])} kcal</span> · P ${fmt(x.n[1])} · C ${fmt(T.keto ? x.n[2] - x.n[4] : x.n[2])} · F ${fmt(x.n[3])}${x.m.out ? " · loose estimate" : ` · ${x.m.min} min${x.m.tags.has("premade") ? " · premade" : ""}${portionNote}`}</div>
+          <div class="mt"><span class="kc">${x.m.out ? "about " : ""}${fmt(x.n[0])} kcal</span> · P ${fmt(x.n[1])} · C ${fmt(T.keto ? x.n[2] - x.n[4] : x.n[2])} · F ${fmt(x.n[3])}${x.m.out ? " · loose estimate" : ` · ${x.m.min} min${x.m.tags.has("premade") ? " · premade" : ""}${portionNote}`}${x.plates > 1.25 ? ` · cook ${half(Math.round(x.plates * 2) / 2)} plates` : ""}</div>
           ${x.m.out ? `<p class="hint">${x.m.how}</p>` : `<details><summary>Ingredients and method</summary>
             <ul>${x.items.map(({ k, g, fin, sauce }) => `<li>${amountText(k, g)}${sauce ? ` <span class="sauce-tag">Sauced up</span>${wd.passed ? "" : ` <button type="button" class="ghost small" data-sauce="${di}:${i}">Different sauce</button>`}` : ""}${fin ? ` <span class="logged" title="Includes ${fmt(fin)} ${(ING[k][8] || {}).ml ? "ml" : "g"} so nothing is left in the package">+${fmt(fin)} ${(ING[k][8] || {}).ml ? "ml" : "g"} to use it up</span>` : ""}</li>`).join("")}</ul>
             <p>${x.m.how}</p></details>`}`;
@@ -3531,6 +3558,14 @@ button.btn { border-radius: 0; }
         }
         el.append(mm);
       });
+      if (d.own?.length) {
+        const ow = document.createElement("details");
+        ow.className = "own";
+        const nm = (o) => ctx.house?.others?.[o.who - 1]?.name || `Person ${o.who + 1}`;
+        ow.innerHTML = `<summary>Everyone else's breakfast and snacks</summary>${d.own.map((o) => `<p><b>${esc(nm(o))}</b>: ${o.meals.length
+          ? o.meals.map((x) => `${esc(x.m.name)} (${fmt(nutr(x.items)[0])} kcal)`).join(", ") : "just the shared meals"}</p>`).join("")}`;
+        el.append(ow);
+      }
       const free = SL.map((sl, i) => [sl, i]).filter(([, i]) => !wd.log?.[i]);
       if (free.length) {
         const lg = document.createElement("details");
@@ -4049,7 +4084,7 @@ button.btn { border-radius: 0; }
   })();
   $("form").addEventListener("input", (e) => {
     if (e.target.id === "avoid" || e.target.id === "likes") return;
-    if (e.target.name === "units") setUnits(e.target.value, true);
+    if (e.target.name === "units") { setUnits(e.target.value, true); renderPeople(); }
     if (e.target.name !== "store" && e.target.id !== "packs") isExample = false;
     if (e.target.name === "diet") syncProts();
     showCourses(); showStore(); showOut();
@@ -4169,7 +4204,75 @@ button.btn { border-radius: 0; }
   }
   $("prots").addEventListener("input", (e) => { const k = e.target.dataset.prot; if (k) { prots[k] = +e.target.value; syncProts(); } });
   $("protReset").addEventListener("click", () => { prots = {}; syncProts(); saveInputs(); update(false); });
-  restoreInputs(); syncFlav(); syncProts();
+  // ---------- Household builder form ----------
+  // Everyone but you. Each card writes the full person (engine fields override yours); home = { b, l, d } weekday arrays, false = away.
+  const HOME_T = [["b", "Breakfast"], ["l", "Lunch"], ["d", "Dinner"]];
+  let peopleTimer = 0;
+  function renderPeople() {
+    const imp = radio("units") === "imperial", list = getHousehold();
+    $("people").innerHTML = list.map((pp, i) => {
+      const inch = (pp.heightCm || 170) / 2.54, w = pp.weightKg || 70;
+      const away = HOME_T.reduce((a, [t]) => a + (pp.home?.[t] || []).filter((x) => x === false).length, 0);
+      return `<div class="person" data-i="${i}">
+        <div class="person-h"><input type="text" data-f="name" value="${esc(pp.name || "")}" placeholder="Person ${i + 2}" aria-label="Name"><button type="button" class="ghost small" data-rm-person>Remove</button></div>
+        <div class="seg" role="radiogroup" aria-label="Sex"><label><input type="radio" name="psex-${i}" value="male"${pp.sex === "male" ? " checked" : ""}><span>Male</span></label><label><input type="radio" name="psex-${i}" value="female"${pp.sex !== "male" ? " checked" : ""}><span>Female</span></label></div>
+        <div class="row">
+          <label class="f">Age<div class="unit-in"><input type="number" data-f="age" min="2" max="90" value="${pp.age || 30}" inputmode="numeric"><span>yrs</span></div></label>
+          ${imp ? `<label class="f">Height<div class="unit-in"><input type="number" data-f="ft" min="2" max="7" value="${Math.floor(inch / 12)}" inputmode="numeric"><span>ft</span></div></label>
+          <label class="f">&nbsp;<div class="unit-in"><input type="number" data-f="in" min="0" max="11.5" step="0.5" value="${Math.round((inch % 12) * 2) / 2}" inputmode="decimal" aria-label="Inches"><span>in</span></div></label>`
+          : `<label class="f">Height<div class="unit-in"><input type="number" data-f="cm" min="80" max="230" value="${Math.round(pp.heightCm || 170)}" inputmode="numeric"><span>cm</span></div></label>`}
+          <label class="f">Weight<div class="unit-in"><input type="number" data-f="wt" min="10" max="300" step="0.1" value="${imp ? Math.round(w * 2.20462) : Math.round(w * 10) / 10}" inputmode="decimal"><span>${imp ? "lb" : "kg"}</span></div></label>
+        </div>
+        <div class="row">
+          <label class="f">Activity<select data-f="activity">${ACTIVITY.map((a) => `<option value="${a.v}"${+pp.activity === a.v ? " selected" : ""}>${a.name}</option>`).join("")}</select></label>
+          <label class="f">Goal<select data-f="goal">${GOALS.map((g) => `<option value="${g.id}"${pp.goal === g.id ? " selected" : ""}>${g.name}</option>`).join("")}</select></label>
+        </div>
+        <div class="chips">${DIETS.map((dd) => `<label class="chip"><input type="checkbox" data-diet="${dd}"${(pp.diets || []).includes(dd) ? " checked" : ""}><span>${dd}</span></label>`).join("")}</div>
+        <label class="f">Foods to avoid<input type="text" data-f="avoid" value="${esc(pp.avoid || "")}" placeholder="e.g. mushrooms, shellfish"></label>
+        <details class="fold"><summary>Meals at home <b>${away ? away + " away" : "Every meal"}</b></summary>
+          <div class="home-grid"><span></span>${DAY_NAMES.map((n) => `<b>${n.slice(0, 2)}</b>`).join("")}
+          ${HOME_T.map(([t, tn]) => `<span>${tn}</span>${DAY_NAMES.map((n, j) => `<label><input type="checkbox" data-home="${t}:${j}"${pp.home?.[t]?.[j] === false ? "" : " checked"} aria-label="${tn} at home on ${n}"></label>`).join("")}`).join("")}</div>
+        </details>
+      </div>`;
+    }).join("");
+    $("hhRow").hidden = list.length > 0;
+    $("houseHint").hidden = list.length > 0;
+  }
+  function readPeople() {
+    const imp = radio("units") === "imperial";
+    return [...$("people").querySelectorAll(".person")].map((c, i) => {
+      const f = (k) => c.querySelector(`[data-f="${k}"]`)?.value ?? "", num = (k) => parseFloat(f(k)) || 0;
+      const home = {};
+      c.querySelectorAll("[data-home]").forEach((x) => { const [t, j] = x.dataset.home.split(":"); (home[t] ||= Array(7).fill(true))[+j] = x.checked; });
+      Object.keys(home).forEach((t) => { if (home[t].every(Boolean)) delete home[t]; });
+      return {
+        name: f("name").trim(), sex: c.querySelector(`input[name="psex-${i}"]:checked`)?.value || "female", age: num("age") || 30,
+        heightCm: imp ? (num("ft") * 12 + num("in")) * 2.54 : num("cm"), weightKg: imp ? num("wt") * 0.45359237 : num("wt"),
+        activity: parseFloat(f("activity")) || 1.375, goal: f("goal") || "maintain",
+        diets: [...c.querySelectorAll("[data-diet]:checked")].map((x) => x.dataset.diet), avoid: f("avoid"), home,
+      };
+    });
+  }
+  $("people").addEventListener("input", (e) => {
+    e.stopPropagation();
+    if (e.target.dataset.home) { const c = e.target.closest(".person"), n = [...c.querySelectorAll("[data-home]")].filter((x) => !x.checked).length; c.querySelector("summary b").textContent = n ? n + " away" : "Every meal"; }
+    clearTimeout(peopleTimer); peopleTimer = setTimeout(() => setHousehold(readPeople()), 500);
+  });
+  $("people").addEventListener("click", (e) => {
+    if (!e.target.closest("[data-rm-person]")) return;
+    const i = +e.target.closest(".person").dataset.i, list = readPeople(); list.splice(i, 1);
+    clearTimeout(peopleTimer); setHousehold(list); renderPeople();
+  });
+  $("addPerson").addEventListener("click", () => {
+    const me = read(), list = readPeople();
+    if (list.length >= 7) return;
+    list.push({ name: "", sex: me.sex === "male" ? "female" : "male", age: me.age, heightCm: me.sex === "male" ? 165 : 178, weightKg: me.sex === "male" ? 65 : 80,
+      activity: me.activity, goal: "maintain", diets: [], avoid: "", home: {} });
+    clearTimeout(peopleTimer); setHousehold(list); renderPeople();
+    $("people").lastElementChild?.querySelector('[data-f="name"]')?.focus();
+    $("addPerson").hidden = list.length >= 7;
+  });
+  restoreInputs(); syncFlav(); syncProts(); renderPeople();
   showStore(); showOut();
   setUnits(radio("units"), false);
   showCourses();
