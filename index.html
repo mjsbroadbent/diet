@@ -2852,10 +2852,10 @@ button.btn { border-radius: 0; }
       const ep = (p - T.p) / T.p;
       const ef = (f - T.f) / T.f;
       // Children: protein is a floor; going over it barely counts
-      // More than 8% off the calories gets steep fast, so macros never pull a day past 10%
+      // More than 8% off the calories gets steep fast, so macros never pull a day past 10% (keto's carb limit pulls hardest, so steeper still)
       const far = Math.max(0, Math.abs(ek) - 0.08);
       // A small target (under 1,500 kcal) can't trade calories for protein as freely: going over counts double
-      let s = (ek > 0 && T.k < 1500 ? 12 : 6) * ek * ek + 60 * far * far + (ep < 0 ? 4 : T.kid ? 0.1 : 1) * ep * ep + ef * ef;
+      let s = (ek > 0 && T.k < 1500 ? 12 : 6) * ek * ek + (T.keto ? 400 : 60) * far * far + (ep < 0 ? 4 : T.kid ? 0.1 : 1) * ep * ep + ef * ef;
       if (T.keto) { const over = Math.max(0, (c - fib - T.c) / T.c); s += 5 * over * over; }
       else { const ec = (c - T.c) / T.c; s += ec * ec; }
       return s;
@@ -2865,6 +2865,8 @@ button.btn { border-radius: 0; }
   // The same dish whether it's served as lunch or dinner, or as its Costco version
   const dishOf = (m) => (m.dish ??= m.id.replace(/^k[ld]\./, "k.").replace(/^c(?=\d)/, "m"));
   const WASTE_W = 0.004;
+  // Pick-one groups: a plan (and the weeks carried on from it) uses one of each
+  const PICK_ONE = [["whey", "pea"], ["milk", "soymilk", "oatmilk"], ["wrice", "brice"]];
   // Pantry first (chained weeks): how much more often a meal made from owned food is drawn, and the score cost of each new $ when there's stock
   let OWN_B = 3, STOCK_W = 0.006, OLD_W = 0.015, TRIM_MAX = 12, TRIM_V = 4, CARRY_W = 0.01;
   const isStocked = () => !!ctx?.costco && Object.values(pantry).some((q) => q > 0);
@@ -2880,11 +2882,11 @@ button.btn { border-radius: 0; }
   // Fresh food that won't keep to next week (and frozen food when there's no freezer)
   const isFresh = (k, fcap) => { const P = pk(k); return !!P && (P.keep === "x" || (P.keep === "z" && fcap === 0)); };
   // A fresh pack's leftover can be eaten this week instead (extra in the meals that use it) when it's light food,
-  // at most doubles what the week already uses (2.5x for fruit and vegetables under 100 kcal per 100 g), and adds no more than 3% to the week's calories (5% for fruit and vegetables under 100 kcal per 100 g)
+  // at most doubles what the week already uses (2.5x for fruit and vegetables under 100 kcal per 100 g, 3x for very light ones under 40 like tomatoes and greens), and adds no more than 3% to the week's calories (5% for fruit and vegetables under 100 kcal per 100 g)
   // (richer food only when it's a scrap: under 1% of the week's calories)
   const stretchable = (k, over, used) => {
     const kc = (eatUnits(k, over) * ING[k][1]) / 100 / (ctx.house?.size || 1);
-    return over <= (ING[k][1] <= 100 ? 1.5 : 1) * used && kc <= (ING[k][1] <= 100 ? 0.05 : 0.03) * (ctx.nDays || 7) * ctx.T.k && (ING[k][1] <= 170 || kc <= 0.01 * (ctx.nDays || 7) * ctx.T.k);
+    return over <= (ING[k][1] <= 40 ? 2 : ING[k][1] <= 100 ? 1.5 : 1) * used && kc <= (ING[k][1] <= 100 ? 0.05 : 0.03) * (ctx.nDays || 7) * ctx.T.k && (ING[k][1] <= 170 || kc <= 0.01 * (ctx.nDays || 7) * ctx.T.k);
   };
   // A small calorie target (under 1,500 kcal) can also have a half-portion snack: other portions stop at 3/4, so the day would run over.
   // Only snacks made from food that keeps, so half portions don't leave fresh food over.
@@ -2948,6 +2950,18 @@ button.btn { border-radius: 0; }
       .filter((m) => s.premade || !m.tags.has("premade"));
     // Build-your-own bowls, sandwiches and plates, in the styles you picked
     library.push(...COMBOS.filter((m) => (s.premade || !m.tags.has("premade")) && m.items.every(([k]) => (mostly ? atAny(k) : !costco || atC(k)))));
+    // Pick one: nobody buys whey and plant protein, or two milks or two rices, for one plan. What's already in the pantry
+    // (or ticked as a staple) wins; otherwise the first in the group's order that some allowed meal uses (plant first for vegans and dairy-free).
+    const plant = diets.includes("Vegan") || avoid.some((a) => /dairy|milk|lactose/.test(a));
+    const picks = {};
+    for (const g of PICK_ONE) {
+      const own = g.filter((k) => pantry[k] > 0 || staples.has(k));
+      const usable = (k) => library.some((m) => m.items.some(([x]) => x === k) && allowed(m, diets, avoid));
+      const order = plant ? [...g].sort((a, b) => !!(ING[a][7] || "").includes("dairy") - !!(ING[b][7] || "").includes("dairy")) : g;
+      const keep = own.length ? own : [order.find(usable) || g[0]];
+      g.forEach((k) => (picks[k] = keep.includes(k)));
+    }
+    for (let i = library.length - 1; i >= 0; i--) if (library[i].items.some(([k]) => picks[k] === false)) library.splice(i, 1);
     const styles = new Set(s.styles?.length ? s.styles : ["bowl", "sand", "plate", "classic"]);
     for (const type of ["b", "l", "d", "s", ...(treat ? [treat] : [])]) {
       const fit = library.filter((m) => m.type === type && allowed(m, diets, avoid) && ((type !== "l" && type !== "d") || styles.has(m.style || "classic")));
@@ -2993,6 +3007,15 @@ button.btn { border-radius: 0; }
     // New pantry staples (pantry rocket): meals that use them are picked three times as often this week
     const feat = new Set(typeof featured === "function" ? featured() : []);
     // Even share of the week for one option of a capped course (3 options: 3 servings at most before it starts to cost)
+    // Rotation: a breakfast, lunch or snack served more than its even share + 1 is close to ruled out (big appetites
+    // otherwise pick the richest option every day), extra snacks included
+    const useKey = (m, extra) => (extra ? "E:" : "") + m.name;
+    const dUses = {}, overShare = (m, extra) => {
+      if (share[m.type] >= 99) return 0;
+      // With fewer options than the variety setting (vegan keto has two snacks), the even share is over what there is
+      const n = Math.min(ctx.course[m.type].variety, pools[m.type]?.length || 1), sh = Math.ceil((ctx.nDays || 7) / n);
+      return (dUses[useKey(m, extra)] || 0) >= sh + 1 ? 0.5 : 0;
+    };
     const share = new Proxy({}, { get: (_, t) => { const v = ctx.course[t]?.variety || 7; return v > 1 && v < 7 ? Math.ceil((ctx.nDays || 7) / v) : 99; } });
     // Variety: how many different recipes each course may use across the week
     const perDay = {};
@@ -3077,7 +3100,7 @@ button.btn { border-radius: 0; }
           picked.push(m); today.add(dishOf(m));
         });
         const o = optimize(picked, T, score);
-        let s = o.s + ctx.appealScore(picked) + picked.reduce((a, m) => a + (ctx.course[m.type].variety >= 7 ? 0.05 * (uses[m.id] || 0) : ctx.mix && m.anchor ? 0.03 * (uses[m.id] || 0) : 0.03 * Math.max(0, (uses[m.id] || 0) + 1 - share[m.type])) - (liked(m) ? 0.01 : 0), 0);
+        let s = o.s + ctx.appealScore(picked) + picked.reduce((a, m) => a + (ctx.course[m.type].variety >= 7 ? 0.05 * (uses[m.id] || 0) : ctx.mix && m.anchor ? 0.03 * (uses[m.id] || 0) : 0.03 * Math.max(0, (uses[m.id] || 0) + 1 - share[m.type]) + overShare(m)) - (liked(m) ? 0.01 : 0), 0);
         // One rotisserie chicken's worth per shop
         const hu = hotOf(picked, o.ms);
         for (const k in hu) if ((hotUsed[k] || 0) + hu[k] > hotCap(k) + 1) s += 5;
@@ -3107,7 +3130,7 @@ button.btn { border-radius: 0; }
         for (const [m, sl] of cands) {
           if (best.ids.includes(m.id)) continue;
           const ms = [...best.ids.map((id) => MEAL[id]), m];
-          const o = optimize(ms, T, score), sc = o.s + ctx.appealScore(ms);
+          const o = optimize(ms, T, score), sc = o.s + ctx.appealScore(ms) + overShare(m, sl === "Extra meal");
           if (!add || sc < add.sc) add = { m, sl, ms: o.ms, sc };
         }
         if (!add) break;
@@ -3115,7 +3138,7 @@ button.btn { border-radius: 0; }
       }
       spent += best.c; spentAll += best.call;
       { const hu = hotOf(best.ids.map((id) => MEAL[id]), best.ms); for (const k in hu) hotUsed[k] = (hotUsed[k] || 0) + hu[k]; }
-      best.ids.forEach((id) => { uses[id] = (uses[id] || 0) + 1; chosen[MEAL[id].type].add(akey(MEAL[id])); if (!MEAL[id].out) servedAs[dishOf(MEAL[id])] ||= MEAL[id].type; });
+      best.ids.forEach((id, i) => { uses[id] = (uses[id] || 0) + 1; const uk = useKey(MEAL[id], (best.slots || slots)[i] === "Extra meal"); dUses[uk] = (dUses[uk] || 0) + 1; chosen[MEAL[id].type].add(akey(MEAL[id])); if (!MEAL[id].out) servedAs[dishOf(MEAL[id])] ||= MEAL[id].type; });
       if (ctx.costco) best.ids.forEach((id, i) => MEAL[id].items.forEach(([k, g]) => {
         const u = buyUnits(k, g * best.ms[i] * plates(d, MEAL[id].type)), short = u - (have[k] || 0);
         if (old[k] > 0) old[k] -= Math.min(old[k], u);
@@ -3191,10 +3214,10 @@ button.btn { border-radius: 0; }
     });
     const varietyCost = () => {
       const n = {};
-      const u = {};
-      days.forEach((d) => d.ids.forEach((id) => { const m = MEAL[id]; (n[m.type] ||= new Set()).add(akey(m)); u[id] = (u[id] || 0) + 1; }));
+      const u = {}, ty = {};
+      days.forEach((d) => d.ids.forEach((id) => { const m = MEAL[id]; (n[m.type] ||= new Set()).add(akey(m)); u[dishOf(m)] = (u[dishOf(m)] || 0) + 1; ty[dishOf(m)] = m.type; }));
       const v = ctx.course;
-      const pile = Object.entries(u).reduce((a, [id, c]) => { const vt = v[MEAL[id].type]?.variety || 7; return a + (vt > 1 && vt < 7 ? PILE * Math.max(0, c - Math.ceil(days.length / vt) - 1) : 0); }, 0);
+      const pile = Object.entries(u).reduce((a, [dk, c]) => { const vt = v[ty[dk]]?.variety || 7; return a + (vt > 1 && vt < 7 ? PILE * Math.max(0, c - Math.ceil(days.length / vt) - 1) : 0); }, 0);
       return pile + Object.entries(n).reduce((a, [t, set]) => a + 0.004 * Math.max(0, set.size - (cap[t] || Infinity)), 0);
     };
     // Freezer: kilograms over its space on the busiest day; a hard limit, so it outweighs everything else
@@ -3410,12 +3433,17 @@ button.btn { border-radius: 0; }
     else {
       const prev = week?.days ? week : saved;
       if (week) week.src = {};
-      const b = buildWeek(ctx, seed);
+      let b = buildWeek(ctx, seed);
+      // Zero waste comes first: if the swaps couldn't clear every leftover, try up to two more draws and keep the least wasteful
+      for (let k = 1; k <= 2 && ctx.costco && !b.error && weekShop(ctx, b.days).waste > 0.01; k++) {
+        const b2 = buildWeek(ctx, seed + k * 7919);
+        if (!b2.error && weekShop(ctx, b2.days).waste < weekShop(ctx, b.days).waste) b = b2;
+      }
       week = b.error ? { error: b.error } : { key, seed, days: b.days };
       if (!b.error) {
         // Days marked done stay exactly as eaten
         prev?.days?.forEach((d, i) => { if (d.passed && d.ids.every((id) => MEAL[id])) week.days[i] = d; });
-        hotFirst();
+        hotFirst(); topUpDays();
         rebalance(); finishUp(); ls.set("ad-week", week);
       }
       Object.keys(skipped).forEach((k) => delete skipped[k]);
@@ -3507,6 +3535,31 @@ button.btn { border-radius: 0; }
     if (fz0 && freezerPeak() > Math.max(fz0, FZ_PLAN * ctx.fcap)) week.days = was;
   }
   const slotsOf = (d) => d.slots || ctx.slots;
+  // Swaps that clear leftovers may leave a day well short of its calories (common when few meals fit, e.g. vegan keto).
+  // Such a day gets another snack, or an extra meal from the breakfasts, not already eaten that day; kept only if no fresh food is wasted.
+  function topUpDays() {
+    const before = ctx.costco ? weekShop(ctx, week.days).waste : 0, was = JSON.stringify(week.days);
+    let changed = false;
+    week.days.forEach((d) => {
+      if (fixedDay(d)) return;
+      const T = dayT(d), sc = makeScorer(T);
+      for (let n = 0; n < 2; n++) {
+        const kc = d.ids.reduce((a, id, i) => a + stepN(MEAL[id], d.ms[i])[0], 0);
+        if (kc >= 0.93 * T.k) break;
+        const sl = slotsOf(d), today = new Set(d.ids.map((id) => dishOf(MEAL[id])));
+        const cands = [...(ctx.pools.s || []).map((m) => [m, "Snack"]), ...(!sl.includes("Extra meal") ? (ctx.pools.b || []).map((m) => [m, "Extra meal"]) : [])].filter(([m]) => !today.has(dishOf(m)));
+        let add = null;
+        for (const [m, s] of cands) {
+          const ms = [...d.ids.map((id) => MEAL[id]), m], o = optimize(ms, T, sc), v = o.s + ctx.appealScore(ms);
+          if (!add || v < add.v) add = { m, s, ms: o.ms, v };
+        }
+        if (!add || add.v >= (d.s ?? optimize(d.ids.map((id) => MEAL[id]), T, sc).s + ctx.appealScore(d.ids.map((id) => MEAL[id])))) break;
+        d.ids = [...d.ids, add.m.id]; d.ms = add.ms; d.slots = [...sl, add.s]; d.s = add.v; changed = true;
+      }
+      delete d.s;
+    });
+    if (changed && ctx.costco && weekShop(ctx, week.days).waste > before + 0.005) week.days = JSON.parse(was);
+  }
   const fixedDay = (d) => d.passed || (d.log && Object.keys(d.log).length);
   // A day's target, after any trimming to absorb an off-plan meal earlier in the week
   function dayT(day) {
@@ -3554,16 +3607,28 @@ button.btn { border-radius: 0; }
   // goes without sauces, unless that leaves fresh food to throw away
   function finishUp() {
     const before = JSON.stringify(week.days);
-    finishUp0();
+    // Fresh food still left over (re-portioning after the finishing amounts can shrink the meals that use it)?
+    // Try again letting a little more be finished, up to 2 portions' worth, and keep that if it leaves less
+    const fin = () => {
+      finishUp0();
+      const wa = shopStats()?.waste || 0;
+      if (wa <= 0.005) return;
+      week.days = JSON.parse(before); FINISH_X = 2; finishUp0(); FINISH_X = 1.25;
+      if ((shopStats()?.waste || 0) >= wa - 0.005) { week.days = JSON.parse(before); finishUp0(); }
+    };
+    fin();
     const heavy = week.days.filter((d, di) => !fixedDay(d) && !d.lean && Object.values(d.sauce || {}).some((x) => x.k) && dayData(d, di).tot[0] > 1.08 * dayT(d).k);
     if (!heavy.length) return;
     const w0 = shopStats()?.waste || 0;
     heavy.forEach((d) => (d.lean = true));
     finishUp0();
-    if ((shopStats()?.waste || 0) > w0 + 0.005) { week.days = JSON.parse(before); finishUp0(); }
+    if ((shopStats()?.waste || 0) > w0 + 0.005) { week.days = JSON.parse(before); fin(); }
   }
   // How a finishing amount is shared over the meals that use the food: in proportion, or whole pieces (wraps, sandwiches)
   // one at a time, to the meals with the least of it first, since part of a wrap left in the pack is still thrown away
+  // Whole pieces (wraps, sandwiches) left over get eaten when that's at most one more piece for each meal that uses them
+  let FINISH_X = 1.25;
+  const wholeOK = (k, over, n) => { const x = ING[k][8] || {}; return !!(x.whole && x.each) && over <= n * x.each + 1; };
   function shares(k, add, open, openG, rnd) {
     const x = ING[k][8] || {};
     if (!x.whole || !x.each) return open.map(([, , g, pl]) => rnd((add * g) / openG / pl));
@@ -3592,7 +3657,7 @@ button.btn { border-radius: 0; }
       // Zero waste: fresh food that won't keep gets finished this week, up to doubling what the menu uses
       const P = pk(k), net = u - ownedK(kk), packs = net > 0 ? Math.max(1, Math.ceil(net / P.size - 0.05)) : 0, over = packs * P.size - net;
       // (or about one portion or less is left over: that gets eaten too)
-      if (isFresh(k, ctx.fcap) && over > Math.max(20, P.size * 0.02) && (stretchable(k, over, net) || over <= 1.25 * portionSize)) rest = over;
+      if (isFresh(k, ctx.fcap) && over > Math.max(20, P.size * 0.02) && (stretchable(k, over, net) || over <= FINISH_X * portionSize || wholeOK(k, over, uses[kk].length))) rest = over;
       else if (r < 1 || rest >= portionSize) continue;
       const add = eatUnits(k, rest);
       if (add < 1) continue;
@@ -3632,7 +3697,7 @@ button.btn { border-radius: 0; }
         if (!P || !isFresh(k, ctx.fcap) || !uses2[kk]) continue;
         const net = buyUnits(k, tot2[kk]) - ownedK(kk), packs = net > 0 ? Math.max(1, Math.ceil(net / P.size - 0.05)) : 0, over = packs * P.size - net;
         const portion2 = net / uses2[kk].reduce((a, x) => a + x[3], 0);
-        if (over <= Math.max(20, P.size * 0.02) || !(stretchable(k, over, net) || over <= 1.25 * portion2)) continue;
+        if (over <= Math.max(20, P.size * 0.02) || !(stretchable(k, over, net) || over <= FINISH_X * portion2 || wholeOK(k, over, uses2[kk].length))) continue;
         const add = eatUnits(k, over);
         const open = uses2[kk].filter(([di]) => !fixedDay(week.days[di])), openG = open.reduce((a, x) => a + x[2], 0);
         if (!openG) continue;
