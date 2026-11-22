@@ -225,6 +225,21 @@ button.btn:hover { filter: brightness(1.08); }
 .gbar { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; }
 .gbar .note { margin-right: auto; }
 .gbar .ghost { min-height: 44px; }
+@media print {
+  html, body { background: #fff !important; color: #000 !important; }
+  body { padding: 0 !important; font-size: 11pt; }
+  body::after, .steps, .topbar, .mini, .step-next, .gbar, .gm, #leftSec .btns, #hiddenItems button, #haveItems button { display: none !important; }
+  .gsec, .day, .cost div, .left, form, .label, h2.sec { box-shadow: none !important; }
+  .gi { grid-template-columns: 1fr; break-inside: avoid; }
+  .gsec { break-inside: avoid-page; }
+  .gl { min-height: 0; padding: 4px 0; }
+  .gl input { width: 14px; height: 14px; }
+  html.print-list .wrap > :not(section[aria-labelledby="groceryTitle"]) { display: none !important; }
+  html.print-list .wrap > section[aria-labelledby="groceryTitle"] { display: grid !important; }
+  html.print-list .grocery { display: block; columns: 2; column-gap: 18px; }
+  html.print-list .gsec { margin-bottom: 12px; border: 1px solid #888 !important; }
+  html.print-list h2.sec { transform: none; }
+}
 
 /* Plain skins ("boring UI"): calm tokens, no box-front art */
 :root[data-skin="light"], :root[data-skin="dark"] { --shadow: none; --display: "Libre Franklin", system-ui, -apple-system, "Segoe UI", sans-serif; }
@@ -922,6 +937,9 @@ button.btn { border-radius: 0; }
     <p class="note" id="haveItems" hidden></p>
     <div class="gbar" id="gbar" hidden>
       <p class="note" id="gCount" aria-live="polite"></p>
+      <button type="button" class="ghost" id="copyList">Copy list</button>
+      <button type="button" class="ghost" id="shareList" hidden>Share list</button>
+      <button type="button" class="ghost" id="printList">Print list</button>
       <button type="button" class="ghost" id="untick">Untick all</button>
     </div>
     <div class="grocery" id="grocery"></div>
@@ -3050,16 +3068,24 @@ button.btn { border-radius: 0; }
         else if (x.dry) amt = `${mass(g * x.dry)} dry (${mass(g)} cooked)`;
         else if (x.each) amt = `${Math.max(1, Math.ceil(g / x.each - 0.15))} (about ${mass(g)})`;
         else amt = mass(g, x.ml ? "ml" : "g");
-        return gRow(k, checked.has(k), name, `<small>${amt}</small>`, [`<button type="button" data-have="${k}">Already have it</button>`]);
+        return gRow(k, checked.has(k), name, `<small>${amt}</small>`, [`<button type="button" data-have="${k}">Already have it</button>`], `${name}: ${amt}`);
       }).join("");
       box.append(div);
     });
     gCount();
   }
   // One grocery row: tapping anywhere on it ticks it; the actions open from the ⋯ button
-  function gRow(k, on, title, sub, acts) {
+  const esc = (t) => String(t).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+  // Search links stand in for a cart (no store API is open to us): one tap finds the item at the store
+  const shopLink = (store, q) => {
+    q = q.replace(/\s*\(.*?\)/g, "").replace(/,[^,]*\d[^,]*$/, "").replace(/\s+/g, " ").trim();
+    return store === "nf"
+      ? `<a href="https://www.nofrills.ca/en/search?search-bar=${encodeURIComponent(q)}" target="_blank" rel="noopener">Find at No Frills ↗</a>`
+      : `<a href="https://sameday.costco.ca/store/costco-canada/s?k=${encodeURIComponent(q)}" target="_blank" rel="noopener">Find on Costco Same-Day ↗</a>`;
+  };
+  function gRow(k, on, title, sub, acts, copy) {
     const plain = title.replace(/<[^>]+>/g, "").trim();
-    return `<div class="gi"><label class="gl"><input type="checkbox" data-k="${k}" ${on ? "checked" : ""}><span>${title}${sub}</span></label>`
+    return `<div class="gi" data-copy="${esc(copy || plain)}"><label class="gl"><input type="checkbox" data-k="${k}" ${on ? "checked" : ""}><span>${title}${sub}</span></label>`
       + `<details class="gm"><summary aria-label="More for ${plain.replace(/"/g, "&quot;")}" title="More"><span aria-hidden="true">⋯</span></summary><div class="gpop">${acts.join("")}</div></details></div>`;
   }
   function gCount() {
@@ -3153,7 +3179,8 @@ button.btn { border-radius: 0; }
         return gRow(r.k, checked.has(r.k) || !r.packs, `<span class="row2"><span>${r.nf ? `<span class="store-nf">No Frills</span> ` : ""}${r.prod}</span><span class="price">${r.packs ? money(r.cost) : ""}</span></span>`,
           `<small>${buy}<span class="keep ${r.keep}" title="${KEEP[r.keep][1]}">${KEEP[r.keep][0]}</span>${alt}</small>`,
           [r.packs ? `<button type="button" data-have="${r.k}">Already have it</button>` : `<button type="button" data-unhave="${r.k}">Don't have it</button>`,
-           r.nf ? "" : `<button type="button" data-nostock="${r.k}">Not at my Costco</button>`]);
+           r.nf ? "" : `<button type="button" data-nostock="${r.k}">Not at my Costco</button>`, shopLink(r.nf ? "nf" : "costco", r.prod)],
+          `${r.packs > 1 ? r.packs + " × " : ""}${r.prod}${r.nf ? " (No Frills)" : ""}${r.packs ? ", " + money(r.cost) : ""}`);
       }).join("");
       box.append(div);
     });
@@ -3207,6 +3234,44 @@ button.btn { border-radius: 0; }
     ls.set("ad-checked", []);
     $("grocery").querySelectorAll(".gl input").forEach((i) => { if (!i.closest(".gi").querySelector("[data-unhave]")) i.checked = false; });
     gCount();
+  });
+  // Copy or share the list as plain text: what's still to buy, by aisle (everything once it's all ticked)
+  function listText() {
+    const secs = [...$("grocery").querySelectorAll(".gsec")];
+    const open = (g) => !g.querySelector(".gl input").checked;
+    const any = secs.some((s) => [...s.querySelectorAll(".gi")].some(open));
+    const out = [];
+    secs.forEach((s) => {
+      const rows = [...s.querySelectorAll(".gi")].filter((g) => !any || open(g));
+      if (rows.length) out.push("", s.querySelector("h3").textContent.toUpperCase(), ...rows.map((g) => "- " + g.dataset.copy));
+    });
+    return ["Grocery list from Big Box Diet", ...out].join("\n").trim();
+  }
+  function flash(b, t) { const o = b.dataset.label || (b.dataset.label = b.textContent); b.textContent = t; clearTimeout(b._t); b._t = setTimeout(() => (b.textContent = o), 2000); }
+  async function copyText(t) {
+    try { await navigator.clipboard.writeText(t); return true; } catch {}
+    const ta = document.createElement("textarea");
+    ta.value = t; ta.setAttribute("readonly", ""); ta.style.cssText = "position:fixed;left:-9999px;top:0";
+    document.body.append(ta); ta.select();
+    let ok = false; try { ok = document.execCommand("copy"); } catch {}
+    ta.remove(); return ok;
+  }
+  $("copyList").addEventListener("click", async (e) => { const b = e.currentTarget; flash(b, (await copyText(listText())) ? "Copied" : "Couldn't copy"); });
+  if (navigator.share) {
+    $("shareList").hidden = false;
+    $("shareList").addEventListener("click", async (e) => {
+      const b = e.currentTarget;
+      try { await navigator.share({ title: "Grocery list", text: listText() }); }
+      catch (err) { if (err?.name !== "AbortError") flash(b, (await copyText(listText())) ? "Copied instead" : "Couldn't share"); }
+    });
+  }
+  // Print just the list: everything else on the page is hidden while the print dialog is up
+  $("printList").addEventListener("click", () => {
+    const root = document.documentElement;
+    root.classList.add("print-list");
+    const done = () => { root.classList.remove("print-list"); removeEventListener("afterprint", done); };
+    addEventListener("afterprint", done);
+    try { window.print(); } catch { done(); }
   });
 
   // ---------- Wiring ----------
