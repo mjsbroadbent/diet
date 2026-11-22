@@ -67,7 +67,7 @@
     if (!box) return;
     box.textContent = "";
     if (state === "out") {
-      var b = el("button", "ghost", "Sign in to sync"); b.type = "button"; b.id = "signIn";
+      var b = el("button", "ghost"); b.innerHTML = 'Sign in<span class="sx"> to sync</span>'; b.type = "button"; b.id = "signIn";
       b.title = "Save your plan to a Google account so it follows you to your other devices";
       b.addEventListener("click", signIn);
       box.appendChild(b);
@@ -89,10 +89,10 @@
     var top = document.querySelector(".topbar");
     if (!top || box) return;
     box = el("div", "acct"); box.id = "acct";
-    var inst = document.getElementById("install");
-    if (inst) inst.parentNode.insertBefore(box, inst); else top.appendChild(box);
+    var menu = document.getElementById("siteMenu");
+    if (menu && menu.parentNode === top) top.insertBefore(box, menu); else top.appendChild(box);
     ui(meta().uid ? "busy" : "out", {});
-    var foot = document.querySelector("footer.fine");
+    var foot = document.querySelector("footer.fine .ingr") || document.querySelector("footer.fine");
     if (foot) {
       var n = el("p"); n.id = "syncNote";
       n.innerHTML = "<b>Accounts are optional.</b> Everything works without signing in and stays on your device. If you sign in with Google, your plan, ticks and ratings are saved to Google Firebase under your account so they sync between devices. Only you can read them, and Delete synced copy in the account menu removes them.";
