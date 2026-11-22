@@ -702,6 +702,14 @@ button.btn { border-radius: 0; }
 .tune-h { font-family: var(--label); text-transform: uppercase; letter-spacing: 0.04em; font-size: 12px; font-weight: 800; }
 .tune-h b { font-family: var(--slant); font-style: italic; font-weight: 900; color: var(--red); }
 </style>
+<style id="quiet">
+/* Quiet interior (all skins): body text in the day cards and the grocery list is at least 14 px.
+   Headings, badges, ribbons and stamps keep their own sizes. */
+.day .mt, .day .kc, .day .macros, .day .macros b, .day details summary, .day details li, .day details p, .day .logged, .day .swap, .day .logf button { font-size: 14px; }
+.day .slot { font-size: 12.5px; }
+.grocery small, #gbar .note, #gbar button { font-size: 14px; }
+.grocery .keep { font-size: 12px; }
+</style>
 <script>
   (function () { var k; try { k = JSON.parse(localStorage.getItem("ad-skin")); } catch (e) {} k = k === "light" || k === "dark" ? k : "cereal";
     document.documentElement.dataset.skin = k; document.getElementById("skin-cereal").media = k === "cereal" ? "all" : "not all";
