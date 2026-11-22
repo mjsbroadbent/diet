@@ -2094,16 +2094,54 @@ button.btn { border-radius: 0; }
   const staleOn = (k, di) => ctx?.costco && isFresh(k, ctx.fcap) && di - (di >= 7 && shortLived(k) ? 7 : 0) >= fridgeDays(k);
   const freshOK = (m, di) => !m.items?.some(([k]) => staleOn(k, di));
   const onDay = (list, di) => { const f = (list || []).filter((m) => freshOK(m, di)); return f.length ? f : list || []; };
+  // Opened or cut: a tub, carton or can once opened (whole fruit or big veg once cut) keeps FRIDGE.open[k] days from its
+  // first planned use. Each one is finished inside that time, or the rest goes in the freezer where that works, or it's waste.
+  const FREEZE_OPEN = new Set(FRIDGE.freeze || []);
+  const openLife = (k) => (ctx?.costco ? FRIDGE.open?.[k] || 0 : 0);
+  const openUnit = (k) => FRIDGE.unit?.[k] || (!UNIT[k] && (ING[k]?.[8] || {}).each) || pk(k)?.unit || 0;
+  const openFreezes = (k) => ctx.fcap > 0 && FREEZE_OPEN.has(k);
+  const openMin = (U) => Math.max(20, 0.05 * U);
+  // per: each day's grams by key. Food left in an opened pack past its days is thrown out and a new one opened.
+  // At the plan's end, an opened pack already past its days is lost too; one with time to go is "finish within N days" (left),
+  // carried into the next plan with those days.
+  function openSim(per) {
+    const lost = {}, ev = [], at = {}, N = per.length;
+    // An opened pack carried over from the last plan is used first, and keeps only the days it has left
+    for (const k in openStock) { const o = openStock[k], L = openLife(k); if (L && o.g > 0 && (pantry[k] || 0) >= o.g - 1) at[k] = { r: o.g, f: o.days - L }; }
+    const loss = (kk, s, d) => { const k = baseK(kk); if (s.r <= openMin(openUnit(k)) || openFreezes(k)) return; lost[kk] = (lost[kk] || 0) + s.r; ev.push({ kk, k, f: s.f, d, g: s.r }); };
+    per.forEach((n, d) => { for (const kk in n) {
+      const k = baseK(kk), L = openLife(k), U = L && openUnit(k);
+      if (!U || !(n[kk] > 1e-6)) continue;
+      const s = (at[kk] ||= { r: 0, f: 0 });
+      if (s.r > 1e-6 && d - s.f >= L) { loss(kk, s, d); s.r = 0; }
+      // (a few grams past the end of a pack is rounding: nobody opens another for it)
+      for (let g = n[kk]; g > 1e-6;) { if (s.r <= 1e-6) { if (g <= Math.max(5, 0.02 * U)) break; s.r = U; s.f = d; } const x = Math.min(s.r, g); s.r -= x; g -= x; }
+    } });
+    const left = {};
+    for (const kk in at) {
+      const s = at[kk], k = baseK(kk), daysLeft = s.f + openLife(k) - N;
+      if (s.r <= openMin(openUnit(k))) continue;
+      // ...or, with under half its days to go, more than this plan's pace would eat in them (the next plan couldn't finish it)
+      const pace = per.reduce((x, n) => x + (n[kk] || 0), 0) / N;
+      if (daysLeft < 1 || (daysLeft < openLife(k) / 2 && s.r > 1.5 * pace * daysLeft)) loss(kk, s, N);
+      else left[kk] = { g: s.r, days: daysLeft, freeze: openFreezes(k) };
+    }
+    return { lost, ev, left };
+  }
+  const openWorth = (kk, g) => { const P = pk(baseK(kk)); return P ? (g / P.size) * P.price : 0; };
   const ownedK = (k) => (k.endsWith("@2") ? 0 : pantry[k] || 0);
   const dayNeed = (d, di) => { const n = {}; d.ids.forEach((id, i) => servings(di, MEAL[id], i, d).forEach(([mm, pl]) => portionOf(mm, twinMult(mm, MEAL[id], d.ms[i])).forEach(({ k, g }) => { const kk = keyOf(k, di); n[kk] = (n[kk] || 0) + buyUnits(k, g * pl); }))); return n; };
-  function weekShop(ctx, days, need) {
-    if (!need) { need = {}; days.forEach((d, di) => { const n = dayNeed(d, di); for (const k in n) need[k] = (need[k] || 0) + n[k]; }); }
+  // nds: each day's needs, when known, so opened packs past their days count as waste (and another is bought)
+  function weekShop(ctx, days, need, nds) {
+    if (days && !nds) nds = days.map((d, di) => dayNeed(d, di));
+    if (!need) { need = {}; nds.forEach((n) => { for (const k in n) need[k] = (need[k] || 0) + n[k]; }); }
     let cost = 0, waste = 0, food = 0;
-    const left = {};
+    const left = {}, ol = ctx.costco && nds ? openSim(nds).lost : {};
     for (const kk in need) {
       const k = baseK(kk), P = pk(k);
       if (!P) continue;
-      const net = need[kk] - ownedK(kk);
+      if (ol[kk]) { const v = openWorth(kk, ol[kk]); waste += v; left[kk] = (left[kk] || 0) + v; }
+      const net = need[kk] + (ol[kk] || 0) - ownedK(kk);
       if (net <= 1e-6) continue;
       const fresh = isFresh(k, ctx.fcap);
       const opt = (Q) => {
@@ -2116,7 +2154,7 @@ button.btn { border-radius: 0; }
       if (ctx.mostly && fresh && o.w > 0.5 && NOFRILLS[k] && !P.nf) { const n = opt({ size: NOFRILLS[k][1], price: NOFRILLS[k][2] }); if (n.w < o.w - 0.5) o = n; }
       cost += o.c;
       if (!isStaple(k)) food += o.c;
-      if (o.w) { waste += o.w; left[kk] = o.w; }
+      if (o.w) { waste += o.w; left[kk] = (left[kk] || 0) + o.w; }
     }
     return { cost, waste, left, need, food };
   }
@@ -2217,7 +2255,8 @@ button.btn { border-radius: 0; }
           if (!hotOK(di, nd)) continue;
           for (const k in needs[di]) need[k] -= needs[di][k];
           for (const k in nd) need[k] = (need[k] || 0) + nd[k];
-          const st2 = withFz(weekShop(ctx, null, need), needs.map((n, i) => (i === di ? nd : n)));
+          const nds2 = needs.map((n, i) => (i === di ? nd : n));
+          const st2 = withFz(weekShop(ctx, null, need, nds2), nds2);
           const save = d.ids; d.ids = ids;
           const j = J(st2, sSum - d.s + o.s, varietyCost());
           d.ids = save;
@@ -2270,7 +2309,8 @@ button.btn { border-radius: 0; }
         let s2 = sSum;
         const nds = new Map();
         chg.forEach((c, di) => { const nd = dayNeed(c, di); nds.set(di, nd); for (const x in needs[di]) need[x] -= needs[di][x]; for (const x in nd) need[x] = (need[x] || 0) + nd[x]; s2 += c.s - days[di].s; });
-        const st2 = withFz(weekShop(ctx, null, need), needs.map((n, i) => nds.get(i) || n));
+        const nds2 = needs.map((n, i) => nds.get(i) || n);
+        const st2 = withFz(weekShop(ctx, null, need, nds2), nds2);
         const save = new Map([...chg.keys()].map((di) => [di, days[di].ids]));
         chg.forEach((c, di) => (days[di].ids = c.ids));
         const j = J(st2, s2, varietyCost());
@@ -2355,6 +2395,8 @@ button.btn { border-radius: 0; }
   // ---------- Menu state and rendering ----------
   let ctx = null, week = null, seed = ls.get("ad-seed") || 1 + Math.floor(Math.random() * 1e9);
   let pantry = ls.get("ad-pantry") || {};
+  // Opened packs carried into this plan from the last one ("Start next week with these"): grams, and days left once open
+  let openStock = ls.get("ad-open") || {};
   const nostock = new Set(ls.get("ad-nostock") || []);
   const have = new Set(ls.get("ad-have") || []); // any-store mode: items already at home
   let leftovers = null;
@@ -2462,7 +2504,7 @@ button.btn { border-radius: 0; }
         // Days marked done stay exactly as eaten
         prev?.days?.forEach((d, i) => { if (d.passed && d.ids.every((id) => MEAL[id])) week.days[i] = d; });
         hotFirst(); topUpDays();
-        rebalance(); finishUp(); ls.set("ad-week", week);
+        rebalance(); finishUp(); openRepair(); ls.set("ad-week", week);
       }
       Object.keys(skipped).forEach((k) => delete skipped[k]);
     }
@@ -2493,14 +2535,17 @@ button.btn { border-radius: 0; }
   }
   function shopStats() {
     if (!ctx?.costco || !week?.days) return null;
-    const sum = {};
+    const sum = {}, op = openPlan();
     week.days.forEach((d, di) => houseItems(dayData(d, di)).forEach(({ k, g }) => { const kk = keyOf(k, di); sum[kk] = (sum[kk] || 0) + g; }));
-    let shop = 0, eaten = 0, waste = 0, left = 0, kit = 0, topUp = 0, restock = 0;
+    let shop = 0, eaten = 0, waste = 0, left = 0, kit = 0, topUp = 0, restock = 0, openWaste = 0;
     const wasted = [], topUpItems = [], bought = [];
     for (const kk in sum) {
       const k = baseK(kk), P = pk(k);
       if (!P) continue;
-      const used = buyUnits(k, sum[kk]), inPantry = Math.min(used, ownedK(kk));
+      // An opened pack thrown out past its days: waste, and another pack to buy
+      const lost = op.lost[kk] || 0;
+      if (lost) { const v = openWorth(kk, lost); waste += v; openWaste += v; wasted.push([k, v, lost, "opened"]); }
+      const used = buyUnits(k, sum[kk]) + lost, inPantry = Math.min(used, ownedK(kk));
       const packs = used - inPantry > 0 ? Math.max(1, Math.ceil((used - inPantry) / P.size - 0.05)) : 0;
       const over = Math.max(0, packs * P.size - (used - inPantry));
       shop += packs * P.price;
@@ -2517,22 +2562,28 @@ button.btn { border-radius: 0; }
     // firstShop: the pantry started empty, so kit really is setup. Later weeks' kit is new staples for new recipes.
     // nextShop: what a following week usually costs when it starts from what's left (chained harness runs land at 0.8 to 1.4x a week's eating)
     const wk = (eaten * 7) / week.days.length;
-    return { shop, eaten, waste, left, wasted, kit, restock, food: shop - kit - restock, cap: ctx.cap, topUp, topUpItems, bought, days: week.days.length,
+    return { shop, eaten, waste, openWaste, opened: op.ev, openLeft: op.left, left, wasted, kit, restock, food: shop - kit - restock, cap: ctx.cap, topUp, topUpItems, bought, days: week.days.length,
       firstShop: !isStocked(), nextShop: [0.8 * wk, 1.4 * wk] };
+  }
+  // The plan's opened packs, day by day, from what's really on the plates (finishing extras and everyone's own meals too)
+  function openPlan() {
+    if (!ctx?.costco || !week?.days) return { lost: {}, ev: [], left: {} };
+    return openSim(week.days.map((d, di) => { const n = {}; houseItems(dayData(d, di)).forEach(({ k, g }) => { const kk = keyOf(k, di); n[kk] = (n[kk] || 0) + buyUnits(k, g); }); return n; }));
   }
   // Test hook for tests/harness.mjs: build a week from given settings and seed, without touching saved data
   window.__bbd = {
-    MEAL, ING, pieceStep, fridge: (k) => (isFresh(k, ctx.fcap) ? fridgeDays(k) : Infinity), keyOf: (k, di) => keyOf(k, di), compute, context, dayData, shopStats, freezerPeak, allowed, read, buildWeek, optimize, weekShop,
+    MEAL, ING, pieceStep, fridge: (k) => (isFresh(k, ctx.fcap) ? fridgeDays(k) : Infinity), open: (k) => ({ life: openLife(k), unit: openLife(k) ? openUnit(k) : 0, freezes: openFreezes(k) }), keyOf: (k, di) => keyOf(k, di), compute, context, dayData, shopStats, freezerPeak, allowed, read, buildWeek, optimize, weekShop,
     // pan: what's already in the pantry (a chained week starts from carry())
-    run(over, sd, pan) {
+    run(over, sd, pan, opn) {
       const s = { ...read(), ...over, course: { ...read().course, ...(over.course || {}) } };
       const r = compute(s);
-      seed = sd; pantry = { ...(pan || {}) }; week = null; nostock.clear();
+      seed = sd; pantry = { ...(pan || {}) }; openStock = { ...(opn || {}) }; week = null; nostock.clear();
       refreshMenu(s, r, true);
       return { s, r, ctx, week };
     },
     // What "Start next week with these" would put in the pantry, and what it's worth
-    carry() { const next = {}; (leftovers || []).filter((r) => r.keep !== "x").forEach((r) => (next[r.k] = Math.round(r.left))); return next; },
+    carry() { return carryNext(); },
+    carryOpen() { return carryOpen(); },
     stockValue(pan, foodOnly) { return Object.entries(pan).reduce((a, [k, q]) => { const P = pk(k); return a + (P && !(foodOnly && isStaple(k)) ? (q / P.size) * P.price : 0); }, 0); },
     tune(o) { if (o.OWN_B != null) OWN_B = o.OWN_B; if (o.STOCK_W != null) STOCK_W = o.STOCK_W; if (o.OLD_W != null) OLD_W = o.OLD_W; if (o.TRIM_MAX != null) TRIM_MAX = o.TRIM_MAX; if (o.CARRY_W != null) CARRY_W = o.CARRY_W; },
   };
@@ -2542,7 +2593,7 @@ button.btn { border-radius: 0; }
   function hotFirst() {
     const hot = (d) => d.ids.filter((id) => MEAL[id].items.some(([k]) => (ING[k][8] || {}).hot)).length;
     const out = (d) => d.ids.some((id) => MEAL[id].out);
-    const was = week.days.slice(), fz0 = ctx.costco && ctx.fcap < Infinity ? freezerPeak() : 0;
+    const was = week.days.slice(), fz0 = ctx.costco && ctx.fcap < Infinity ? freezerPeak() : 0, w0 = ctx.costco ? weekShop(ctx, week.days).waste : 0;
     // A two-week plan reorders each week on its own: week 2's fresh food comes from the day-8 top-up
     [false, true].forEach((o) => [0, 1].forEach((half) => {
       const at = week.days.map((d, i) => i).filter((i) => Math.floor(i / 7) === half && !fixedDay(week.days[i]) && out(week.days[i]) === o);
@@ -2550,7 +2601,8 @@ button.btn { border-radius: 0; }
       at.forEach((i, j) => (week.days[i] = order[j]));
     }));
     // The new order changes when packs are opened; keep it only if the freezer still fits
-    if (fz0 && freezerPeak() > Math.max(fz0, FZ_PLAN * ctx.fcap)) week.days = was;
+    // ...and only if no opened pack now sits past its days
+    if ((fz0 && freezerPeak() > Math.max(fz0, FZ_PLAN * ctx.fcap)) || (ctx.costco && weekShop(ctx, week.days).waste > w0 + 0.005)) week.days = was;
   }
   const slotsOf = (d) => d.slots || ctx.slots;
   // Swaps that clear leftovers may leave a day well short of its calories (common when few meals fit, e.g. vegan keto).
@@ -2623,6 +2675,52 @@ button.btn { border-radius: 0; }
   // it's spread over the meals that use it, and the other meals on those days are trimmed to make room.
   // A day more than 8% over its calories after sauces and finishing packs (portions already at 3/4, typical on a 1,200 kcal target)
   // goes without sauces, unless that leaves fresh food to throw away
+  // Last look: an opened pack (or cut veg) still left past its days once the week is finished. A meal that would eat it
+  // stale (or that opened it near the end) is swapped for one that doesn't use it (food already on the list first),
+  // kept only if the plan then wastes less.
+  function openRepair() {
+    if (!ctx.costco) return;
+    const fz0 = ctx.fcap < Infinity ? Math.max(freezerPeak(), ctx.fcap) : Infinity;
+    for (let t = 0; t < 3; t++) {
+      const st = shopStats(), e = (st?.opened || [])[0];
+      if (!e) return;
+      const snap = JSON.stringify(week.days), snapW = JSON.stringify({ extra: week.extra, finished: week.finished, src: week.src, alt: week.alt });
+      const restore = () => { week.days = JSON.parse(snap); Object.assign(week, JSON.parse(snapW)); };
+      const onList = new Set(week.days.flatMap((d) => d.ids.flatMap((id) => MEAL[id].items.map(([k]) => k))));
+      const other = { l: new Set(), d: new Set() };
+      week.days.forEach((d) => d.ids.forEach((id) => { const m = MEAL[id]; if (!m.out && other[m.type]) other[m.type].add(dishOf(m)); }));
+      let best = null;
+      week.days.forEach((d, di) => {
+        // Past its days mid-plan: the meals from then on. Left at the plan's end: the meals from the day it was opened.
+        if (di < (e.d < week.days.length ? e.d : e.f) || fixedDay(d)) return;
+        d.ids.forEach((id, si) => {
+          const m0 = MEAL[id];
+          if (best || m0.out || !m0.items.some(([k]) => k === e.k)) return;
+          const today = new Set(d.ids.filter((x, j) => j !== si).map((x) => dishOf(MEAL[x])));
+          const cross = m0.type === "l" ? other.d : m0.type === "d" ? other.l : null;
+          let cands = ctx.pools[m0.type].filter((m) => !m.items.some(([k]) => k === e.k) && freshOK(m, di) && !today.has(dishOf(m)) && !cross?.has(dishOf(m)));
+          const known = cands.filter((m) => m.items.every(([k]) => onList.has(k) || !(isFresh(k, ctx.fcap) || openLife(k))));
+          if (known.length) cands = known;
+          const T = dayT(d), fit = (ids) => { const o = optimize(ids.map((x) => MEAL[x]), T, makeScorer(T)); o.s += ctx.appealScore(ids.map((x) => MEAL[x])); return o; };
+          const s0 = fit(d.ids).s;
+          for (const m of cands.slice(0, 8)) {
+            const ids = d.ids.slice(); ids[si] = m.id;
+            const o = fit(ids);
+            // The day stays about as close to its calories as it was (a score of 0.05 is about 9% off)
+            if (o.s > Math.max(s0 + 0.02, 0.05)) continue;
+            Object.assign(week.days[di], { ids, ms: o.ms, s: o.s });
+            finishUp();
+            const w = shopStats()?.waste || 0;
+            if (w < st.waste - 0.005 && freezerPeak() <= fz0 && (!best || w < best.w)) best = { di, ids, ms: o.ms, s: o.s, w };
+            restore();
+          }
+        });
+      });
+      if (!best) return;
+      Object.assign(week.days[best.di], { ids: best.ids, ms: best.ms, s: best.s });
+      finishUp();
+    }
+  }
   function finishUp() {
     const before = JSON.stringify(week.days);
     // Fresh food still left over (re-portioning after the finishing amounts can shrink the meals that use it)?
@@ -2739,6 +2837,37 @@ button.btn { border-radius: 0; }
         });
         if (!week.finished.includes(k)) week.finished.push(k);
       }
+      // An opened pack (or cut fruit or veg) with some left when its days run out: the meals that use it while it's open
+      // eat the rest, when that's a little more each (as for fresh packs above)
+      openPlan().ev.forEach(({ kk, k, f, d, g }) => {
+        const open = (uses2[kk] || []).filter(([di]) => di >= f && di < Math.min(d, f + openLife(k)) && !fixedDay(week.days[di])), openG = open.reduce((a, x) => a + x[2], 0);
+        if (!openG) return;
+        const pl = open.reduce((a, x) => a + x[3], 0);
+        if (!(stretchable(k, g, openG) || g <= FINISH_X * (openG / pl) || wholeOK(k, g, open.length))) return;
+        // ...inside the packs already bought: if that would take another pack, the meals after it use that much less
+        // (cut the pepper once and finish it, rather than leave a piece to spoil while later meals cut fresh ones)
+        const P = pk(k), net = buyUnits(k, tot2[kk] || 0) - ownedK(kk), packs = (x) => (x > 0 ? Math.max(1, Math.ceil(x / P.size - 0.05)) : 0);
+        if (packs(net + g) > packs(net)) {
+          const later = (uses2[kk] || []).filter(([di]) => di >= d && !fixedDay(week.days[di])), laterG = later.reduce((a, x) => a + x[2], 0);
+          if (laterG < 2 * g) return;
+          const stp = pieceStep(k);
+          later.forEach(([di, si, hg, pl]) => {
+            const e = stp ? Math.round((g * hg) / laterG / pl / stp) * stp : Math.round((g * hg) / laterG / pl);
+            if (e < 1) return;
+            const ex = (week.extra[di + ":" + si] ||= {});
+            ex[k] = (ex[k] || 0) - e;
+            again.add(di);
+          });
+        }
+        const sh = shares(k, eatUnits(k, g), open, openG, Math.ceil);
+        open.forEach(([di, si], oi) => {
+          if (sh[oi] < 1) return;
+          const ex = (week.extra[di + ":" + si] ||= {});
+          ex[k] = (ex[k] || 0) + sh[oi];
+          again.add(di);
+        });
+        if (!week.finished.includes(k)) week.finished.push(k);
+      });
       if (pass === 2) break;
       again.forEach((di) => {
         const d = week.days[di];
@@ -2788,6 +2917,8 @@ button.btn { border-radius: 0; }
     return Object.keys(SAUCE).filter((k) => {
       const sc = SAUCE[k];
       if (!(sc.types || "bld").includes(m.type)) return false;
+      // A jar that won't keep long once opened (salsa, alfredo, tzatziki) isn't opened for a topping, unless the rest can be frozen
+      if (sc.kind !== "fresh" && openLife(k) && !openFreezes(k)) return false;
       if (!sc.goes.some((x) => ks.includes(x)) || sc.no?.some((x) => ks.includes(x))) return false;
       // Salads get a dressing-style sauce, not a glaze
       if ((ks.includes("greens") || /salad/i.test(m.name)) && !sc.salad) return false;
@@ -2822,7 +2953,6 @@ button.btn { border-radius: 0; }
       week.days.forEach((d) => Object.values(d.sauce || {}).forEach((x) => x.k && bought.add(x.k)));
       afford = (k, di, take) => {
         const P = pk(k);
-        if (!P || pantry[k] > 0 || staples.has(k)) return true;
         const kk = keyOf(k, di), g = buyUnits(k, SAUCE[k].g);
         // Fresh, and frozen (the freezer was checked before sauces): only what's spare in packs already bought
         if (isFresh(k, ctx.fcap) || inFreezer(k, ctx.fcap)) { if ((spare[kk] || 0) < g) return false; if (take) spare[kk] -= g; return true; }
@@ -3068,7 +3198,8 @@ button.btn { border-radius: 0; }
           use.forEach((x) => { const L = F[x].length && rand() < 0.6 ? F[x] : P[x]; let m = L[Math.floor(rand() * L.length)]; if (ms.includes(m)) m = P[x][Math.floor(rand() * P[x].length)]; ms.push(m); });
           const r = fitOwn(ms, c);
           // Opening a new item costs a little, a new frozen pack (freezer space) more, and a new fresh one (a tub nobody else is using, likely binned) a lot
-          const fresh = ms.reduce((a, m) => a + m.items.filter(([k]) => !bought.has(k)).reduce((b, [k]) => b + (isFresh(k, ctx.fcap) ? 50 : inFreezer(k, ctx.fcap) ? 5 : 1), 0), 0);
+          // (a tub that won't keep long once opened counts as fresh)
+          const fresh = ms.reduce((a, m) => a + m.items.filter(([k]) => !bought.has(k)).reduce((b, [k]) => b + (isFresh(k, ctx.fcap) || (openLife(k) && !openFreezes(k)) ? 50 : inFreezer(k, ctx.fcap) ? 5 : 1), 0), 0);
           // An added snack only wins when the day really needs it
           const sc = r.s + 0.01 * fresh + (use.length > slots.length ? 0.03 : 0);
           if (!best || sc < best.sc) best = { ids: ms.map((m) => m.id), ms: r.ms, sc };
@@ -3119,14 +3250,18 @@ button.btn { border-radius: 0; }
         left[kk] = (over / P.size) * P.price;
         w += left[kk];
       }
+      // Opened packs left past their days count too (targets for swaps, not for the scraps below)
+      const ol = {}, lost = openSim(dn).lost;
+      for (const k in lost) { ol[k] = openWorth(k, lost[k]); w += ol[k]; }
       const fz = ctx.fcap === Infinity ? 0 : Math.max(0, freezerPeak(dn) - ctx.fcap) / 1000;
-      return { w: w + 4 * fz, left, fz };
+      return { w: w + 4 * fz, left, ol, fz };
     };
     const cx = week.days.map((d, di) => (fixedDay(d) || !d.own ? null : H.others.map((o) => ownCtx(d, di, o))));
     let st = waste();
     for (let it = 0; it < 40 && H?.others.length && st.w > 0.01; it++) {
       const lb = {};
       for (const kk in st.left) lb[baseK(kk)] = (lb[baseK(kk)] || 0) + st.left[kk];
+      for (const k in st.ol) lb[k] = (lb[k] || 0) + st.ol[k];
       const bad = Object.keys(lb).sort((a, b) => lb[b] - lb[a]);
       // Over the freezer: frozen items in people's own meals become targets too, biggest first
       if (st.fz > 0) {
@@ -3249,8 +3384,10 @@ button.btn { border-radius: 0; }
       const extra = day.passed ? day.fx?.[i] : week?.extra?.[di + ":" + i];
       if (extra) for (const k in extra) {
         const it = items.find((x) => x.k === k);
-        if (it) { it.g += extra[k]; it.fin = extra[k]; } else items.push({ k, g: extra[k], fin: extra[k] });
+        // (a negative amount: food moved to an earlier meal, so an opened pack is finished in time)
+        if (it) { it.g = Math.max(0, it.g + extra[k]); if (extra[k] > 0) it.fin = extra[k]; } else if (extra[k] > 0) items.push({ k, g: extra[k], fin: extra[k] });
       }
+      for (let j = items.length; j--;) if (items[j].g <= 0) items.splice(j, 1);
       const sc = day.sauce?.[i];
       if (sc?.k && sc.id === day.ids[i] && SAUCE[sc.k]) items.push({ k: sc.k, g: SAUCE[sc.k].g, sauce: true });
       const pl = plates(di, m.type);
@@ -3261,7 +3398,7 @@ button.btn { border-radius: 0; }
       // Someone else's version (their protein, the same base): its own food is cooked for them only (g 0 on your plate)
       const nOf = {}, twins = sv.slice(1).map(([t, p, who]) => {
         const ti = portion(t, twinMult(t, m, day.ms[i]));
-        if (extra) for (const k in extra) { const it = ti.find((x) => x.k === k); if (it) it.g += extra[k]; }
+        if (extra) for (const k in extra) { const it = ti.find((x) => x.k === k); if (it) it.g = Math.max(0, it.g + extra[k]); }
         const n = nutr(ti);
         who.forEach((o) => (nOf[o.who] = n));
         ti.forEach(({ k, g }) => { const it = items.find((x) => x.k === k && !x.sauce); if (it) it.hg += hgOf(k, g, p); else items.push({ k, g: 0, hg: hgOf(k, g, p), other: true }); });
@@ -3622,14 +3759,15 @@ button.btn { border-radius: 0; }
   // Costco list: whole packs, what they cost in the warehouse, and what's left after the week
   function renderCostco(sum) {
     const checked = new Set(ls.get("ad-checked") || []);
+    const op = openPlan();
     // Two-week plans: fresh food for days 8 to 14 is keyed "k@2" and bought on a top-up trip around day 8
     const rows = Object.entries(sum).map(([kk, g]) => {
       const k = baseK(kk), top = kk !== k;
       const { prod, size, price, keep, nf, other, est } = pk(k);
-      const used = buyUnits(k, g), inPantry = Math.min(used, ownedK(kk));
+      const used = buyUnits(k, g), lost = op.lost[kk] || 0, inPantry = Math.min(used + lost, ownedK(kk));
       // A few grams over a pack from rounding portions doesn't mean opening another one
-      const packs = used - inPantry > 0 ? Math.max(1, Math.ceil((used - inPantry) / size - 0.05)) : 0;
-      return { k, kk, top, prod, size, price, keep, nf, other, est, used, inPantry, packs, cost: packs * price, eaten: (used / size) * price };
+      const packs = used + lost - inPantry > 0 ? Math.max(1, Math.ceil((used + lost - inPantry) / size - 0.05)) : 0;
+      return { k, kk, top, prod, size, price, keep, nf, other, est, used, lost, inPantry, packs, cost: packs * price, eaten: (used / size) * price, opened: op.left[kk] };
     });
     // Pantry items this week's menu doesn't touch still carry forward
     Object.entries(pantry).forEach(([k, q]) => { const P = pk(k); if (!sum[k] && !sum[k + "@2"] && P && q > 0) rows.push({ k, kk: k, prod: P.prod, size: P.size, price: P.price, keep: P.keep, nf: P.nf, other: P.other, est: P.est, used: 0, inPantry: 0, packs: 0, cost: 0, eaten: 0, idle: q }); });
@@ -3637,13 +3775,13 @@ button.btn { border-radius: 0; }
     const unit = (k) => ((ING[k][8] || {}).ml ? "ml" : "g");
     const mass = (v, u) => (v >= 1000 ? `${(v / 1000).toFixed(1)} ${u === "ml" ? "L" : "kg"}` : `${fmt(v)} ${u}`);
     const dry = (k) => ((ING[k][8] || {}).dry ? " dry" : "");
-    leftovers = rows.map((r) => ({ ...r, left: r.idle ?? Math.max(0, (r.inPantry ? (pantry[r.k] || 0) - r.inPantry : 0) + r.packs * r.size - (r.used - r.inPantry)) }))
+    leftovers = rows.map((r) => ({ ...r, left: r.idle ?? Math.max(0, (r.inPantry ? (pantry[r.k] || 0) - r.inPantry : 0) + r.packs * r.size - (r.used + (r.lost || 0) - r.inPantry)) }))
       .filter((r) => r.left > Math.max(20, r.size * 0.02));
     const fcap = ctx.fcap;
     if (fcap === 0) leftovers.forEach((r) => { if (r.keep === "z") r.keep = "x"; });
     const fzLeft = leftovers.filter((r) => inFreezer(r.k, fcap)).reduce((a, r) => a + r.left, 0);
     const fzPeak = freezerPeak();
-    const wasteVal = leftovers.filter((r) => r.keep === "x").reduce((a, r) => a + (r.left / r.size) * r.price, 0);
+    const wasteVal = leftovers.filter((r) => r.keep === "x").reduce((a, r) => a + (r.left / r.size) * r.price, 0) + rows.reduce((a, r) => a + ((r.lost || 0) / r.size) * r.price, 0);
     // "Carries over" is what this week's new packs leave behind; food you already had in the pantry isn't part of this shop
     const carryVal = rows.filter((r) => r.packs && r.keep !== "x" && !(r.keep === "z" && fcap === 0))
       .reduce((a, r) => a + (Math.max(0, r.packs * r.size - (r.used - r.inPantry)) / r.size) * r.price, 0);
@@ -3710,7 +3848,7 @@ button.btn { border-radius: 0; }
     $("leftovers").innerHTML = shown.length ? shown.sort((a, b) => "pzrx".indexOf(a.keep) - "pzrx".indexOf(b.keep) || b.left / b.size * b.price - a.left / a.size * a.price).map((r) => {
       const u = unit(r.k);
       return `<div class="li"><span>${ING[r.k][0].replace(/ \(.*\)/, "")}<span class="keep ${r.keep}">${KEEP[r.keep][0]}</span></span><em>${mass(r.left, u)}${dry(r.k)}</em>
-        <small>${Math.round((r.left / r.size) * 100)}% of a pack · worth about ${money((r.left / r.size) * r.price)} · ${KEEP[r.keep][1]}</small></div>`;
+        <small>${Math.round((r.left / r.size) * 100)}% of a pack · worth about ${money((r.left / r.size) * r.price)} · ${r.opened ? `${mass(r.opened.g, u)} of it is open: ${r.opened.freeze ? "freeze it, or " : ""}eat it within ${r.opened.days === 1 ? "a day" : `${r.opened.days} days`}` : KEEP[r.keep][1]}</small></div>`;
     }).join("") : `<div class="li"><span>Nothing left over.</span></div>`;
     $("carry").hidden = !leftovers.some((r) => r.keep !== "x");
   }
@@ -3731,15 +3869,19 @@ button.btn { border-radius: 0; }
     el.querySelectorAll("[data-restock]").forEach((b) => b.addEventListener("click", () => { nostock.delete(b.dataset.restock); ls.set("ad-nostock", [...nostock]); update(true); }));
   }
 
+  // Next week's pantry: what's left, less any opened pack (that's eaten or frozen now, not counted as sealed stock)
+  // An opened pack goes along with the days it has left, so next week's plan finishes it in time (or freezes it)
+  const carryNext = () => { const next = {}; (leftovers || []).filter((r) => r.keep !== "x").forEach((r) => (next[r.k] = Math.round(r.left))); return next; };
+  const carryOpen = () => { const o = {}; (leftovers || []).forEach((r) => { if (r.opened && !r.opened.freeze && r.keep !== "x") o[r.k] = { g: Math.round(r.opened.g), days: r.opened.days }; }); return o; };
   $("carry").addEventListener("click", () => {
-    const next = {};
-    (leftovers || []).filter((r) => r.keep !== "x").forEach((r) => (next[r.k] = Math.round(r.left)));
+    const next = carryNext();
+    openStock = carryOpen(); ls.set("ad-open", openStock);
     pantry = next; ls.set("ad-pantry", pantry);
     seed = 1 + Math.floor(Math.random() * 1e9); ls.set("ad-seed", seed); ls.set("ad-checked", []);
     update(true);
     $("menuTitle").scrollIntoView({ behavior: "smooth", block: "start" });
   });
-  $("clearPantry").addEventListener("click", () => { pantry = {}; ls.set("ad-pantry", pantry); renderMenu(); });
+  $("clearPantry").addEventListener("click", () => { pantry = {}; openStock = {}; ls.set("ad-pantry", pantry); ls.set("ad-open", openStock); renderMenu(); });
 
   $("grocery").addEventListener("change", (e) => {
     const k = e.target.dataset.k;
@@ -3786,7 +3928,7 @@ button.btn { border-radius: 0; }
   }
   // Share link: settings, the week (swaps, done days), pantry and store choices, packed into the link's #plan= part.
   // Nothing goes to a server. Ticks, ratings and the look stay on each device.
-  const SHARED = ["ad-inputs", "ad-seed", "ad-week", "ad-nostock", "ad-staples", "ad-pantry", "ad-have"];
+  const SHARED = ["ad-inputs", "ad-seed", "ad-week", "ad-nostock", "ad-staples", "ad-pantry", "ad-have", "ad-open"];
   const SITE = "https://bigboxdiet.com/";
   const b64u = (u8) => { let t = ""; u8.forEach((c) => (t += String.fromCharCode(c))); return btoa(t).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, ""); };
   const unb64u = (t) => Uint8Array.from(atob(t.replace(/-/g, "+").replace(/_/g, "/")), (c) => c.charCodeAt(0));
