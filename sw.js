@@ -1,7 +1,7 @@
 // Offline support: serve from cache, refresh in the background.
 // Both the install and the refresh skip the browser's HTTP cache (GitHub Pages sets max-age=600), so a new release isn't stuck behind a stale copy.
-const CACHE = "bbd-v105";
-const SHELL = ["./", "index.html", "sync.js?v=2", "manifest.webmanifest", "icon.svg", "icon-192.png", "icon-512.png"];
+const CACHE = "bbd-v106";
+const SHELL = ["./", "index.html", "data.js?v=1", "sync.js?v=2", "manifest.webmanifest", "icon.svg", "icon-192.png", "icon-512.png"];
 self.addEventListener("install", (e) => { e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL.map((u) => new Request(u, { cache: "reload" })))).then(() => self.skipWaiting())); });
 self.addEventListener("activate", (e) => { e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim())); });
 self.addEventListener("fetch", (e) => {
