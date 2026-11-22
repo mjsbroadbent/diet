@@ -2119,6 +2119,49 @@ button.btn { border-radius: 0; }
       : m.type === "d" || (m.type === "l" && !NOT_DINNER.test(m.name));
   }
   [...MEALS, ...COSTCO_MEALS, ...COMBOS].forEach(tagMeal);
+  // ---------- Appeal ----------
+  // m.appeal: 1 to 5, how keen a typical Costco shopper would be to eat it. Familiar hot dinners, sandwiches, chicken, beef
+  // and eggs rate high; tofu, tempeh and niche plant dishes rate low (the planner can lift those for a vegetarian or vegan diet).
+  // Parts are rated here; a build-your-own meal takes two thirds from its protein, topping or filling and one third from its
+  // side, base or bread. Anything not listed is a 3. New parts and recipes should get a rating here.
+  const APPEAL = {
+    protein: { chicken: 5, thigh: 5, rchicken: 5, chipchick: 4, salmon: 4, pinksalmon: 3, cod: 3, tilapia: 3, steak: 5, pork: 4, bulgogi: 4, shrimp: 4,
+      salmonburger: 3, turkey: 4, tofu: 2, eggs: 3, haddock: 4, chparm: 5, meatballs: 5, drumstick: 4, porkchop: 4, sausage: 4, bchstrips: 5, ham: 3,
+      beyond: 2, impnug: 2, chickedam: 1 },
+    side: { potgb: 5, wedges: 5, rice: 4, brice: 3, sweetpot: 4, quinoa: 3, mash: 5, brussels: 4, salad: 3, mexrice: 4, naanveg: 4, cauli: 2, gnocchi: 4,
+      kale: 3, greek: 4, caesar: 4, saladkit: 3, littlepot: 5, squash: 3, caulibroc: 3, bokrice: 3, noodle: 4, kimchirice: 3, cornsalad: 3, pastasalad: 3,
+      zucmush: 3, asparavo: 3, cheesybroc: 4, ricepeas: 4, quinnorm: 3, roastveg: 4, ricemix: 4, gnocnorm: 4, potnorm: 4 },
+    base: { rice: 4, brice: 3, quinoa: 3, greens: 3, pasta: 5, cauli: 2, chickpea: 2, potato: 5, quinsal: 3, noodle: 4, chickpasta: 2, romaine: 3,
+      pastasal: 3, kimchirice: 3, veg: 3 },
+    topping: { teriyaki: 5, taco: 5, greek: 4, poke: 3, bulgogi: 4, satay: 2, butter: 5, chili: 4, pesto: 4, meatball: 5, turkeychili: 4, bbq: 5,
+      smsalmon: 3, chipotle: 4, eggavo: 3, medchick: 2, teritofu: 2, salmon: 3, kimchipork: 3, sausagepep: 4, hamegg: 3, ricottachick: 3, chsalad: 4,
+      texmex: 4, shrimpbok: 3, squashchick: 2, terisalmon: 4, caesarbowl: 4, fajita: 5, crispy: 5, tofutaco: 2, tofuscram: 1, edamsatay: 1,
+      chickcurry: 2, burger: 5, nugget: 2, eggcurry: 2, caprese: 3, steakcobb: 4 },
+    bread: { bread: 3, tortilla: 4, pita: 3, naan: 4, bagel: 4, emuffin: 3, buns: 5, ciabatta: 4, ketotort: 2 },
+    filling: { turkey: 4, caesar: 4, tunamelt: 4, eggsalad: 3, smsalmon: 3, chipotle: 4, steak: 5, hummus: 2, pesto: 4, souvlaki: 4, bulgogi: 4,
+      salmonburger: 3, turkeyburger: 4, bbqpizza: 5, margherita: 4, meatballpizza: 5, chickpizza: 4, hamcheddar: 4, chsalad: 4, sausage: 4, crispy: 5,
+      quesadilla: 5, blt: 5, ricottapizza: 3, hawaiian: 4, sausagepizza: 5, beyond: 2, sritofu: 1, roastveg: 2, nugget: 2, caprese: 3, eggcheese: 4 },
+    // Hand-written recipes by number (MEALS index; the Costco version of a recipe shares its rating)
+    meal: {
+      5: "7 9 23 31 32 39 41 43 49 72 73 74 75 76 77 96 99 102 103 106 113 126 130 133 134 143 145 146 147 149 163 169 170 173",
+      4: "0 1 3 5 10 11 13 14 19 21 26 28 29 30 37 38 40 45 53 54 55 57 59 66 67 68 70 80 82 83 84 85 88 89 92 94 97 98 100 104 105 107 108 109 110 " +
+        "117 118 119 120 123 124 125 128 131 132 135 136 138 139 140 141 144 148 150 151 152 153 157 159 160 161 166 168 172 174 175 176 177 178 180 " +
+        "181 183 185 188 189 193",
+      2: "2 4 12 16 17 22 34 36 42 48 52 58 60 65 91 93 116 155 184 190 192 194 195 196 198 199 200 201 202",
+      1: "25 27 44",
+    },
+  };
+  {
+    const byNum = {};
+    Object.entries(APPEAL.meal).forEach(([r, ns]) => ns.split(" ").forEach((n) => (byNum[n] = +r)));
+    [...MEALS, ...COSTCO_MEALS].forEach((m) => (m.appeal = byNum[m.id.slice(1)] || 3));
+    const CAT = { plate: ["protein", "side", 0], bowl: ["base", "topping", 1], sand: ["bread", "filling", 1] };
+    COMBOS.forEach((m) => {
+      const [, style, a, b] = m.id.split("."), [ca, cb, mainIsB] = CAT[style];
+      const ra = APPEAL[ca][a] || 3, rb = APPEAL[cb][b] || 3;
+      m.appeal = mainIsB ? Math.round((2 * rb + ra) / 3) : Math.round((2 * ra + rb) / 3);
+    });
+  }
   // Eating out replaces dinner with a loose estimate
   const OUT = {
     h: { id: "oh", type: "o", out: true, name: "Eating out: salad with protein", items: [], min: 0, n: [650, 45, 35, 38, 8], tags: new Set(), text: "",
