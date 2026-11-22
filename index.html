@@ -3340,15 +3340,17 @@ button.btn { border-radius: 0; }
       }));
       fzPeak = Math.max(fzPeak, Object.keys(hv).filter((k) => hv[k] > 0 && inFreezer(k, fcap)).reduce((a, k) => a + hv[k], 0));
     });
-    const leftVal = leftovers.reduce((a, r) => a + (r.left / r.size) * r.price, 0);
-    const carryVal = leftovers.filter((r) => r.keep !== "x").reduce((a, r) => a + (r.left / r.size) * r.price, 0);
+    const wasteVal = leftovers.filter((r) => r.keep === "x").reduce((a, r) => a + (r.left / r.size) * r.price, 0);
+    // "Carries over" is what this week's new packs leave behind; food you already had in the pantry isn't part of this shop
+    const carryVal = rows.filter((r) => r.packs && r.keep !== "x" && !(r.keep === "z" && fcap === 0))
+      .reduce((a, r) => a + (Math.max(0, r.packs * r.size - (r.used - r.inPantry)) / r.size) * r.price, 0);
     const nDays = week.days.length || 7;
 
     $("cost").hidden = false;
     $("cost").innerHTML = `
       <div class="lead"><span>What you eat costs</span><b>${money(eaten / nDays)}<small> a day</small></b><span>${money(eaten)} of food over ${nDays} days${shop > eaten * 1.25 && carryVal > 1 ? `. The shop costs more because Costco packs are big: ${money(carryVal)} of it carries into next week.` : "."}</span></div>
       <div><span>This week's shop, in-store</span><b>${money(shop)}</b><span>${shopNF ? `${money(shop - shopNF)} Costco · ${money(shopNF)} No Frills` : `${money(shop * INSTORE)} on Costco Same-Day`}</span></div>
-      <div><span>Carries over to next week</span><b>${money(carryVal)}</b><span>${leftVal - carryVal > 0.5 ? money(leftVal - carryVal) + " of fresh food won't keep" : "Mostly pantry and freezer"}</span></div>
+      <div><span>Carries over to next week</span><b>${money(carryVal)}</b><span>${wasteVal > 0.5 ? money(wasteVal) + " of fresh food won't keep" : "Mostly pantry and freezer"}</span></div>
       <div><span>Freezer, busiest day</span><b>${(fzPeak / 1000).toFixed(1)} kg</b><span>${fcap === Infinity ? `No limit set · ${(fzLeft / 1000).toFixed(1)} kg left at week's end` : fcap === 0 ? "No freezer, so no frozen packs" : `of ${fcap / 1000} kg${fzPeak > fcap ? ". Over your space: try Shuffle" : ""} · ${(fzLeft / 1000).toFixed(1)} kg left at week's end`}</span></div>`;
     $("groceryNote").textContent = ctx.mostly
       ? `Costco packs at warehouse prices, plus No Frills for what Costco doesn't carry or where a Costco pack would mostly go to waste${NF_DATE ? ` (No Frills prices from ${NF_DATE})` : ""}. Tick items off as you shop.`
@@ -3385,11 +3387,14 @@ button.btn { border-radius: 0; }
     const pkeys = Object.keys(pantry).filter((k) => pantry[k] > 0);
     $("clearPantry").hidden = !pkeys.length;
     $("pantryNote").hidden = !pkeys.length;
-    $("pantryNote").textContent = pkeys.length ? `${pkeys.length} item${pkeys.length > 1 ? "s" : ""} in your pantry (carried over or marked "Already have it") ${pkeys.length > 1 ? "are" : "is"} counted in the list above.` : "";
-    $("leftovers").innerHTML = leftovers.length ? leftovers.sort((a, b) => "pzrx".indexOf(a.keep) - "pzrx".indexOf(b.keep) || b.left / b.size * b.price - a.left / a.size * a.price).map((r) => {
+    const idle = leftovers.filter((r) => r.idle).map((r) => ING[r.k][0].replace(/ \(.*\)/, "").replace(/, drained$/, "")).sort((a, b) => a.localeCompare(b));
+    $("pantryNote").textContent = pkeys.length ? `${pkeys.length} item${pkeys.length > 1 ? "s" : ""} in your pantry ${pkeys.length > 1 ? "are" : "is"} counted in the list above, so you only buy what's missing.`
+      + (idle.length ? ` Not needed this week: ${idle.join(", ")}.` : "") : "";
+    const shown = leftovers.filter((r) => !r.idle);
+    $("leftovers").innerHTML = shown.length ? shown.sort((a, b) => "pzrx".indexOf(a.keep) - "pzrx".indexOf(b.keep) || b.left / b.size * b.price - a.left / a.size * a.price).map((r) => {
       const u = unit(r.k);
       return `<div class="li"><span>${ING[r.k][0].replace(/ \(.*\)/, "")}<span class="keep ${r.keep}">${KEEP[r.keep][0]}</span></span><em>${mass(r.left, u)}${dry(r.k)}</em>
-        <small>${Math.round((r.left / r.size) * 100)}% of a pack · worth about ${money((r.left / r.size) * r.price)} · ${KEEP[r.keep][1]}${r.idle ? " Not used this week." : ""}</small></div>`;
+        <small>${Math.round((r.left / r.size) * 100)}% of a pack · worth about ${money((r.left / r.size) * r.price)} · ${KEEP[r.keep][1]}</small></div>`;
     }).join("") : `<div class="li"><span>Nothing left over.</span></div>`;
     $("carry").hidden = !leftovers.some((r) => r.keep !== "x");
   }
