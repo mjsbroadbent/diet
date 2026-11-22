@@ -2,7 +2,7 @@
 // release on their first load after it ships; the cached copy is the fallback when offline or the network is slow.
 // Icons, the manifest and fonts are cache-first and refresh in the background.
 // Network fetches skip the browser's HTTP cache (GitHub Pages sets max-age=600), so a new release isn't stuck behind a stale copy.
-const CACHE = "bbd-v110";
+const CACHE = "bbd-v111";
 const SHELL = ["./", "index.html", "data.js?v=1", "sync.js?v=2", "manifest.webmanifest", "icon.svg", "icon-192.png", "icon-512.png"];
 const WAIT = 3000;
 self.addEventListener("install", (e) => { e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL.map((u) => new Request(u, { cache: "reload" })))).then(() => self.skipWaiting())); });
