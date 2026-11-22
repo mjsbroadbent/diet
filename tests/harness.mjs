@@ -55,7 +55,8 @@ const RULES = [
     return Object.entries(n).filter(([, c]) => c > 2).map(([k, c]) => `${k} x${c}`);
   } },
   { id: "prots-never", hard: true, desc: "no protein the person never eats", check: (w) => w.days.flatMap((d, i) => d.meals.filter((m) => !m.out && w.never.includes(m.main)).map((m) => `day ${i + 1}: ${m.name} [${m.main}]`)) },
-  { id: "portion-size", hard: true, desc: "meal portions between 3/4 and 1 1/2", check: (w) => w.days.flatMap((d, i) => d.meals.filter((m) => "bld".includes(m.type) && !m.out && (m.mult < 0.75 || m.mult > 1.5)).map((m) => `day ${i + 1}: ${m.name} x${m.mult}`)) },
+  { id: "portion-size", hard: true, desc: "meal and snack portions between 3/4 and 1 1/2", check: (w) => [...w.days.flatMap((d, i) => d.meals.filter((m) => "blds".includes(m.type) && !m.out && (m.mult < 0.75 || m.mult > 1.5)).map((m) => `day ${i + 1}: ${m.name} x${m.mult}`)),
+    ...(w.others || []).flatMap((o) => o.days.flatMap((d, i) => (d.ms || []).filter((x) => x < 0.75 || x > 1.5).map((x) => `${o.name} day ${i + 1}: own meal x${x}`)))] },
   { id: "household", hard: true, desc: "everyone in a household gets within 15% of their calories, from meals they can eat", check: (w) => (w.others || []).flatMap((o) => o.days.flatMap((d, i) => [
     ...(Math.abs(d.k - d.tk) / d.tk > 0.15 ? [`${o.name} day ${i + 1}: ${Math.round(d.k)} vs ${d.tk}`] : []),
     ...d.bad.map((n) => `${o.name} day ${i + 1}: ${n}`)])) },
@@ -110,7 +111,7 @@ for (const prof of PROFILES) for (let k = 0; k < SEEDS; k++) {
       dd.meals.forEach((x) => { if ((x.m.type === "l" || x.m.type === "d") && o.home?.[x.m.type]?.[wd] !== false) { k += x.n[0] * o.ratio; p += x.n[1] * o.ratio; } });
       const own = (dd.own || []).find((y) => y.who === o.who);
       own?.meals.forEach((x) => x.items.forEach(({ k: ing, g }) => { k += (B.ING[ing][1] * g) / 100; p += (B.ING[ing][2] * g) / 100; }));
-      return { k, p, tk: own?.tk ?? o.T.k, own: own?.meals.map((x) => x.m.name) || [], bad: (own?.meals || []).filter((x) => !B.allowed(x.m, o.diets, o.avoid)).map((x) => x.m.name) };
+      return { k, p, tk: own?.tk ?? o.T.k, ms: (d.own || []).find((y) => y.who === o.who)?.ms || [], own: own?.meals.map((x) => x.m.name) || [], bad: (own?.meals || []).filter((x) => !B.allowed(x.m, o.diets, o.avoid)).map((x) => x.m.name) };
     }) }));
     return { hh: (ctx.house?.n || 1) + (ctx.house?.others.length || 0), others, never, T: ctx.T, days, protein, shop: B.shopStats(), fz: { peak: B.freezerPeak(), cap: ctx.fcap }, labels, daily, quickDinner: ctx.course.d.effort <= 10 };
   }, { s: { ...base, ...prof.s }, seed });
