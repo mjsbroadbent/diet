@@ -2551,8 +2551,12 @@ button.btn { border-radius: 0; }
   // Fresh food that won't keep to next week (and frozen food when there's no freezer)
   const isFresh = (k, fcap) => { const P = pk(k); return !!P && (P.keep === "x" || (P.keep === "z" && fcap === 0)); };
   // A fresh pack's leftover can be eaten this week instead (extra in the meals that use it) when it's light food,
-  // adds at most half again to what the week already uses, and no more than 3% to the week's calories
-  const stretchable = (k, over, used) => ING[k][1] <= 170 && over <= 0.5 * used && (over / ((ING[k][8] || {}).dry || 1)) * ING[k][1] / 100 <= 0.03 * 7 * ctx.T.k;
+  // at most doubles what the week already uses, and adds no more than 3% to the week's calories
+  // (richer food only when it's a scrap: under 1% of the week's calories)
+  const stretchable = (k, over, used) => {
+    const kc = ((over / ((ING[k][8] || {}).dry || 1)) * ING[k][1]) / 100;
+    return over <= used && kc <= 0.03 * 7 * ctx.T.k && (ING[k][1] <= 170 || kc <= 0.01 * 7 * ctx.T.k);
+  };
   const stepsOf = (m) => (m.max ? STEPS[m.type].filter((x) => x <= m.max) : STEPS[m.type]);
   // Nutrition of a meal at a portion step, after rounding to amounts you can measure (whole bottles, pieces),
   // so the optimiser sees what the menu will actually show
@@ -2755,7 +2759,9 @@ button.btn { border-radius: 0; }
   }
 
   // The whole week's shop from total amounts needed: whole packs, cost, and fresh food left in an open pack (waste)
-  const dayNeed = (d) => { const n = {}; d.ids.forEach((id, i) => MEAL[id].items.forEach(([k, g]) => (n[k] = (n[k] || 0) + buyUnits(k, g * d.ms[i])))); return n; };
+  // Amounts as the menu will show them (rounded portions), so the waste check matches the grocery list
+  const portionOf = (m, x) => ((m._rp ||= {})[x] ||= portion(m, x));
+  const dayNeed = (d) => { const n = {}; d.ids.forEach((id, i) => portionOf(MEAL[id], d.ms[i]).forEach(({ k, g }) => (n[k] = (n[k] || 0) + buyUnits(k, g)))); return n; };
   function weekShop(ctx, days, need) {
     if (!need) { need = {}; days.forEach((d) => { const n = dayNeed(d); for (const k in n) need[k] = (need[k] || 0) + n[k]; }); }
     let cost = 0, waste = 0;
@@ -2765,9 +2771,17 @@ button.btn { border-radius: 0; }
       if (!P) continue;
       const net = need[k] - (pantry[k] || 0);
       if (net <= 1e-6) continue;
-      const packs = Math.max(1, Math.ceil(net / P.size - 0.05)), over = packs * P.size - net;
-      cost += packs * P.price;
-      if (isFresh(k, ctx.fcap) && over > Math.max(20, P.size * 0.02) && !stretchable(k, over, net)) { const v = (over / P.size) * P.price; waste += v; left[k] = v; }
+      const fresh = isFresh(k, ctx.fcap);
+      const opt = (Q) => {
+        const packs = Math.max(1, Math.ceil(net / Q.size - 0.05)), over = packs * Q.size - net;
+        const w = fresh && over > Math.max(20, Q.size * 0.02) && !stretchable(k, over, net) ? (over / Q.size) * Q.price : 0;
+        return { c: packs * Q.price, w };
+      };
+      let o = opt(P);
+      // Mostly Costco: a smaller No Frills pack is bought instead when it wastes less fresh food (see pickSources)
+      if (ctx.mostly && fresh && o.w > 0.5 && NOFRILLS[k] && !P.nf) { const n = opt({ size: NOFRILLS[k][1], price: NOFRILLS[k][2] }); if (n.w < o.w - 0.5) o = n; }
+      cost += o.c;
+      if (o.w) { waste += o.w; left[k] = o.w; }
     }
     return { cost, waste, left, need };
   }
@@ -2783,7 +2797,7 @@ button.btn { border-radius: 0; }
     };
     const J = (st, sSum, vc) => sSum + 0.1 * st.waste + 0.01 * Math.max(0, st.cost - ctx.cap) + (ctx.packs ? 0.0004 * st.cost : 0) + vc;
     let st = weekShop(ctx, days), sSum = days.reduce((a, d) => a + d.s, 0), cur = J(st, sSum, varietyCost());
-    for (let it = 0; it < 40 && (st.waste > 0.5 || st.cost > ctx.cap); it++) {
+    for (let it = 0; it < 60 && (st.waste > 0.5 || st.cost > ctx.cap); it++) {
       const bad = new Set(Object.keys(st.left));
       const overCap = st.cost > ctx.cap;
       const other = { l: new Set(), d: new Set() };
@@ -2825,7 +2839,7 @@ button.btn { border-radius: 0; }
           const today = new Set(cur_.filter((x, j) => j !== si).map((x) => dishOf(MEAL[x])));
           const cross = m0.type === "l" ? other.d : m0.type === "d" ? other.l : null;
           let cands = ctx.pools[m0.type].filter((m) => !today.has(dishOf(m)) && !cross?.has(dishOf(m)) && !m.items.some(([x]) => bad.has(x)));
-          if (cands.length > 12) { for (let i = 0; i < 12; i++) { const j = i + Math.floor(rand() * (cands.length - i)); [cands[i], cands[j]] = [cands[j], cands[i]]; } cands = cands.slice(0, 12); }
+          if (cands.length > 24) { for (let i = 0; i < 24; i++) { const j = i + Math.floor(rand() * (cands.length - i)); [cands[i], cands[j]] = [cands[j], cands[i]]; } cands = cands.slice(0, 24); }
           let pick = null;
           for (const m of cands) {
             const ids = cur_.slice(); ids[si] = m.id;
@@ -2982,7 +2996,7 @@ button.btn { border-radius: 0; }
   }
   // Test hook for tests/harness.mjs: build a week from given settings and seed, without touching saved data
   window.__bbd = {
-    MEAL, ING, compute, context, dayData, shopStats, allowed, read, buildWeek, optimize,
+    MEAL, ING, compute, context, dayData, shopStats, allowed, read, buildWeek, optimize, weekShop,
     run(over, sd) {
       const s = { ...read(), ...over, course: { ...read().course, ...(over.course || {}) } };
       const r = compute(s);
@@ -3142,7 +3156,8 @@ button.btn { border-radius: 0; }
         return { cost: packs * P.price, total: (need / P.size) * P.price + waste, waste, left };
       };
       const rc = real(c), rn = real(n);
-      if (rc.waste >= 2 && rn.total < rc.total - Math.max(1, 0.1 * rc.total)) { week.src[k] = "nf"; week.alt[k] = { cost: rc.cost, left: rc.left }; }
+      // Fresh food that would be thrown away: the smaller pack wins whenever it wastes less (zero waste beats price)
+      if ((isFresh(k, ctx.fcap) && rn.waste < rc.waste - 0.5) || (rc.waste >= 2 && rn.total < rc.total - Math.max(1, 0.1 * rc.total))) { week.src[k] = "nf"; week.alt[k] = { cost: rc.cost, left: rc.left }; }
     }
   }
   // "Sauce it up": one spoonful of something on a meal for variety, counted in the day's calories.
