@@ -1,8 +1,22 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="96" fill="#E8402F"/>
-  <g fill="#C22A1C">
-    <path d="M256 560 L-40 0 L40 0 Z"/><path d="M256 560 L120 0 L200 0 Z"/><path d="M256 560 L280 0 L360 0 Z"/><path d="M256 560 L440 0 L520 0 Z"/>
+  <!-- Big Box Diet: an open cereal box, printed with the colour plates a hair off the black key plate -->
+  <rect width="512" height="512" rx="96" fill="#1F4C9E"/>
+  <g transform="translate(10 -8)">
+    <path d="M136 190 L376 190 L392 112 L120 112 Z" fill="#F7CF4F"/>
+    <path d="M116 250 L136 190 L64 146 L34 214 Z" fill="#A91D23"/>
+    <path d="M396 250 L376 190 L448 146 L478 214 Z" fill="#A91D23"/>
+    <path d="M136 190 L376 190 L396 250 L116 250 Z" fill="#F2B91A"/>
+    <path d="M136 190 L116 250 L170 250 Z" fill="#D99A0B"/>
+    <path d="M376 190 L396 250 L342 250 Z" fill="#D99A0B"/>
+    <rect x="116" y="250" width="280" height="196" fill="#D3272E"/>
+    <rect x="166" y="300" width="180" height="96" rx="14" fill="#FBF4E2"/>
   </g>
-  <rect x="96" y="120" width="320" height="300" rx="28" fill="#FFC93C" stroke="#1D1B4A" stroke-width="18"/>
-  <text x="256" y="325" text-anchor="middle" font-family="Arial Black, Impact, sans-serif" font-weight="900" font-size="150" fill="#1D1B4A">BB</text>
+  <g fill="none" stroke="#1A1714" stroke-width="16" stroke-linejoin="round">
+    <path d="M136 190 L376 190 L392 112 L120 112 Z"/>
+    <path d="M116 250 L136 190 L64 146 L34 214 Z"/>
+    <path d="M396 250 L376 190 L448 146 L478 214 Z"/>
+    <path d="M136 190 L376 190 L396 250 L116 250 Z"/>
+    <rect x="116" y="250" width="280" height="196"/>
+    <rect x="166" y="300" width="180" height="96" rx="14" stroke-width="12"/>
+  </g>
 </svg>

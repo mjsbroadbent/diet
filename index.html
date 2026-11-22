@@ -270,7 +270,8 @@ button.btn:hover { filter: brightness(1.08); }
 .acct-pop { position: absolute; right: 0; top: calc(100% + 6px); z-index: 30; width: min(300px, 86vw); padding: 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink); box-shadow: 0 6px 20px rgba(0,0,0,.15); }
 .acct-pop .note { margin: 0 0 10px; }
 .acct-pop .btns { display: flex; flex-wrap: wrap; gap: 8px; }
-.acct-pop button, .acct-menu summary, #signIn { min-height: 44px; }
+.acct-pop button, .acct-menu summary, #signIn, #install { min-height: 44px; }
+.acct-menu summary, #signIn, #install { box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; }
 .gsec.kit .note { margin: 0 0 4px; }
 .cost .lead b { font-size: 34px; }
 .cost b small { font-size: 0.5em; font-family: var(--body); font-weight: 700; color: var(--muted); margin-left: 2px; }
@@ -799,34 +800,20 @@ button.btn { border-radius: 0; }
 </script>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
-<link rel="icon" href="icon-192.png" sizes="192x192" type="image/png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Big Box">
-<meta name="description" content="Pour in your stats. Get your daily targets, a full week of meals, and one Costco grocery list to buy it all.">
-<!-- Alpha, friends only: remove this noindex tag at public launch -->
-<meta name="robots" content="noindex, nofollow">
-<link rel="canonical" href="https://bigboxdiet.com/">
-<meta name="theme-color" content="#E8402F">
+<meta name="description" content="Pour in your stats. Get your daily targets, a full week of meals, and the grocery list.">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="Big Box Diet">
-<meta property="og:locale" content="en_CA">
-<meta property="og:title" content="Big Box Diet: a week of meals from one Costco shop">
-<meta property="og:description" content="Pour in your stats. Get your daily targets, a full week of meals, and one Costco grocery list to buy it all.">
-<meta property="og:url" content="https://bigboxdiet.com/">
-<meta property="og:image" content="https://bigboxdiet.com/og.jpg">
-<meta property="og:image:secure_url" content="https://bigboxdiet.com/og.jpg">
-<meta property="og:image:type" content="image/jpeg">
+<meta property="og:title" content="Big Box Diet">
+<meta property="og:description" content="Pour in your stats. Get your daily targets, a full week of meals, and the grocery list.">
+<meta property="og:url" content="https://mjsbroadbent.github.io/diet/">
+<meta property="og:image" content="https://mjsbroadbent.github.io/diet/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Big Box Diet cereal box with a bowl of chicken, rice, broccoli and berries">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Big Box Diet: a week of meals from one Costco shop">
-<meta name="twitter:description" content="Pour in your stats. Get your daily targets, a full week of meals, and one Costco grocery list to buy it all.">
-<meta name="twitter:image" content="https://bigboxdiet.com/og.jpg">
-<meta name="twitter:image:alt" content="Big Box Diet cereal box with a bowl of chicken, rice, broccoli and berries">
 <script>window.BBD_PWA = true; if ("serviceWorker" in navigator) addEventListener("load", () => navigator.serviceWorker.register("sw.js"));</script>
-<script src="sync.js?v=2"></script>
 <style>body { margin: 0; } img { max-width: 100%; }</style>
 </head>
 <body>
