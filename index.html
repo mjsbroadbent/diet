@@ -1754,7 +1754,9 @@ button.btn { border-radius: 0; }
       // More than 8% off the calories gets steep fast, so macros never pull a day past 10% (keto's carb limit pulls hardest, so steeper still)
       const far = Math.max(0, Math.abs(ek) - 0.08);
       // A small target (under 1,500 kcal) can't trade calories for protein as freely: going over counts double
-      let s = (ek > 0 && T.k < 1500 ? 12 : 6) * ek * ek + (T.keto ? 400 : 60) * far * far + (ep < 0 ? 4 : T.kid ? 0.1 : 1) * ep * ep + ef * ef;
+      // Protein more than 8% short gets steep too, so a high-protein target picks leaner proteins or a shake over a near miss
+      const pShort = T.kid ? 0 : Math.max(0, -ep - 0.08);
+      let s = (ek > 0 && T.k < 1500 ? 12 : 6) * ek * ek + (T.keto ? 400 : 60) * far * far + (ep < 0 ? 4 : T.kid ? 0.1 : 1) * ep * ep + 25 * pShort * pShort + ef * ef;
       if (T.keto) { const over = Math.max(0, (c - fib - T.c) / T.c); s += 5 * over * over; }
       else { const ec = (c - T.c) / T.c; s += ec * ec; }
       return s;
@@ -2378,6 +2380,20 @@ button.btn { border-radius: 0; }
     const old = savedInputs(saved);
     return !!old && Object.keys(cur).every((f) => !(f in old) || JSON.stringify(old[f] ?? null) === JSON.stringify(cur[f] ?? null));
   }
+  // Rules a saved week is checked against once (bump when a release adds a hard menu rule): Sometimes is a weekly ceiling,
+  // and everyone at a shared meal can eat it or has their own version
+  const RULES_V = 1;
+  function breaksRules(w) {
+    if (!w.days.every((d) => d.ids.every((id) => MEAL[id]))) return false;
+    const f = {};
+    for (const d of w.days) for (const id of d.ids) {
+      const m = MEAL[id];
+      if (m.out || (m.type !== "l" && m.type !== "d")) continue;
+      if (ctx.house?.others.some((o) => !ctx.twinsFor(m, o).length)) return true;
+      if (ctx.prots?.[m.main] === 1) f[m.main] = (f[m.main] || 0) + 1;
+    }
+    return Object.values(f).some((c) => c > ctx.protCeil);
+  }
   // A saved meal this release no longer has: swap in the closest fit for that slot, keep the rest of the day, and say so
   function mendWeek(w) {
     const gone = [], fix = new Set();
@@ -2407,11 +2423,14 @@ button.btn { border-radius: 0; }
     const key = inputsKey(s, r);
     const saved = ls.get("ad-week");
     saved?.days?.forEach((d) => d.ids.forEach((id) => id[0] === "x" && customMeal(+id.slice(1))));
-    // A saved week survives a site update unchanged unless the person changed their inputs or shuffled
-    if (!force && saved?.days && saved.seed === seed && (saved.key === key || sameInputs(saved, inputsOf(s, r)))) {
+    // A saved week survives a site update unchanged unless the person changed their inputs or shuffled,
+    // or it breaks a rule this release added (checked once): then it's planned again, keeping the days already eaten
+    const keepSaved = !force && saved?.days && saved.seed === seed && (saved.key === key || sameInputs(saved, inputsOf(s, r)));
+    const broke = keepSaved && saved.rulesV !== RULES_V && breaksRules(saved);
+    if (keepSaved && !broke) {
       week = saved;
-      const migrated = week.key !== key, mended = mendWeek(week);
-      week.key = key; week.inputs = inputsOf(s, r);
+      const migrated = week.key !== key || week.rulesV !== RULES_V, mended = mendWeek(week);
+      week.key = key; week.inputs = inputsOf(s, r); week.rulesV = RULES_V;
       if (mended || !week.extra || !!week.sauceOn !== !!ctx.sauce) { finishUp(); ls.set("ad-week", week); }
       else if (migrated) ls.set("ad-week", week);
     }
@@ -2424,7 +2443,7 @@ button.btn { border-radius: 0; }
         const b2 = buildWeek(ctx, seed + k * 7919);
         if (!b2.error && weekShop(ctx, b2.days).waste < weekShop(ctx, b.days).waste) b = b2;
       }
-      week = b.error ? { error: b.error } : { key, inputs: inputsOf(s, r), seed, days: b.days };
+      week = b.error ? { error: b.error } : { key, inputs: inputsOf(s, r), seed, days: b.days, rulesV: RULES_V, ...(broke ? { replanNote: "Your week was planned again to fit your protein and household settings. Days you've marked done stay as they were." } : {}) };
       if (!b.error) {
         // Days marked done stay exactly as eaten
         prev?.days?.forEach((d, i) => { if (d.passed && d.ids.every((id) => MEAL[id])) week.days[i] = d; });
@@ -2489,7 +2508,7 @@ button.btn { border-radius: 0; }
   }
   // Test hook for tests/harness.mjs: build a week from given settings and seed, without touching saved data
   window.__bbd = {
-    MEAL, ING, pieceStep, compute, context, dayData, shopStats, fzOf: (days) => freezerPeak(days.map(dayNeed)), fzAt: () => freezerPeak.at, freezerPeak, allowed, read, buildWeek, optimize, weekShop,
+    MEAL, ING, pieceStep, compute, context, dayData, shopStats, freezerPeak, allowed, read, buildWeek, optimize, weekShop,
     // pan: what's already in the pantry (a chained week starts from carry())
     run(over, sd, pan) {
       const s = { ...read(), ...over, course: { ...read().course, ...(over.course || {}) } };
@@ -3314,6 +3333,7 @@ button.btn { border-radius: 0; }
     if (unmatched.length) notes.push(`No built-in recipes use ${unmatched.join(", ")} yet.`);
     if (week.note) notes.push(week.note);
     if (week.mendNote) notes.push(week.mendNote);
+    if (week.replanNote) notes.push(week.replanNote);
     if (week.finished?.length) notes.push(`You'd nearly finish the ${week.finished.map((k) => ING[k][0].toLowerCase().replace(/ \(.*\)/, "").split(",")[0]).join(", ").replace(/, ([^,]*)$/, " and $1")} this week, so the last bit is spread over the meals that use it and those calories are counted.`);
     warn.hidden = !notes.length; warn.textContent = notes.join(" ");
 

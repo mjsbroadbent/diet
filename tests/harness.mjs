@@ -235,7 +235,7 @@ if (!only || "saved".includes(only.toLowerCase())) {
     const old = JSON.parse(st["ad-week"]);
     const changed = old.days.flatMap((d, i) => d.ids.map((id, j) => (now?.days?.[i]?.ids[j] === id ? null : `day ${i + 1} meal ${j + 1}: ${id} -> ${now?.days?.[i]?.ids[j]}`)).filter(Boolean));
     const gone = old.days.flatMap((d) => d.ids).filter((id) => /m99999/.test(id)).length;
-    saved.push({ f, changed, gone, note: now?.mendNote || "" });
+    saved.push({ f, changed, gone, note: now?.mendNote || "", replan: now?.replanNote || "", broken: f.includes("-broken") });
     await ctx2.close();
   }
 }
@@ -278,7 +278,9 @@ if (chains.length) {
 }
 if (saved.length) {
   console.log(`\nSaved weeks from earlier builds, loaded by this one:`);
-  saved.forEach(({ f, changed, gone, note }) => {
+  // A "-broken" fixture breaks a rule added since (tofu every lunch and dinner with tofu at Sometimes): it's planned again, with a note
+  saved.forEach(({ f, changed, gone, note, replan, broken }) => {
+    if (broken) { const ok = changed.length > 0 && !!replan; if (!ok) hardFail++; console.log(`${ok ? " ok " : "FAIL"}  ${f}: ${changed.length} meals planned again${replan ? ", noted" : ", no note"}`); return; }
     const ok = changed.length === gone && (!gone || note);
     if (!ok) hardFail++;
     console.log(`${ok ? " ok " : "FAIL"}  ${f}: ${changed.length ? changed.join("; ") : "unchanged"}${gone ? ` (${gone} meal no longer on the menu${note ? ", noted" : ", no note"})` : ""}`);
