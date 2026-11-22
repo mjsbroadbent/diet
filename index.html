@@ -4344,7 +4344,8 @@ button.btn { border-radius: 0; }
   // Pantry starter kit: long-life staples ranked by how many of this person's meals they open up per dollar.
   // A meal counts by how much the planner wants it (appeal, proteins you eat, your ratings), so a staple behind
   // well-liked meals ranks above one behind meals you'd rarely see. Sauces also count the meals "Sauce it up" can dress with them.
-  // Returns [{ k, name, meals, price, perDollar }], best first, leaving out what's already ticked or in the pantry.
+  // Returns [{ k, name, meals, week, price, perDollar }], best first, leaving out what's already ticked or in the pantry.
+  // meals counts every meal variant you could get (library-sized); week counts this week's meals that use it.
   function starterKit(n = 8) {
     if (!ctx?.pools) return [];
     const meals = [...new Set(["b", "l", "d", "s"].flatMap((t) => ctx.pools[t] || []))];
@@ -4361,7 +4362,10 @@ button.btn { border-radius: 0; }
         w += ctx.want(m) * (uses ? 1 : 0.3);
         if (uses) c++;
       });
-      if (w > 0) out.push({ k, name: stapleName(k), meals: c, price: Math.round(P.price * 100) / 100, perDollar: w / P.price });
+      // week: how many of this week's meals (yours and everyone's own) use it, for display
+      let wk = 0;
+      (week?.days || []).forEach((d) => { d.ids.forEach((id) => { if (MEAL[id].items.some(([x]) => x === k)) wk++; }); (d.own || []).forEach((o) => o.ids.forEach((id) => { if (MEAL[id].items.some(([x]) => x === k)) wk++; })); });
+      if (w > 0) out.push({ k, name: stapleName(k), meals: c, week: wk, price: Math.round(P.price * 100) / 100, perDollar: w / P.price });
     }));
     return out.sort((a, b) => b.perDollar - a.perDollar).slice(0, n);
   }
