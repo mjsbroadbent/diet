@@ -200,13 +200,27 @@ button.btn:hover { filter: brightness(1.08); }
 .meal summary { cursor: pointer; color: var(--muted); font-size: 12.5px; }
 .meal ul { margin: 6px 0; padding-left: 18px; display: grid; gap: 2px; font-variant-numeric: tabular-nums; }
 .meal p { margin: 4px 0 0; color: var(--muted); }
-.grocery { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
+.grocery { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); gap: 14px; }
 .gsec { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; min-width: 0; }
 .gsec h3 { font-family: var(--display); font-weight: 800; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin: 0 0 6px; }
-.gsec label { display: grid; grid-template-columns: auto 1fr; gap: 8px; align-items: start; padding: 4px 0; font-size: 14px; cursor: pointer; }
-.gsec input { accent-color: var(--accent); margin-top: 3px; }
+/* Grocery rows: the whole row ticks (44 px tall at least); row actions sit behind a menu button */
+.gi { display: grid; grid-template-columns: minmax(0, 1fr) 44px; align-items: start; border-top: 1px solid var(--line); }
+.gsec h3 + .gi { border-top: 0; }
+.gl { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 10px; align-items: start; min-height: 44px; padding: 10px 0; font-size: 14px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.gl input { width: 22px; height: 22px; margin: 0; accent-color: var(--accent); cursor: pointer; }
 .gsec small { display: block; color: var(--muted); font-size: 12.5px; font-variant-numeric: tabular-nums; }
-.gsec label:has(input:checked) span { text-decoration: line-through; color: var(--muted); }
+.gi:has(.gl input:checked) .gl > span { text-decoration: line-through; color: var(--muted); }
+.gi:has(.gl input:checked) .gl > span .keep { opacity: .6; }
+.gm { position: relative; }
+.gm summary { list-style: none; width: 44px; height: 44px; display: grid; place-items: center; cursor: pointer; border-radius: 8px; color: var(--muted); font-size: 22px; line-height: 1; font-weight: 800; }
+.gm summary::-webkit-details-marker { display: none; }
+.gm summary:hover, .gm[open] summary { color: var(--ink); background: var(--accent-soft); }
+.gpop { position: absolute; right: 0; top: 44px; z-index: 20; min-width: 210px; display: grid; padding: 4px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 8px 24px rgba(0, 0, 0, .18); }
+.gpop button, .gpop a { display: flex; align-items: center; min-height: 44px; padding: 0 12px; font: inherit; font-size: 14px; font-weight: 600; text-align: left; color: var(--ink); background: none; border: 0; border-radius: 6px; cursor: pointer; text-decoration: none; }
+.gpop button:hover, .gpop a:hover { background: var(--accent-soft); }
+.gbar { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; }
+.gbar .note { margin-right: auto; }
+.gbar .ghost { min-height: 44px; }
 
 /* Plain skins ("boring UI"): calm tokens, no box-front art */
 :root[data-skin="light"], :root[data-skin="dark"] { --shadow: none; --display: "Libre Franklin", system-ui, -apple-system, "Segoe UI", sans-serif; }
@@ -417,6 +431,11 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
 .swap:hover { background: var(--ink); color: var(--bg); border-color: var(--ink); }
 .gsec h3 { color: var(--red); font-weight: 900; font-family: var(--slant); font-style: italic; text-transform: uppercase; }
 .gsec input { accent-color: var(--red); }
+.gi { border-top: 2px dashed var(--line); }
+.gsec h3 + .gi { border-top: 0; }
+.gpop { border: 3px solid var(--ink); border-radius: 4px; box-shadow: 4px 4px 0 var(--ink); }
+.gpop button, .gpop a { font-weight: 800; border-radius: 0; }
+.gm summary { border-radius: 4px; }
 .tag { border: 2px solid var(--ink); font-weight: 700; background: var(--accent-soft); }
 #likesTags .tag { background: #E3ECFF; color: var(--blue); border-color: var(--blue); }
 #avoidTags .tag { border-color: var(--bad); }
@@ -884,6 +903,10 @@ button.btn { border-radius: 0; }
     <div class="cost" id="cost" hidden></div>
     <p class="note" id="hiddenItems" hidden></p>
     <p class="note" id="haveItems" hidden></p>
+    <div class="gbar" id="gbar" hidden>
+      <p class="note" id="gCount" aria-live="polite"></p>
+      <button type="button" class="ghost" id="untick">Untick all</button>
+    </div>
     <div class="grocery" id="grocery"></div>
   </section>
 
@@ -2770,7 +2793,7 @@ button.btn { border-radius: 0; }
   function renderMenu() {
     const days = $("days"), warn = $("menuWarn");
     if (!week || week.error) {
-      days.innerHTML = ""; $("grocery").innerHTML = ""; $("cost").hidden = true; $("leftSec").hidden = true;
+      days.innerHTML = ""; $("grocery").innerHTML = ""; $("gbar").hidden = true; $("cost").hidden = true; $("leftSec").hidden = true;
       warn.hidden = false; warn.textContent = week?.error || "";
       renderHidden();
       mealSplitHTML = ""; if ($("mealSplit")) $("mealSplit").innerHTML = ""; $("miniMeals").innerHTML = "";
@@ -2958,12 +2981,29 @@ button.btn { border-radius: 0; }
         else if (x.dry) amt = `${mass(g * x.dry)} dry (${mass(g)} cooked)`;
         else if (x.each) amt = `${Math.max(1, Math.ceil(g / x.each - 0.15))} (about ${mass(g)})`;
         else amt = mass(g, x.ml ? "ml" : "g");
-        return `<label><input type="checkbox" id="g-${k}" data-k="${k}" ${checked.has(k) ? "checked" : ""}><span>${name}<small>${amt}</small>
-          <button type="button" class="ghost small" data-have="${k}">Already have it</button></span></label>`;
+        return gRow(k, checked.has(k), name, `<small>${amt}</small>`, [`<button type="button" data-have="${k}">Already have it</button>`]);
       }).join("");
       box.append(div);
     });
+    gCount();
   }
+  // One grocery row: tapping anywhere on it ticks it; the actions open from the ⋯ button
+  function gRow(k, on, title, sub, acts) {
+    const plain = title.replace(/<[^>]+>/g, "").trim();
+    return `<div class="gi"><label class="gl"><input type="checkbox" data-k="${k}" ${on ? "checked" : ""}><span>${title}${sub}</span></label>`
+      + `<details class="gm"><summary aria-label="More for ${plain.replace(/"/g, "&quot;")}" title="More"><span aria-hidden="true">⋯</span></summary><div class="gpop">${acts.join("")}</div></details></div>`;
+  }
+  function gCount() {
+    const all = $("grocery").querySelectorAll(".gl input"), n = [...all].filter((i) => i.checked).length;
+    $("gbar").hidden = !all.length;
+    $("gCount").textContent = all.length ? (n === all.length ? `All ${n} ticked off.` : `${n} of ${all.length} ticked off`) : "";
+    $("untick").hidden = ![...all].some((i) => i.checked && !i.closest(".gi").querySelector("[data-unhave]"));
+  }
+  // Close a row menu when another opens, on a tap outside it, or after picking an action
+  document.addEventListener("click", (e) => {
+    document.querySelectorAll(".gm[open]").forEach((d) => { if (!d.contains(e.target) || e.target.closest(".gpop button, .gpop a")) d.open = false; });
+  });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") document.querySelectorAll(".gm[open]").forEach((d) => { d.open = false; d.querySelector("summary").focus(); }); });
   document.addEventListener("click", (e) => {
     const b = e.target.closest("[data-sauce]");
     if (!b) return;
@@ -3041,10 +3081,10 @@ button.btn { border-radius: 0; }
         const need = `uses ${mass(r.used, u)}${dry(r.k)}`;
         const buy = r.packs ? `${r.packs > 1 ? r.packs + " packs · " : ""}${need}${r.inPantry ? `, ${mass(r.inPantry, u)} from your pantry` : ""}` : `<span class="pantry">In your pantry</span> · ${need}`;
         const alt = r.nf && week.alt?.[r.k] ? `<span class="why">Smaller size beats the Costco pack (${COSTCO[r.k][0]}, ${money(week.alt[r.k].cost)}), which would leave ${mass(week.alt[r.k].left, u)}${dry(r.k)} over.</span>` : r.nf ? `<span class="why">Not at Costco.</span>` : "";
-        return `<label><input type="checkbox" data-k="${r.k}" ${checked.has(r.k) || !r.packs ? "checked" : ""}><span><span class="row2"><span>${r.nf ? `<span class="store-nf">No Frills</span> ` : ""}${r.prod}</span><span class="price">${r.packs ? money(r.cost) : ""}</span></span>
-          <small>${buy}<span class="keep ${r.keep}" title="${KEEP[r.keep][1]}">${KEEP[r.keep][0]}</span>${alt}</small>
-          ${r.packs ? `<button type="button" class="ghost small" data-have="${r.k}">Already have it</button>` : `<button type="button" class="ghost small" data-unhave="${r.k}">Don't have it</button>`}
-          ${r.nf ? "" : `<button type="button" class="ghost small" data-nostock="${r.k}">Not at my Costco</button>`}</span></label>`;
+        return gRow(r.k, checked.has(r.k) || !r.packs, `<span class="row2"><span>${r.nf ? `<span class="store-nf">No Frills</span> ` : ""}${r.prod}</span><span class="price">${r.packs ? money(r.cost) : ""}</span></span>`,
+          `<small>${buy}<span class="keep ${r.keep}" title="${KEEP[r.keep][1]}">${KEEP[r.keep][0]}</span>${alt}</small>`,
+          [r.packs ? `<button type="button" data-have="${r.k}">Already have it</button>` : `<button type="button" data-unhave="${r.k}">Don't have it</button>`,
+           r.nf ? "" : `<button type="button" data-nostock="${r.k}">Not at my Costco</button>`]);
       }).join("");
       box.append(div);
     });
@@ -3052,6 +3092,7 @@ button.btn { border-radius: 0; }
       e.preventDefault();
       nostock.add(b.dataset.nostock); ls.set("ad-nostock", [...nostock]); update(true);
     }));
+    gCount();
 
     // Leftovers
     $("leftSec").hidden = false;
@@ -3091,6 +3132,12 @@ button.btn { border-radius: 0; }
     const set = new Set(ls.get("ad-checked") || []);
     e.target.checked ? set.add(k) : set.delete(k);
     ls.set("ad-checked", [...set]);
+    gCount();
+  });
+  $("untick").addEventListener("click", () => {
+    ls.set("ad-checked", []);
+    $("grocery").querySelectorAll(".gl input").forEach((i) => { if (!i.closest(".gi").querySelector("[data-unhave]")) i.checked = false; });
+    gCount();
   });
 
   // ---------- Wiring ----------
