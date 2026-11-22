@@ -266,15 +266,19 @@ button.btn:hover { filter: brightness(1.08); }
 .steps button[aria-current="step"] { color: var(--ink); border-color: var(--accent); }
 .steps button[aria-current="step"] b { background: var(--accent); color: var(--on-accent); }
 .steps button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
-html[data-step="you"] [data-step]:not([data-step~="you"]), html[data-step="week"] [data-step]:not([data-step~="week"]), html[data-step="shop"] [data-step]:not([data-step~="shop"]) { display: none !important; }
+html[data-step="you"] [data-step]:not([data-step~="you"]), html[data-step="pantry"] [data-step]:not([data-step~="pantry"]), html[data-step="week"] [data-step]:not([data-step~="week"]), html[data-step="shop"] [data-step]:not([data-step~="shop"]) { display: none !important; }
 .step-next { display: flex; justify-content: flex-end; }
+.staples { display: grid; gap: 16px; }
+.staples h3 { margin: 0 0 8px; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+.staples .chip span { font-size: 14px; }
+.step-next { gap: 10px; }
 @media (max-width: 820px) {
   .steps { position: fixed; left: 0; right: 0; bottom: 0; z-index: 45; gap: 4px; padding: 6px max(8px, env(safe-area-inset-left)) calc(env(safe-area-inset-bottom) + 6px); background: var(--surface); border-top: 1px solid var(--line); box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08); }
   .steps button { gap: 6px; min-height: 46px; padding: 4px; border: 0; border-radius: 10px; font-size: 14px; }
   .steps button[aria-current="step"] { background: var(--accent-soft, var(--bg)); }
   body { padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
   html[data-step="week"] aside, html[data-step="shop"] aside { display: none; }
-  .step-next .btn { width: 100%; min-height: 48px; }
+  .step-next .btn, .step-next .ghost { flex: 1; min-height: 48px; }
 }
 .topbar { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; justify-content: space-between; }
 .topbar .seg span { padding: 6px 12px; font-size: 13px; }
@@ -699,6 +703,9 @@ button.btn { border-radius: 0; }
 /* The fine print: the small type on the side panel of a box */
 .fine { max-width: none; padding: 16px 20px; border: 2px solid var(--ink); background: var(--surface); box-shadow: 4px 4px 0 var(--ink); color: var(--ink); }
 .fine h2 { font-family: var(--display); font-weight: 400; font-size: 20px; letter-spacing: 0.04em; border-bottom: 3px solid var(--ink); padding-bottom: 4px; }
+
+/* Pantry step: shelf labels */
+.staples h3 { font-family: var(--label); color: var(--red); font-weight: 900; font-style: italic; letter-spacing: 0.03em; }
 </style>
 <style id="quiet">
 /* Quiet interior (all skins): body text in the day cards and the grocery list is at least 14 px.
@@ -711,8 +718,8 @@ button.btn { border-radius: 0; }
 <script>
   (function () { var k; try { k = JSON.parse(localStorage.getItem("ad-skin")); } catch (e) {} k = k === "light" || k === "dark" ? k : "cereal";
     document.documentElement.dataset.skin = k; document.getElementById("skin-cereal").media = k === "cereal" ? "all" : "not all";
-    var st = (location.hash || "").slice(1); if (!/^(you|week|shop)$/.test(st)) { try { st = JSON.parse(localStorage.getItem("ad-step")); } catch (e) {} }
-    document.documentElement.dataset.step = /^(you|week|shop)$/.test(st) ? st : "you"; })();
+    var st = (location.hash || "").slice(1); if (!/^(you|pantry|week|shop)$/.test(st)) { try { st = JSON.parse(localStorage.getItem("ad-step")); } catch (e) {} }
+    document.documentElement.dataset.step = /^(you|pantry|week|shop)$/.test(st) ? st : "you"; })();
 </script>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
@@ -756,8 +763,9 @@ button.btn { border-radius: 0; }
 
   <nav class="steps" id="steps" aria-label="Steps">
     <button type="button" data-go="you"><b>1</b><span>You</span></button>
-    <button type="button" data-go="week"><b>2</b><span>Week</span></button>
-    <button type="button" data-go="shop"><b>3</b><span>Shop</span></button>
+    <button type="button" data-go="pantry"><b>2</b><span>Pantry</span></button>
+    <button type="button" data-go="week"><b>3</b><span>Week</span></button>
+    <button type="button" data-go="shop"><b>4</b><span>Shop</span></button>
   </nav>
 
   <div class="grid">
@@ -926,7 +934,18 @@ button.btn { border-radius: 0; }
       </details>
     </aside>
   </div>
-  <div class="step-next" data-step="you"><button type="button" class="btn" data-go="week">Next: your week</button></div>
+  <div class="step-next" data-step="you"><button type="button" class="btn" data-go="pantry">Next: your pantry</button></div>
+
+  <section class="menu pantry" aria-labelledby="pantryTitle" data-step="pantry">
+    <div class="menu-head">
+      <div>
+        <h2 class="sec" id="pantryTitle">Your pantry</h2>
+        <p>Tick the staples you already have. They keep for months, so the grocery list won't buy them and the menu leans on them. Skip this if you'd rather start from scratch.</p>
+      </div>
+    </div>
+    <div class="staples" id="staples"></div>
+  </section>
+  <div class="step-next" data-step="pantry"><button type="button" class="ghost" data-go="week">Skip</button><button type="button" class="btn" data-go="week">Next: your week</button></div>
 
   <section class="menu" aria-labelledby="menuTitle" data-step="week">
     <div class="menu-head">
@@ -3597,7 +3616,7 @@ button.btn { border-radius: 0; }
   ls.set("ad-seed", seed);
   // ---------- Steps: You, Week, Shop ----------
   function goStep(k, scroll) {
-    if (!/^(you|week|shop)$/.test(k)) k = "you";
+    if (!/^(you|pantry|week|shop)$/.test(k)) k = "you";
     document.documentElement.dataset.step = k;
     document.querySelectorAll("#steps [data-go]").forEach((b) => (b.dataset.go === k ? b.setAttribute("aria-current", "step") : b.removeAttribute("aria-current")));
     ls.set("ad-step", k);
@@ -3610,6 +3629,38 @@ button.btn { border-radius: 0; }
   }
   document.addEventListener("click", (e) => { const b = e.target.closest("[data-go]"); if (b) goStep(b.dataset.go, true); });
   goStep(document.documentElement.dataset.step);
+  // ---------- Pantry step: staples you already have ----------
+  // Long-life staples, a curated subset of the STAPLE set. Ticked ones count as a full pack in the pantry (Costco mode) and as "already have it" (any store).
+  const STAPLES = [
+    ["Oils and sauces", ["oil", "soysauce", "tamari", "sriracha", "hotsauce", "bbq", "teriyaki", "sweetchili", "dijon", "satay", "salsa", "marinara", "pesto", "oyster", "chilicrunch", "mayo", "balsglaze"]],
+    ["Spices and seasonings", ["montreal", "montchick", "tacoseas", "garlicparm", "everything", "tajin", "nosalt", "italian", "smpaprika"]],
+    ["Spreads and sweeteners", ["pb", "ab", "honey", "maple"]],
+    ["Protein powder", ["whey", "pea"]],
+    ["Grains and pasta", ["oats", "wrice", "brice", "quinoa", "pasta", "spaghetti", "shortpasta"]],
+    ["Cans, broth and seeds", ["cantom", "chickpeas", "blackbeans", "tuna", "cchicken", "broth", "coco", "chia", "pepitas"]],
+  ].map(([h, ks]) => [h, ks.filter((k) => ING[k])]);
+  const staples = new Set(ls.get("ad-staples") || []);
+  const stapleName = (k) => ING[k][0].replace(/ \((cooked|dry|canned, drained|canned or cooked|canned)\)/, "").replace(/, drained$/, "");
+  function applyStaples() {
+    staples.forEach((k) => {
+      if (!ING[k]) return;
+      let z = 0; try { z = pk(k).size; } catch {}
+      if (z) pantry[k] = Math.max(pantry[k] || 0, z);
+      have.add(k);
+    });
+    ls.set("ad-pantry", pantry); ls.set("ad-have", [...have]);
+  }
+  $("staples").innerHTML = STAPLES.map(([h, ks]) => `<div><h3>${h}</h3><div class="chips">${ks.map((k) =>
+    `<label class="chip"><input type="checkbox" data-staple="${k}"${staples.has(k) ? " checked" : ""}><span>${stapleName(k)}</span></label>`).join("")}</div></div>`).join("");
+  $("staples").addEventListener("change", (e) => {
+    const k = e.target.dataset.staple; if (!k) return;
+    if (e.target.checked) staples.add(k);
+    else { staples.delete(k); delete pantry[k]; have.delete(k); }
+    ls.set("ad-staples", [...staples]);
+    applyStaples();
+    if (week && !week.error) renderMenu();
+  });
+  applyStaples();
   restoreInputs(); syncFlav();
   showStore(); showOut();
   setUnits(radio("units"), false);
