@@ -2459,7 +2459,7 @@ button.btn { border-radius: 0; }
   const TICKS = { effort: ["10 min", "25 min", "45 min"], variety: ["Same", "2", "3", "5", "Daily"] };
   const slider = (k, c, L, def) => `<div class="sl"><input type="range" min="0" max="${L.length - 1}" step="1" id="${k}-${c.t}" value="${L.findIndex(([v]) => v === def)}" aria-label="${c.name} ${k}">
         <div class="ticks" aria-hidden="true">${TICKS[k].map((t, j, a) => `<span style="--p:${j / (a.length - 1)}">${t}</span>`).join("")}</div></div>`;
-  const SLOT_TYPE = { Breakfast: "b", Lunch: "l", Dinner: "d", Snack: "s", Treat: "h" };
+  const SLOT_TYPE = { Breakfast: "b", Lunch: "l", Dinner: "d", Snack: "s", Treat: "h", "Extra meal": "b" };
   const TREAT_COURSE = { effort: 999, variety: 7 };
   const DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
   // Meals stay within ¾ to 1½ of a normal portion; a bigger appetite gets an extra snack instead of a giant plate
@@ -2747,7 +2747,9 @@ button.btn { border-radius: 0; }
       const ep = (p - T.p) / T.p;
       const ef = (f - T.f) / T.f;
       // Children: protein is a floor; going over it barely counts
-      let s = 6 * ek * ek + (ep < 0 ? 4 : T.kid ? 0.1 : 1) * ep * ep + ef * ef;
+      // More than 8% off the calories gets steep fast, so macros never pull a day past 10%
+      const far = Math.max(0, Math.abs(ek) - 0.08);
+      let s = 6 * ek * ek + 60 * far * far + (ep < 0 ? 4 : T.kid ? 0.1 : 1) * ep * ep + ef * ef;
       if (T.keto) { const over = Math.max(0, (c - fib - T.c) / T.c); s += 5 * over * over; }
       else { const ec = (c - T.c) / T.c; s += ec * ec; }
       return s;
@@ -2947,18 +2949,22 @@ button.btn { border-radius: 0; }
         }
         if (!best || s < best.s) best = { ids: picked.map((m) => m.id), ms: o.ms, s, c: ctx.costco ? packCost(picked, o.ms)[0] / INSTORE : 0 };
       }
-      // Portions top out at 1½, so a day that still falls short gets an extra snack (a shake or similar)
-      if (pools.s?.length) {
+      // Portions top out at 1½, so a day that still falls short gets more eating occasions, up to three:
+      // extra snacks (a shake or similar) or, when it is far short, a 4th meal from the breakfast list
+      for (let extra = 0; extra < 3; extra++) {
         const kc = best.ids.reduce((a, id, i) => a + stepN(MEAL[id], best.ms[i])[0], 0);
-        if (kc < 0.93 * T.k) {
-          let add = null;
-          for (const m of pools.s.filter((m) => !best.ids.includes(m.id))) {
-            const ms = [...best.ids.map((id) => MEAL[id]), m];
-            const o = optimize(ms, T, score), sc = o.s + ctx.appealScore(ms);
-            if (!add || sc < add.sc) add = { m, ms: o.ms, sc };
-          }
-          if (add) { best.ids = [...best.ids, add.m.id]; best.ms = add.ms; best.slots = [...slots, "Snack"]; best.s += add.sc - best.s; }
+        if (kc >= 0.95 * T.k) break;
+        const sl0 = best.slots || slots;
+        const cands = [...(pools.s || []).map((m) => [m, "Snack"]), ...(T.k - kc > 450 && !sl0.includes("Extra meal") ? (pools.b || []).map((m) => [m, "Extra meal"]) : [])];
+        let add = null;
+        for (const [m, sl] of cands) {
+          if (best.ids.includes(m.id)) continue;
+          const ms = [...best.ids.map((id) => MEAL[id]), m];
+          const o = optimize(ms, T, score), sc = o.s + ctx.appealScore(ms);
+          if (!add || sc < add.sc) add = { m, sl, ms: o.ms, sc };
         }
+        if (!add) break;
+        best.ids = [...best.ids, add.m.id]; best.ms = add.ms; best.slots = [...sl0, add.sl]; best.s = add.sc;
       }
       spent += best.c;
       best.ids.forEach((id) => { uses[id] = (uses[id] || 0) + 1; chosen[MEAL[id].type].add(akey(MEAL[id])); if (!MEAL[id].out) servedAs[dishOf(MEAL[id])] ||= MEAL[id].type; });
@@ -3415,8 +3421,11 @@ button.btn { border-radius: 0; }
         // Meals that carry a top-up keep their portion; the others make room
         const keep = new Set(Object.keys(week.extra).filter((key) => +key.split(":")[0] === di).map((key) => +key.split(":")[1]));
         const t = dayT(d), meals = [...d.ids.map((id, i) => (keep.has(i) ? { ...MEAL[id], type: "o", n: stepN(MEAL[id], d.ms[i]), items: [] } : MEAL[id])), { type: "o", n: nutr(items) }];
-        const ms = optimize(meals, t, makeScorer(t), [...d.ids.map((id, i) => (keep.has(i) ? 1 : d.ms[i])), 1]).ms;
-        d.ms = d.ms.map((x, i) => (keep.has(i) ? x : ms[i]));
+        const o = optimize(meals, t, makeScorer(t), [...d.ids.map((id, i) => (keep.has(i) ? 1 : d.ms[i])), 1]);
+        // Unless that leaves the day more than 10% over: then every meal makes room, and the next pass tops up what's left
+        const kc = o.ms.reduce((a, x, i) => a + (meals[i].type === "o" ? meals[i].n[0] : stepN(meals[i], x)[0]), 0);
+        if (kc > 1.1 * t.k) d.ms = optimize([...d.ids.map((id) => MEAL[id]), { type: "o", n: nutr(items) }], t, makeScorer(t), [...d.ms, 1]).ms.slice(0, d.ids.length);
+        else d.ms = d.ms.map((x, i) => (keep.has(i) ? x : o.ms[i]));
       });
     }
     // Extras and re-portioning changed the shared plates, so everyone else's own meals are fitted again
@@ -3893,7 +3902,7 @@ button.btn { border-radius: 0; }
     const sum = {};
     all.forEach((d, di) => d.meals.forEach((x, i) => {
       const sl = slotsOf(week.days[di])[i] || "";
-      const k = sl === "Snack" ? "Snacks" : x.m.out ? "Dinner" : sl;
+      const k = sl === "Snack" || sl === "Extra meal" ? "Snacks" : x.m.out ? "Dinner" : sl;
       sum[k] = (sum[k] || 0) + x.n[0] / 7;
     }));
     const tot = Object.values(sum).reduce((a, b) => a + b, 0) || 1;
