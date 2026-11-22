@@ -18,7 +18,7 @@ const base = { units: "metric", sex: "male", age: 35, heightCm: 178, weightKg: 8
   freezer: "std", start: 0, styles: ["bowl", "sand", "plate", "classic"], mix: false, cap: 300 };
 const PROFILES = [
   { name: "Default man, lose", s: {} },
-  { name: "Woman, maintain, vegetarian", s: { sex: "female", age: 29, heightCm: 165, weightKg: 62, goal: "maintain", diets: ["Vegetarian"], snacks: "2" } },
+  { name: "Couple, vegetarian, maintain", s: { hh: { n: 2 }, sex: "female", age: 29, heightCm: 165, weightKg: 62, goal: "maintain", diets: ["Vegetarian"], snacks: "2" } },
   { name: "Vegan, 2 meals", s: { diets: ["Vegan"], meals: "2", snacks: "1", sex: "female", heightCm: 170, weightKg: 68, age: 41 } },
   { name: "Keto man", s: { diets: ["Keto"], weightKg: 95, age: 45 } },
   { name: "Gluten-free, nut allergy", s: { diets: ["Gluten-free"], avoid: "nut", prots: { beef: 0, pork: 0 }, sex: "female", heightCm: 160, weightKg: 70, age: 52 } },
@@ -56,7 +56,7 @@ const RULES = [
   { id: "prots-never", hard: true, desc: "no protein the person never eats", check: (w) => w.days.flatMap((d, i) => d.meals.filter((m) => !m.out && w.never.includes(m.main)).map((m) => `day ${i + 1}: ${m.name} [${m.main}]`)) },
   { id: "portion-size", hard: true, desc: "meal portions between 3/4 and 1 1/2", check: (w) => w.days.flatMap((d, i) => d.meals.filter((m) => "bld".includes(m.type) && !m.out && (m.mult < 0.75 || m.mult > 1.5)).map((m) => `day ${i + 1}: ${m.name} x${m.mult}`)) },
   { id: "portion-label", hard: true, desc: "portion labels in plain words", check: (w) => (w.labels.filter((t) => /\d×/.test(t)).slice(0, 3)) },
-  { id: "budget", hard: false, desc: "first shop under $300", check: (w) => (w.shop && w.shop.shop > 300 ? [`$${Math.round(w.shop.shop)}`] : []) },
+  { id: "budget", hard: false, desc: "first shop under $300 a person", check: (w) => (w.shop && w.shop.shop > 300 * w.hh ? [`$${Math.round(w.shop.shop)}`] : []) },
   { id: "waste", hard: false, desc: "no fresh food wasted ($0)", check: (w) => (w.shop && w.shop.waste > 0.005 ? [`$${Math.round(w.shop.waste)}`] : []) },
 ];
 
@@ -98,7 +98,7 @@ for (const prof of PROFILES) for (let k = 0; k < SEEDS; k++) {
     const labels = [...document.querySelectorAll("#days .mt")].map((e) => e.textContent);
     const daily = Object.fromEntries(Object.entries(ctx.course).map(([t, c]) => [t, c.variety >= 7 && "bld".includes(t)]));
     const never = Object.entries(s.prots || {}).filter(([, v]) => v === 0).map(([k]) => k);
-    return { never, T: ctx.T, days, protein, shop: B.shopStats(), labels, daily, quickDinner: ctx.course.d.effort <= 10 };
+    return { hh: ctx.hh || 1, never, T: ctx.T, days, protein, shop: B.shopStats(), labels, daily, quickDinner: ctx.course.d.effort <= 10 };
   }, { s: { ...base, ...prof.s }, seed });
   const fails = RULES.map((rule) => ({ rule, probs: rule.check(w) })).filter((x) => x.probs.length);
   results.push({ prof: prof.name, seed, w, fails });
