@@ -2782,6 +2782,8 @@ button.btn { border-radius: 0; }
     const days = [];
     // Mix and match: variety counts the kept part (protein, bowl base or bread), and what goes with it rotates
     const akey = (m) => (ctx.mix && m.anchor ? m.anchor : m.id);
+    // New pantry staples (pantry rocket): meals that use them are picked three times as often this week
+    const feat = new Set(typeof featured === "function" ? featured() : []);
     // Even share of the week for one option of a capped course (3 options: 3 servings at most before it starts to cost)
     const share = new Proxy({}, { get: (_, t) => { const v = ctx.course[t]?.variety || 7; return v > 1 && v < 7 ? Math.ceil(7 / v) : 99; } });
     // Variety: how many different recipes each course may use across the week
@@ -2831,7 +2833,7 @@ button.btn { border-radius: 0; }
         const daily = ctx.course[type].variety >= 7;
         const cum = [];
         let tot = 0;
-        avail.forEach((m) => { tot += ctx.want(m) * (liked(m) ? 3 : 1) * (ctx.gw?.[type]?.get(m.id) ?? 1) * (daily ? ((uses[m.id] || 0) >= Math.ceil(7 / avail.length) + 1 ? 0.02 : 1 / (1 + 1.5 * (uses[m.id] || 0))) : (chosen[type].has(akey(m)) ? 3 : 1) / (ctx.mix && m.anchor ? 1 + 2 * (uses[m.id] || 0) : 1 + 1.5 * Math.max(0, (uses[m.id] || 0) - share[type] + 1))); cum.push(tot); });
+        avail.forEach((m) => { tot += ctx.want(m) * (liked(m) ? 3 : 1) * (feat.size && m.items.some(([k]) => feat.has(k)) ? 3 : 1) * (ctx.gw?.[type]?.get(m.id) ?? 1) * (daily ? ((uses[m.id] || 0) >= Math.ceil(7 / avail.length) + 1 ? 0.02 : 1 / (1 + 1.5 * (uses[m.id] || 0))) : (chosen[type].has(akey(m)) ? 3 : 1) / (ctx.mix && m.anchor ? 1 + 2 * (uses[m.id] || 0) : 1 + 1.5 * Math.max(0, (uses[m.id] || 0) - share[type] + 1))); cum.push(tot); });
         return { avail, cum, tot, pool };
       });
       const sample = (D) => { const x = rand() * D.tot; let lo = 0, hi = D.cum.length - 1; while (lo < hi) { const mid = (lo + hi) >> 1; if (D.cum[mid] < x) lo = mid + 1; else hi = mid; } return D.avail[lo]; };
@@ -3450,25 +3452,33 @@ button.btn { border-radius: 0; }
   // Pick a sauce for each meal, spreading them across the week; keeps choices on meals that haven't changed
   function sauceUp() {
     week.sauceOn = !!ctx.sauce;
+    // New pantry staples that are sauces get shown off on up to 3 meals, spread over the week, even with Sauce it up off
+    const feat = (typeof featured === "function" ? featured() : []).filter((k) => SAUCE[k]);
+    const FEAT_MAX = 3;
     const used = {};
     week.days.forEach((d) => Object.values(d.sauce || {}).forEach((x) => x.k && (used[x.k] = (used[x.k] || 0) + 1)));
     week.days.forEach((d, di) => {
       if (fixedDay(d)) return;
-      if (!ctx.sauce) { delete d.sauce; return; }
+      if (!ctx.sauce && !feat.length) { delete d.sauce; return; }
       const old = d.sauce || {};
       d.sauce = {};
       d.ids.forEach((id, si) => {
-        if (old[si]?.id === id) { d.sauce[si] = old[si]; return; }
+        if (old[si]?.id === id && (ctx.sauce || feat.includes(old[si].k))) { d.sauce[si] = old[si]; return; }
         if (old[si]?.k) used[old[si].k]--;
-        const opts = sauceOptions(MEAL[id]);
-        if (!opts.length) return;
+        let opts = sauceOptions(MEAL[id]);
         const today = Object.values(d.sauce).map((x) => x.k);
+        const fopts = opts.filter((k) => feat.includes(k) && (used[k] || 0) < FEAT_MAX && !today.includes(k));
+        if (!ctx.sauce) opts = fopts;
+        if (!opts.length) return;
         const h = (k) => ((week.seed || 1) + di * 7 + si * 13 + k.length * 31) % 97;
-        const k = opts.sort((a, b) => today.includes(a) - today.includes(b) || (used[a] || 0) - (used[b] || 0) || h(a) - h(b))[0];
+        const k = opts.sort((a, b) => fopts.includes(b) - fopts.includes(a) || today.includes(a) - today.includes(b) || (used[a] || 0) - (used[b] || 0) || h(a) - h(b))[0];
         d.sauce[si] = { id, k };
         used[k] = (used[k] || 0) + 1;
       });
     });
+    // New staples this week's menu shows off (in a meal or as its sauce), for "New this week" on the page
+    const all = typeof featured === "function" ? featured() : [];
+    week.featured = all.filter((k) => week.days.some((d) => d.ids.some((id, si) => MEAL[id].items.some(([x]) => x === k) || d.sauce?.[si]?.k === k)));
   }
   function changeSauce(di, si) {
     const d = week.days[di], cur = d.sauce?.[si];
@@ -4596,6 +4606,26 @@ button.btn { border-radius: 0; }
   }
   if (window.__bbd) window.__bbd.starterKit = starterKit;
   const staples = new Set(ls.get("ad-staples") || []);
+  // ---------- Pantry rocket (engine) ----------
+  // Planets unlock one at a time: the first one not yet visited is the current stop, later ones stay locked.
+  // A staple added from the rocket (or any pantry tick) is "new" for 8 days, and new staples are featured in the menu
+  // (meals that use them are picked more, and a new sauce goes on a few meals even with Sauce it up off), so nothing sits unopened.
+  // Planet items count as pantry setup: once ticked they sit in the pantry, outside the weekly shop and its cap.
+  const visited = new Set(ls.get("ad-planets") || []);
+  const newStaples = ls.get("ad-new-staples") || {};
+  const NEW_DAYS = 8;
+  const featured = () => Object.keys(newStaples).filter((k) => staples.has(k) && ING[k] && Date.now() - newStaples[k] < NEW_DAYS * 864e5);
+  function markNewStaple(k) { if (!newStaples[k]) { newStaples[k] = Date.now(); ls.set("ad-new-staples", newStaples); } }
+  function visitPlanet(id) { visited.add(id); ls.set("ad-planets", [...visited]); }
+  // Returns [{ id, name, tag, state: "done" | "current" | "locked", keys: [{ k, name, about, have, isNew, price, est, store }] }]
+  function rocket() {
+    let cur = PLANETS.findIndex((pl) => !visited.has(pl.id));
+    if (cur < 0) cur = PLANETS.length;
+    return PLANETS.map((pl, i) => ({ id: pl.id, name: pl.name, tag: pl.tag, state: i < cur ? "done" : i === cur ? "current" : "locked",
+      keys: pl.keys.map((k) => { let P = null; try { P = pk(k); } catch {} return { k, name: stapleName(k), about: ABOUT[k] || "", have: staples.has(k) || (pantry[k] || 0) > 0, isNew: featured().includes(k),
+        price: P?.price ? Math.round(P.price * 100) / 100 : null, est: !!P?.est, store: P ? (P.est ? "elsewhere" : P.nf ? "nofrills" : "costco") : null }; }) }));
+  }
+  if (window.__bbd) Object.assign(window.__bbd, { rocket, visitPlanet, featured, addStaple: (k) => { staples.add(k); markNewStaple(k); ls.set("ad-staples", [...staples]); applyStaples(); } });
   const stapleName = (k) => ING[k][0].replace(/ \((cooked|dry|canned, drained|canned or cooked|canned)\)/, "").replace(/, drained$/, "");
   function applyStaples() {
     staples.forEach((k) => {
@@ -4610,8 +4640,8 @@ button.btn { border-radius: 0; }
     `<label class="chip"><input type="checkbox" data-staple="${k}"${staples.has(k) ? " checked" : ""}><span>${stapleName(k)}</span></label>`).join("")}</div></div>`).join("");
   function onStaple(e) {
     const k = e.target.dataset.staple; if (!k) return;
-    if (e.target.checked) staples.add(k);
-    else { staples.delete(k); delete pantry[k]; have.delete(k); }
+    if (e.target.checked) { if (!staples.has(k)) markNewStaple(k); staples.add(k); }
+    else { staples.delete(k); delete pantry[k]; have.delete(k); delete newStaples[k]; ls.set("ad-new-staples", newStaples); }
     document.querySelectorAll(`[data-staple="${k}"]`).forEach((x) => (x.checked = e.target.checked));
     ls.set("ad-staples", [...staples]);
     applyStaples();
