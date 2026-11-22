@@ -111,11 +111,6 @@ fieldset { min-inline-size: 0; }
 .ticks span:last-child { left: auto; right: 0; transform: none; }
 @media (max-width: 560px) { .sl:has([id^="variety-"]) .ticks span:not(:first-child):not(:last-child):not(.on) { font-size: 0; } .sl:has([id^="variety-"]) .ticks span:not(:first-child):not(:last-child):not(.on)::before { content: ""; display: block; width: 3px; height: 3px; margin-top: 6px; border-radius: 50%; background: currentColor; } }
 .ticks span.on { color: var(--ink); font-weight: 700; }
-.flav-pop { position: fixed; z-index: 60; display: flex; gap: 6px; padding: 6px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18); }
-.flav-pop button { padding: 8px 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); font: inherit; font-size: 14px; cursor: pointer; }
-.flav-pop button.on { border-color: var(--accent); font-weight: 700; }
-.day-tools [data-treat], [aria-label="Daily treat"] label { -webkit-user-select: none; user-select: none; }
-[aria-label="Daily treat"][data-salty] input:checked + span::after { content: " · salty"; font-size: 0.8em; }
 .fold summary { cursor: pointer; font-size: 13px; font-weight: 500; color: var(--muted); padding: 2px 0; }
 .fold summary b { color: var(--ink); font-weight: 700; margin-left: 4px; }
 .fold[open] summary { margin-bottom: 6px; }
@@ -674,11 +669,6 @@ button.btn { border-radius: 0; }
 #mix:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; }
 @media (prefers-reduced-motion: no-preference) { #mix:checked { animation: shuf .35s ease-out; } @keyframes shuf { 0% { transform: rotate(-180deg) scale(.7); } 100% { transform: rotate(4deg); } } }
 
-/* Sweet or salty picker: a little printed tab */
-.flav-pop { border: 2px solid var(--ink); border-radius: 0; background: var(--surface); box-shadow: 3px 3px 0 var(--ink); transform: rotate(-1.5deg); }
-.flav-pop button { border: 2px solid var(--ink); border-radius: 0; font-family: var(--label); text-transform: uppercase; letter-spacing: 0.03em; font-weight: 800; }
-.flav-pop button.on { background: var(--red); color: #fff; }
-.flav-pop button:hover { background: var(--blue); color: #fff; }
 
 /* Steps as three printed box flaps */
 .steps { gap: 12px; }
@@ -838,6 +828,12 @@ button.btn { border-radius: 0; }
               <label><input type="radio" name="treat" id="treat-none" value="none" checked><span>None</span></label>
               <label><input type="radio" name="treat" id="treat-h" value="h"><span>Healthy</span></label>
               <label><input type="radio" name="treat" id="treat-i" value="i"><span>Indulgent</span></label>
+            </div>
+          </div>
+          <div class="f">Treats are
+            <div class="seg" role="radiogroup" aria-label="Treat flavour">
+              <label><input type="radio" name="flav" id="flav-sweet" value="sweet" checked><span>Sweet</span></label>
+              <label><input type="radio" name="flav" id="flav-salty" value="salty"><span>Salty</span></label>
             </div>
           </div>
         </div>
@@ -2171,7 +2167,7 @@ button.btn { border-radius: 0; }
     syncSliders();
     $("slotHint").textContent = "Each day: " + slots.join(", ").toLowerCase().replace(/^./, (x) => x.toUpperCase()) + "." +
       (t === "h" ? (dailyFlav === "salty" ? " Healthy treats are salty: edamame, hummus dips, cheese and almonds." : " Healthy treats are dark chocolate or fruit.")
-        : t === "i" ? (dailyFlav === "salty" ? " Indulgent treats are salty: chips, pizza, taquitos or dumplings." : " Indulgent treats are ice cream, cookies or chocolate.") : "") + (t !== "none" ? " Hold Healthy or Indulgent to switch sweet or salty." : "") + (t !== "none" ? " The treat is a fixed portion, and the rest of the day shrinks to fit it." : "");
+        : t === "i" ? (dailyFlav === "salty" ? " Indulgent treats are salty: chips, pizza, taquitos or dumplings." : " Indulgent treats are ice cream, cookies or chocolate.") : "") + (t !== "none" ? " The treat is a fixed portion, and the rest of the day shrinks to fit it." : "");
   }
 
   let isExample = true;
@@ -2993,9 +2989,8 @@ button.btn { border-radius: 0; }
         <button type="button" class="treat-i" data-treat="i" title="Ice cream or cookies"><span class="emo" aria-hidden="true">🍦</span><span class="w">Cheat</span> <span class="w">treat</span></button>
         <button type="button" data-pass title="Freeze this day as eaten, so the rest of the week balances around it"><span class="emo" aria-hidden="true">${wd.passed ? "↩️" : "✅"}</span>${wd.passed ? "Undo done" : "Day done"}${wd.passed ? "" : '<small class="cut" aria-hidden="true">Clip when eaten</small>'}</button>`;
       tools.querySelectorAll("[data-treat]").forEach((b) => {
-        b.title += ". Hold for sweet or salty";
-        onHold(b, () => flavMenu(b, "sweet", (f) => addTreat(di, b.dataset.treat, f)));
-        b.addEventListener("click", (e) => { if (b.dataset.held) { delete b.dataset.held; e.preventDefault(); return; } addTreat(di, b.dataset.treat); });
+        b.title = (b.dataset.treat === "h" ? (dailyFlav === "salty" ? "Edamame, hummus, cheese or almonds" : "Dark chocolate or fruit") : (dailyFlav === "salty" ? "Chips, pizza, taquitos or dumplings" : "Ice cream or cookies")) + `. Set sweet or salty under Menu.`;
+        b.addEventListener("click", () => addTreat(di, b.dataset.treat, dailyFlav));
       });
       tools.querySelector("[data-pass]").addEventListener("click", (e) => {
         const btn = e.currentTarget;
@@ -3408,40 +3403,9 @@ button.btn { border-radius: 0; }
     update(false);
     saveInputs();
   });
-  // Hold (or right-click) a treat button to choose sweet or salty
-  function onHold(el, fn) {
-    let t;
-    const cancel = () => clearTimeout(t);
-    el.style.webkitTouchCallout = "none";
-    el.addEventListener("pointerdown", (e) => { delete el.dataset.held; if (e.button) return; cancel(); t = setTimeout(() => { el.dataset.held = 1; navigator.vibrate?.(15); fn(); }, 450); });
-    ["pointerup", "pointerleave", "pointercancel"].forEach((ev) => el.addEventListener(ev, cancel));
-    el.addEventListener("contextmenu", (e) => { e.preventDefault(); cancel(); if (!el.dataset.held) { el.dataset.held = 1; fn(); } });
-  }
-  function flavMenu(anchor, cur, pick) {
-    document.querySelector(".flav-pop")?.remove();
-    const pop = document.createElement("div");
-    pop.className = "flav-pop"; pop.setAttribute("role", "menu");
-    pop.innerHTML = [["sweet", "🍫", "Sweet"], ["salty", "🥨", "Salty"]].map(([f, e, l]) => `<button type="button" role="menuitem" data-f="${f}"${f === cur ? ' class="on"' : ""}><span aria-hidden="true">${e}</span> ${l}</button>`).join("");
-    document.body.append(pop);
-    const r = anchor.getBoundingClientRect(), w = pop.offsetWidth, h = pop.offsetHeight;
-    pop.style.left = Math.max(8, Math.min(innerWidth - w - 8, r.left + r.width / 2 - w / 2)) + "px";
-    pop.style.top = (r.top - h - 8 >= 8 ? r.top - h - 8 : r.bottom + 8) + "px";
-    const close = () => { pop.remove(); removeEventListener("pointerdown", out, true); removeEventListener("scroll", close, true); removeEventListener("keydown", esc); };
-    const out = (e) => { if (!pop.contains(e.target)) close(); };
-    const esc = (e) => { if (e.key === "Escape") { close(); anchor.focus(); } };
-    setTimeout(() => { addEventListener("pointerdown", out, true); addEventListener("scroll", close, true); addEventListener("keydown", esc); });
-    pop.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => { close(); pick(b.dataset.f); }));
-    pop.querySelector(".on, button").focus({ preventScroll: true });
-  }
-  const syncFlav = () => document.querySelector('[aria-label="Daily treat"]').toggleAttribute("data-salty", dailyFlav === "salty");
-  ["treat-h", "treat-i"].forEach((id) => {
-    const lab = $(id).closest("label");
-    onHold(lab, () => flavMenu(lab, dailyFlav, (f) => {
-      dailyFlav = f; syncFlav();
-      $(id).checked = true; $(id).dispatchEvent(new Event("input", { bubbles: true }));
-    }));
-    lab.addEventListener("click", (e) => { if (lab.dataset.held) { delete lab.dataset.held; e.preventDefault(); } });
-  });
+  // Sweet or salty: one visible choice for the daily treat and the treat buttons on each day
+  const syncFlav = () => { $("flav-" + dailyFlav).checked = true; };
+  document.querySelectorAll('input[name="flav"]').forEach((r) => r.addEventListener("input", () => { dailyFlav = r.value; if (week && !week.error) renderMenu(); }));
   $("shuffle").addEventListener("click", () => {
     seed = 1 + Math.floor(Math.random() * 1e9);
     ls.set("ad-seed", seed);
