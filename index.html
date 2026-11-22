@@ -98,6 +98,7 @@ input:focus-visible, select:focus-visible, button:focus-visible, .seg label:focu
 .course select { font-size: 14px; padding: 7px 8px; }
 @media (max-width: 480px) { .course { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .course b, .course.head span:first-child { grid-column: 1 / -1; } .course.head span:first-child { display: none; } }
 
+.say { display: contents; }
 .tags { display: flex; flex-wrap: wrap; gap: 6px; }
 .tags:empty { display: none; }
 .tag { display: inline-flex; align-items: center; gap: 4px; padding: 3px 4px 3px 10px; border-radius: 999px; font-size: 13px; font-weight: 500; color: var(--ink); background: var(--accent-soft); border: 1px solid var(--line); }
@@ -358,6 +359,80 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
 .day-tools .treat-h { background: #DDF5D9; color: #1E6B2E; }
 .day-tools .treat-i { background: #FFD9E6; color: #A3164D; }
 .day-tools button:hover { filter: brightness(1.04); }
+
+/* Allergy and likes fields are a chat: you speak on the left, the planner answers on the right */
+.say { display: block; position: relative; margin-bottom: 14px; }
+.say input[type="text"] { border: 2px solid var(--ink); border-radius: 22px; padding: 11px 16px; background: var(--surface); box-shadow: 3px 3px 0 var(--ink); font-style: italic; }
+.say::before, .say::after { content: ""; position: absolute; clip-path: polygon(0 0, 100% 0, 0 100%); pointer-events: none; }
+.say::before { left: 26px; bottom: -15px; width: 20px; height: 17px; background: var(--ink); }
+.say::after { left: 28.5px; bottom: -10px; width: 14px; height: 14px; background: var(--surface); }
+.tags { justify-content: flex-end; gap: 14px 10px; padding: 2px 4px 12px; }
+.tag, #likesTags .tag, #avoidTags .tag { position: relative; border: 2px solid var(--ink); border-radius: 18px; padding: 5px 6px 5px 14px; box-shadow: 2px 2px 0 var(--ink); font-family: var(--slant); font-style: italic; font-weight: 900; text-transform: uppercase; font-size: 12.5px; }
+#avoidTags .tag { background: var(--red); color: var(--surface); }
+#likesTags .tag { background: var(--blue); color: var(--surface); }
+.tag::before, .tag::after { content: ""; position: absolute; clip-path: polygon(0 0, 100% 0, 100% 100%); }
+.tag::before { right: 14px; bottom: -12px; width: 15px; height: 12px; background: var(--ink); }
+.tag::after { right: 16px; bottom: -8px; width: 10px; height: 8px; background: inherit; }
+.tag button { color: inherit; border-radius: 50%; }
+.tag button:hover { background: rgba(0, 0, 0, 0.25); }
+@media (prefers-reduced-motion: no-preference) {
+  .tag.new { animation: reply .35s cubic-bezier(.3, 1.6, .5, 1) both; transform-origin: 85% 100%; }
+  @keyframes reply { from { transform: scale(.2); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+}
+/* Vintage controls: no rounded app buttons in the cereal skin */
+:root { --star: polygon(50.0% 0.0%, 58.5% 13.0%, 71.7% 5.0%, 73.7% 20.3%, 89.1% 18.8%, 84.2% 33.5%, 98.7% 38.9%, 88.0% 50.0%, 98.7% 61.1%, 84.2% 66.5%, 89.1% 81.2%, 73.7% 79.7%, 71.7% 95.0%, 58.5% 87.0%, 50.0% 100.0%, 41.5% 87.0%, 28.3% 95.0%, 26.3% 79.7%, 10.9% 81.2%, 15.8% 66.5%, 1.3% 61.1%, 12.0% 50.0%, 1.3% 38.9%, 15.8% 33.5%, 10.9% 18.8%, 26.3% 20.3%, 28.3% 5.0%, 41.5% 13.0%); --fork: polygon(0 0, 100% 0, calc(100% - 7px) 50%, 100% 100%, 0 100%, 7px 50%); }
+/* Calorie counts on tilted ribbons */
+.pill { --rib: var(--blue); --rib-ink: var(--surface); position: relative; isolation: isolate; border: 0; border-radius: 0; background: none; padding: 3px 15px 4px; font-family: var(--display); font-weight: 400; font-size: 15px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--rib-ink); transform: rotate(-4deg); }
+.pill::before, .pill::after { content: ""; position: absolute; inset: 0; z-index: -1; clip-path: var(--fork); }
+.pill::before { background: var(--ink); translate: 3px 3px; }
+.pill::after { background: var(--rib); translate: var(--mx) var(--my); }
+.pill.ok { --rib: var(--blue); color: var(--surface); background: none; }
+.pill.warn { --rib: var(--bg); color: var(--ink); background: none; }
+.pill.bad { --rib: var(--red); color: var(--surface); background: none; }
+.meal .mt .kc { position: relative; isolation: isolate; display: inline-block; padding: 0 10px 1px; margin: 2px 2px 2px 0; font-weight: 900; color: var(--ink); transform: rotate(-2deg); }
+.meal .mt .kc::before, .meal .mt .kc::after { content: ""; position: absolute; inset: 0; z-index: -1; clip-path: polygon(0 0, 100% 0, calc(100% - 5px) 50%, 100% 100%, 0 100%, 5px 50%); }
+.meal .mt .kc::before { background: var(--ink); translate: 2px 2px; }
+.meal .mt .kc::after { background: var(--bg); }
+/* Treats are starbursts */
+.day-tools { align-items: stretch; }
+.day-tools .treat-h, .day-tools .treat-i { position: relative; isolation: isolate; justify-self: center; width: 100%; max-width: 104px; aspect-ratio: 1; padding: 0 16%; align-content: center; border: 0; border-radius: 0; box-shadow: none; background: none; font-family: var(--display); font-weight: 400; font-size: 12.5px; letter-spacing: 0.03em; text-transform: uppercase; line-height: 1; }
+.day-tools .treat-h::before, .day-tools .treat-i::before, .day-tools .treat-h::after, .day-tools .treat-i::after { content: ""; position: absolute; z-index: -1; clip-path: var(--star); transition: rotate .25s; }
+.day-tools .treat-h::before, .day-tools .treat-i::before { inset: 0; background: var(--ink); }
+.day-tools .treat-h::after, .day-tools .treat-i::after { inset: 4px; translate: var(--mx) var(--my); }
+.day-tools .treat-h { color: var(--ink); }
+.day-tools .treat-h::after { background: var(--bg); }
+.day-tools .treat-i { color: var(--surface); text-shadow: 1px 1px 0 var(--ink); }
+.day-tools .treat-i::after { background: var(--red); }
+.day-tools .treat-h:hover::before, .day-tools .treat-h:hover::after, .day-tools .treat-i:hover::before, .day-tools .treat-i:hover::after { rotate: 13deg; }
+.day-tools .treat-h:focus-visible, .day-tools .treat-i:focus-visible { outline: 3px dashed var(--blue); outline-offset: 0; }
+/* Day done is a clip-and-save coupon; once done it gets a rubber stamp */
+.day-tools button[data-pass] { border: 2px dashed var(--ink); border-radius: 0; box-shadow: none; background: var(--surface); align-content: center; font-family: var(--display); font-weight: 400; font-size: 12.5px; letter-spacing: 0.03em; text-transform: uppercase; }
+.day-tools button[data-pass]:hover { border-style: solid; background: #FFF9EA; }
+.day.passed .day-tools button[data-pass] { background: transparent; color: var(--red); border: 4px double var(--red); transform: rotate(-4deg); }
+/* Swap is a speech balloon */
+.swap { position: relative; border: 2px solid var(--ink); border-radius: 50%; padding: 6px 12px; margin-bottom: 9px; background: var(--surface); font-family: var(--slant); font-style: italic; font-weight: 900; text-transform: uppercase; font-size: 12px; }
+.swap::before, .swap::after { content: ""; position: absolute; clip-path: polygon(0 0, 100% 0, 15% 100%); }
+.swap::before { left: 14px; bottom: -11px; width: 16px; height: 12px; background: var(--ink); }
+.swap::after { left: 16px; bottom: -7px; width: 11px; height: 8px; background: inherit; }
+.swap:hover { background: var(--ink); color: var(--surface); }
+/* Toggles are ticket strips, chips are stamps, cards are coupons */
+.seg { border-radius: 0; box-shadow: 3px 3px 0 var(--ink); }
+.seg label + label span { border-left: 2px dashed var(--ink); }
+.chip span { border-radius: 0; box-shadow: 2px 2px 0 var(--ink); text-transform: uppercase; font-size: 12.5px; letter-spacing: 0.03em; }
+.chip:nth-child(odd) span { transform: rotate(-1.5deg); }
+.chip:nth-child(even) span { transform: rotate(1.2deg); }
+.chip input:checked + span { background: linear-gradient(var(--blue), var(--blue)) var(--mx) var(--my) / 100% 100% no-repeat, var(--surface); }
+.opt, .courses { border-radius: 0; }
+.opt { border-style: dashed; border-color: var(--ink); }
+.opt:has(input:checked) { border-style: solid; }
+input[type="number"], input[type="text"], select { border-radius: 0; border-color: var(--ink); }
+.ghost, .ghost.small { border-radius: 0; border-style: dashed; background: var(--surface); color: var(--ink); text-transform: uppercase; letter-spacing: 0.03em; }
+.ghost:hover { border-style: solid; background: var(--bg); }
+.keep, .sauce-tag, .store-nf, .logged { border-radius: 0; border: 1.5px solid currentColor; text-transform: uppercase; letter-spacing: 0.03em; }
+.logged { display: inline-block; transform: rotate(-5deg); color: var(--red); background: transparent; border: 3px double var(--red); }
+.how, .warn, .cost div, .left, .badge { border-radius: 0; }
+button.btn { border-radius: 0; }
+@media (prefers-reduced-motion: reduce) { .day-tools .treat-h::before, .day-tools .treat-i::before, .day-tools .treat-h::after, .day-tools .treat-i::after { transition: none; } }
 </style>
 <script>
   (function () { var k; try { k = JSON.parse(localStorage.getItem("ad-skin")); } catch (e) {} k = k === "light" || k === "dark" ? k : "cereal";
@@ -440,7 +515,7 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
         <legend>Dietary preferences</legend>
         <div class="chips" id="diets"></div>
         <label class="f">Allergies or foods to avoid
-          <input type="text" id="avoid" placeholder="Type a food and press Enter, e.g. peanuts or dairy">
+          <div class="say"><input type="text" id="avoid" placeholder="Type a food and press Enter, e.g. peanuts or dairy"></div>
           <div class="tags" id="avoidTags"></div>
         </label>
       </fieldset>
@@ -488,7 +563,7 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
         <label class="check"><input type="checkbox" id="sauce">
           <span>Sauce it up<small>Adds a spoonful of barbecue, teriyaki, sweet chili, sriracha, hot sauce, tzatziki, Dijon, pesto or salsa to meals it suits, for variety with no extra work. Calories included.</small></span></label>
         <label class="f">Foods you'd like to see more of (optional)
-          <input type="text" id="likes" placeholder="Type a food and press Enter, e.g. salmon">
+          <div class="say"><input type="text" id="likes" placeholder="Type a food and press Enter, e.g. salmon"></div>
           <div class="tags" id="likesTags"></div>
           <p class="hint">Meals containing these get picked more often.</p>
         </label>
@@ -1225,12 +1300,14 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
 
   // Tag inputs: Enter (or comma) turns the typed food into a removable tag
   const tags = { avoid: [], likes: [] };
+  let freshTags = 0;
   function renderTags(key) {
     const box = $(key + "Tags");
     box.innerHTML = "";
+    const fresh = freshTags; freshTags = 0;
     tags[key].forEach((t, i) => {
       const el = document.createElement("span");
-      el.className = "tag";
+      el.className = i >= tags[key].length - fresh ? "tag new" : "tag";
       el.textContent = t;
       const x = document.createElement("button");
       x.type = "button"; x.textContent = "×"; x.setAttribute("aria-label", "Remove " + t);
@@ -1244,7 +1321,7 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
     const input = $(key);
     const added = input.value.split(",").map((t) => t.trim()).filter(Boolean).filter((t) => !tags[key].some((x) => x.toLowerCase() === t.toLowerCase()));
     input.value = "";
-    if (added.length) { tags[key].push(...added); tagsChanged(key); }
+    if (added.length) { tags[key].push(...added); freshTags = added.length; tagsChanged(key); }
   }
   ["avoid", "likes"].forEach((key) => {
     const input = $(key);
@@ -1860,7 +1937,7 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
           <div class="slot">${SL[i]}</div>
           <div class="nm">${x.m.name}${(() => { const sc = x.items.find((it) => it.sauce); return sc ? ` <span class="sauce-tag">+ ${ING[sc.k][0].replace(/ sauce$/i, "").replace(/^Frank's RedHot$/, "hot sauce").toLowerCase()}</span>` : ""; })()}${ctx.liked(x.m) ? ' <span class="liked" title="Matches a food you asked for">★</span>' : ""}${wd.log?.[i] ? '<span class="logged">Logged</span>' : ""}</div>
           ${wd.log?.[i] ? `<button type="button" class="swap" data-undo>Undo</button>` : wd.addedTreats?.includes(i) ? `<button type="button" class="swap" data-rm aria-label="Remove treat on ${dayName(di)}">Remove</button>` : x.m.out || wd.passed ? "" : `<button type="button" class="swap" aria-label="Swap ${SL[i]} on ${dayName(di)}">Swap</button>`}
-          <div class="mt">${x.m.out ? "about " : ""}${fmt(x.n[0])} kcal · P ${fmt(x.n[1])} · C ${fmt(T.keto ? x.n[2] - x.n[4] : x.n[2])} · F ${fmt(x.n[3])}${x.m.out ? " · loose estimate" : ` · ${x.m.min} min${x.m.tags.has("premade") ? " · premade" : ""}${portionNote}`}</div>
+          <div class="mt"><span class="kc">${x.m.out ? "about " : ""}${fmt(x.n[0])} kcal</span> · P ${fmt(x.n[1])} · C ${fmt(T.keto ? x.n[2] - x.n[4] : x.n[2])} · F ${fmt(x.n[3])}${x.m.out ? " · loose estimate" : ` · ${x.m.min} min${x.m.tags.has("premade") ? " · premade" : ""}${portionNote}`}</div>
           ${x.m.out ? `<p class="hint">${x.m.how}</p>` : `<details><summary>Ingredients and method</summary>
             <ul>${x.items.map(({ k, g, fin, sauce }) => `<li>${amountText(k, g)}${sauce ? ` <span class="sauce-tag">Sauced up</span>${wd.passed ? "" : ` <button type="button" class="ghost small" data-sauce="${di}:${i}">Different sauce</button>`}` : ""}${fin ? ` <span class="logged" title="Includes ${fmt(fin)} ${(ING[k][8] || {}).ml ? "ml" : "g"} so nothing is left in the package">+${fmt(fin)} ${(ING[k][8] || {}).ml ? "ml" : "g"} to use it up</span>` : ""}</li>`).join("")}</ul>
             <p>${x.m.how}</p></details>`}`;
