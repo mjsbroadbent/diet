@@ -118,6 +118,8 @@ fieldset { min-inline-size: 0; }
 .house-fold > summary::before { content: "\25B8\FE0E"; display: inline-block; margin-right: 8px; transition: rotate .15s; }
 .house-fold[open] > summary::before { rotate: 90deg; }
 .house-fold > .hint { margin-top: 2px; }
+.cap-f { display: grid; gap: 4px; width: 100%; max-width: 420px; }
+.cap-v { font-variant-numeric: tabular-nums; }
 .hh-wrap { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 14px 20px; }
 .hh-wrap > #addPerson { flex: 1 1 220px; min-height: 48px; }
 .hh-wrap > #hhRow { flex: 0 1 auto; margin: 0; }
@@ -1218,9 +1220,11 @@ button.btn { border-radius: 0; }
         <label class="check" id="packsRow"><input type="checkbox" id="packs" checked>
           <span>Plan around big packs<small>Favours recipes that reuse what you already bought, so less of each Costco pack goes to waste.</small></span></label>
         <div class="row" id="capRow">
-          <label class="f">Keep each week's shop under
-            <div class="unit-in"><input type="number" id="shopCap" min="0" step="10" value="300" inputmode="numeric"><span>$ a person</span></div>
-          </label>
+          <div class="f cap-f">
+            <label for="shopCap">Keep each week's shop under <b class="cap-v" id="capV">$300 a person</b></label>
+            <div class="sl"><input type="range" id="shopCap" min="150" max="400" step="50" value="300">
+            <div class="ticks" aria-hidden="true"><span style="--p:0">$150</span><span style="--p:0.2">$200</span><span style="--p:0.4">$250</span><span style="--p:0.6">$300</span><span style="--p:0.8">$350</span><span style="--p:1">$400</span></div></div>
+          </div>
         </div>
         <p class="hint" id="storeHint"></p>
       </fieldset>
@@ -4248,6 +4252,9 @@ button.btn { border-radius: 0; }
     if (v.styles) document.querySelectorAll('input[name="style"]').forEach((el) => (el.checked = v.styles.includes(el.value)));
     if (v.mix != null) $("mix").checked = v.mix;
     (v.out || []).forEach((d) => { const el = $("out-" + d); if (el) el.checked = true; });
+    // The budget is a $150 to $400 slider: an old "no cap" (0 or blank) becomes the top stop; anything else snaps to the nearest $50
+    if (v.fields && "shopCap" in v.fields && !(+v.fields.shopCap > 0)) $("shopCap").value = 400;
+    capShow();
   }
   function showStore() {
     const costco = radio("store") !== "any";
@@ -4629,6 +4636,8 @@ button.btn { border-radius: 0; }
   }
   const hhStep = (d) => { const i = $("hhSize"), v = Math.min(8, Math.max(1, (Math.round(parseFloat(i.value)) || 1) + d)); if (String(v) === i.value) return; i.value = v; i.dispatchEvent(new Event("input", { bubbles: true })); i.dispatchEvent(new Event("change", { bubbles: true })); };
   $("hhMinus").addEventListener("click", () => hhStep(-1));
+  function capShow() { const i = $("shopCap"), v = +i.value; $("capV").textContent = `$${v} a person`; i.style.setProperty("--fill", ((v - 150) * 100) / 250 + "%"); document.querySelectorAll("#capRow .ticks span").forEach((t) => t.classList.toggle("on", t.textContent === "$" + v)); }
+  $("shopCap").addEventListener("input", capShow); capShow();
   $("hhPlus").addEventListener("click", () => hhStep(1));
   $("people").addEventListener("input", (e) => {
     e.stopPropagation();
