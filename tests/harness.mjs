@@ -44,6 +44,12 @@ const RULES = [
     ...d.meals.filter((m) => (m.slot === "Treat" && m.type !== "h" && m.type !== "i") || (m.slot === "Dirty snack") !== (m.type === "j")).map((m) => `day ${i + 1}: ${m.slot} ${m.name} (${m.type})`),
     ...(w.treat === "j" && !d.slots.includes("Dirty snack") ? [`day ${i + 1}: no dirty snack`] : []),
   ]) },
+  { id: "hot-chicken", hard: true, desc: "rotisserie chicken: one chicken's worth per shop (more for 3+ people), eaten in the shop's first 3 days", check: (w) => {
+    const cap = 700 * Math.max(1, Math.ceil(w.hh / 2)), out = [], per = {};
+    w.days.forEach((d, i) => { if (!d.hot) return; if (i % 7 >= 3) out.push(`day ${i + 1}: ${Math.round(d.hot)} g`); per[i / 7 | 0] = (per[i / 7 | 0] || 0) + d.hot; });
+    Object.entries(per).forEach(([p, g]) => { if (g > cap + 25) out.push(`shop ${+p + 1}: ${Math.round(g)} g of ${cap} g`); });
+    return out;
+  } },
   { id: "kcal-tight", hard: false, desc: "each day within 8% of its calorie target", check: (w) => w.days.flatMap((d, i) => (Math.abs(d.kcal - d.tk) / d.tk > 0.08 ? [`day ${i + 1}: ${Math.round(d.kcal)} vs ${d.tk}`] : [])) },
   { id: "protein", hard: true, desc: "weekly protein at least 85% of target", check: (w) => (w.protein < 0.85 * w.T.p * 7 ? [`${Math.round(w.protein / 7)} g a day vs ${w.T.p} g`] : []) },
   { id: "repeat-day", hard: true, desc: "no dish twice in one day", check: (w) => w.days.flatMap((d, i) => {
@@ -110,7 +116,7 @@ for (const prof of PROFILES) for (let k = 0; k < SEEDS; k++) {
       const dd = B.dayData(d, di), slots = d.slots || ctx.slots;
       protein += dd.tot[1];
       return {
-        slots, kcal: dd.tot[0], tk: d.tk ?? ctx.T.k,
+        slots, kcal: dd.tot[0], tk: d.tk ?? ctx.T.k, hot: dd.meals.reduce((a, x) => a + x.items.filter((it) => (B.ING[it.k][8] || {}).hot).reduce((b, it) => b + (it.hg ?? it.g), 0), 0),
         meals: dd.meals.map((x, i) => ({ id: x.m.id, name: x.m.name, slot: slots[i], type: x.m.type, out: !!x.m.out, ok: !!x.m.out || B.allowed(x.m, ctx.diets, ctx.avoid),
           dish: x.m.id.replace(/^k[ld]\./, "k.").replace(/^c/, "m"), dinner: x.m.dinner ?? (x.m.style === "sand" ? false : undefined), main: x.m.out ? "none" : mainOf(x.m),
           kcal: x.n[0], mult: x.mult, appeal: x.m.appeal, sauce: x.items.find((it) => it.sauce)?.k || "" })),
@@ -136,7 +142,7 @@ for (const prof of PROFILES) for (let k = 0; k < SEEDS; k++) {
   const fails = RULES.map((rule) => ({ rule, probs: rule.check(w) })).filter((x) => x.probs.length);
   results.push({ prof: prof.name, seed, w, fails });
   if (verbose) {
-    console.log(`\n== ${prof.name} (seed ${seed})${w.shop ? ` shop $${Math.round(w.shop.shop)}, waste $${Math.round(w.shop.waste)}` : ""}`);
+    console.log(`\n== ${prof.name} (seed ${seed})${w.shop ? ` shop $${Math.round(w.shop.shop)}, waste $${Math.round(w.shop.waste)}${w.shop.wasted.length ? ` (${w.shop.wasted.map(([k, v, g]) => `${k} ${Math.round(g)} g`).join(", ")})` : ""}` : ""}`);
     w.days.forEach((d, i) => console.log(`  ${i + 1}. ${Math.round(d.kcal)}/${d.tk}  ` + d.meals.map((m) => `${m.slot[0]}:${m.name} [${m.main}]`).join(" | ")));
     fails.forEach((f) => console.log(`  ${f.rule.hard ? "FAIL" : "warn"} ${f.rule.id}: ${f.probs.join("; ")}`));
   }
