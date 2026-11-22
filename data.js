@@ -1327,5 +1327,35 @@ window.BBD_DATA = (() => {
     granola: "Granola. Crunch on yogurt and cottage cheese.",
     darkbites: "Dark chocolate bites. A little sweet on yogurt or oats.",
   };
-  return { S, ING, INSTORE, COSTCO, SUB, UNIT, FROZEN, STAPLE, FREEZER, NOFRILLS, NF_DATE, NF_KEEP, ELSE_DATE, ELSEWHERE, KEEP, FRIDGE, APPEAL, SWEET, MEASURE, SAUCE, PLANETS, ABOUT, MEAL_ROWS, PARTS };
+  // Cooked bases (Nov 22 2026; draft numbers for Chief to correct): how to cook what recipes list by cooked, dry or raw weight.
+  // keys: ingredients cooked this way. per: what recipe grams are ("cooked" rice, "dry" pasta, "raw" potatoes). yield: cooked grams per gram dry or raw.
+  // cup: grams dry per cup (0 = by weight). water: cups of water per cup dry for the absorption method (0 = boil in plenty of salted water).
+  // life: days it keeps cooked in the fridge, counting the day it's cooked. how: method steps. store: how to keep a batch.
+  const BASICS = {
+    wrice: { name: "white rice", keys: ["wrice"], per: "cooked", yield: 3, cup: 185, water: 1.5, life: 4,
+      how: ["Rinse the rice until the water runs clear.", "Bring the rice, water and a pinch of salt to a boil, then cover and turn to low.", "Cook 15 minutes, then leave it covered off the heat for 10 minutes and fluff with a fork."],
+      store: "Spread it on a tray to cool, then into a sealed box in the fridge within an hour. Reheat until steaming hot." },
+    brice: { name: "brown rice", keys: ["brice"], per: "cooked", yield: 2.5, cup: 190, water: 2, life: 4,
+      how: ["Rinse the rice.", "Bring the rice, water and a pinch of salt to a boil, then cover and turn to low.", "Cook 40 to 45 minutes, then leave it covered off the heat for 10 minutes and fluff."],
+      store: "Spread it on a tray to cool, then into a sealed box in the fridge within an hour. Reheat until steaming hot." },
+    quinoa: { name: "quinoa", keys: ["quinoa"], per: "cooked", yield: 2.7, cup: 170, water: 2, life: 5,
+      how: ["Rinse well in a fine sieve; the coating tastes bitter.", "Bring the quinoa, water and a pinch of salt to a boil, then cover and simmer on low 15 minutes.", "Leave it covered off the heat 5 minutes and fluff."],
+      store: "Cool, then keep in a sealed box in the fridge. Good cold in salads or reheated." },
+    pasta: { name: "pasta", keys: ["pasta", "spaghetti", "shortpasta"], per: "dry", yield: 2.25, cup: 100, water: 0, life: 4,
+      how: ["Bring a big pot of well-salted water to a rolling boil, about 1 L for every 100 g.", "Cook to the packet time; for a batch, take it out 1 minute early so it holds up when reheated.", "Drain and toss with a teaspoon of oil so it doesn't stick."],
+      store: "Cool, toss with a little oil and keep in a sealed box in the fridge. Reheat in the sauce or 1 minute in boiling water." },
+    chickpasta: { name: "chickpea pasta", keys: ["chickpasta"], per: "dry", yield: 2.2, cup: 100, water: 0, life: 3,
+      how: ["Bring a big pot of salted water to a rolling boil.", "Cook 7 to 8 minutes; it goes soft fast, so taste early.", "Drain and rinse briefly to wash off the foam."],
+      store: "Cool, toss with a little oil and keep in a sealed box in the fridge. Best within 3 days." },
+    noodles: { name: "rice noodles", keys: ["riceramen", "ricenoodle"], per: "dry", yield: 2.5, cup: 0, water: 0, life: 2,
+      how: ["Boil in plenty of water 4 minutes (ramen) or soak rice sticks in just-boiled water 6 to 8 minutes.", "Drain and rinse under cold water.", "Toss with a few drops of sesame or neutral oil."],
+      store: "Best cooked fresh. If you cook ahead, rinse cold, oil them and use within 2 days." },
+    potato: { name: "potatoes", keys: ["potato", "littlepot"], per: "raw", yield: 1, cup: 0, water: 0, life: 4,
+      how: ["Scrub, and halve any big ones.", "Cover with cold salted water, bring to a boil and simmer 15 to 20 minutes until a knife slides in, or roast at 220°C / 425°F for 25 minutes.", "Drain or cool on the tray."],
+      store: "Cool, then keep in a sealed box in the fridge. Crisp them in a hot pan or the oven to serve." },
+    sweetpot: { name: "sweet potatoes", keys: ["sweetpot"], per: "raw", yield: 1, cup: 0, water: 0, life: 4,
+      how: ["Scrub and cube, or leave whole.", "Roast cubes at 220°C / 425°F for 25 minutes, or bake whole for 45 minutes until soft.", "Cool on the tray."],
+      store: "Cool, then keep in a sealed box in the fridge. Reheat in the oven or microwave." },
+  };
+  return { BASICS, S, ING, INSTORE, COSTCO, SUB, UNIT, FROZEN, STAPLE, FREEZER, NOFRILLS, NF_DATE, NF_KEEP, ELSE_DATE, ELSEWHERE, KEEP, FRIDGE, APPEAL, SWEET, MEASURE, SAUCE, PLANETS, ABOUT, MEAL_ROWS, PARTS };
 })();
