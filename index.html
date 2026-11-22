@@ -1993,7 +1993,7 @@ button.btn { border-radius: 0; }
       const draw = slots.map((sl) => {
         if (sl === "Dinner" && outToday) return null;
         const type = SLOT_TYPE[sl];
-        let pool = pools[type];
+        let pool = onDay(pools[type], d);
         if (d % 7 >= HOT_DAYS) { const f = pool.filter((m) => !hotIn(m)); if (f.length) pool = f; }
         // Variety cap: only recipes already in the plan (unless none of them can be served today, e.g. rotisserie chicken after day 3)
         if (chosen[type].size >= cap[type]) { const f = pool.filter((m) => chosen[type].has(akey(m))); if (f.length) pool = f; }
@@ -2050,7 +2050,7 @@ button.btn { border-radius: 0; }
         const kc = best.ids.reduce((a, id, i) => a + stepN(MEAL[id], best.ms[i])[0], 0);
         if (kc >= 0.95 * T.k) break;
         const sl0 = best.slots || slots;
-        const cands = [...(pools.s || []).map((m) => [m, "Snack"]), ...(T.k - kc > 450 && !sl0.includes("Extra meal") ? (pools.b || []).map((m) => [m, "Extra meal"]) : [])];
+        const cands = [...onDay(pools.s, d).map((m) => [m, "Snack"]), ...(T.k - kc > 450 && !sl0.includes("Extra meal") ? onDay(pools.b, d).map((m) => [m, "Extra meal"]) : [])];
         let add = null;
         for (const [m, sl] of cands) {
           if (best.ids.includes(m.id)) continue;
@@ -2090,6 +2090,10 @@ button.btn { border-radius: 0; }
   const shortLived = (k) => isFresh(k, ctx.fcap) && fridgeDays(k) < 14;
   const baseK = (k) => (k.endsWith("@2") ? k.slice(0, -2) : k);
   const keyOf = (k, di) => (di >= 7 && shortLived(k) ? k + "@2" : k);
+  // Past its fridge life on day di, counted from the shop it was bought on (day 1, or the day-8 top-up): never planned
+  const staleOn = (k, di) => ctx?.costco && isFresh(k, ctx.fcap) && di - (di >= 7 && shortLived(k) ? 7 : 0) >= fridgeDays(k);
+  const freshOK = (m, di) => !m.items?.some(([k]) => staleOn(k, di));
+  const onDay = (list, di) => { const f = (list || []).filter((m) => freshOK(m, di)); return f.length ? f : list || []; };
   const ownedK = (k) => (k.endsWith("@2") ? 0 : pantry[k] || 0);
   const dayNeed = (d, di) => { const n = {}; d.ids.forEach((id, i) => servings(di, MEAL[id], i, d).forEach(([mm, pl]) => portionOf(mm, twinMult(mm, MEAL[id], d.ms[i])).forEach(({ k, g }) => { const kk = keyOf(k, di); n[kk] = (n[kk] || 0) + buyUnits(k, g * pl); }))); return n; };
   function weekShop(ctx, days, need) {
@@ -2201,7 +2205,7 @@ button.btn { border-radius: 0; }
         const removes = allOf(m0).some(([k]) => bad.has(k));
         const useful = removes ? (m) => !allOf(m).some(([k]) => bad.has(k)) && (!overFz || !frozen(m) || !frozen(m0))
           : overFz && frozen(m0) ? (m) => !frozen(m) : (m) => allOf(m).some(([k]) => bad.has(k)) || (overCap && !allOf(m).some(([k]) => fresh(k)));
-        let cands = ctx.pools[m0.type].filter((m) => m !== m0 && !today.has(dishOf(m)) && !cross?.has(dishOf(m)) && useful(m));
+        let cands = ctx.pools[m0.type].filter((m) => m !== m0 && freshOK(m, di) && !today.has(dishOf(m)) && !cross?.has(dishOf(m)) && useful(m));
         if (cands.length > 16) { for (let i = 0; i < 16; i++) { const j = i + Math.floor(rand() * (cands.length - i)); [cands[i], cands[j]] = [cands[j], cands[i]]; } cands = cands.slice(0, 16); }
         for (const m of cands) {
           const ids = d.ids.slice(); ids[si] = m.id;
@@ -2236,7 +2240,7 @@ button.btn { border-radius: 0; }
           const m0 = MEAL[id], cur_ = chg.get(di)?.ids || d.ids;
           const today = new Set(cur_.filter((x, j) => j !== si).map((x) => dishOf(MEAL[x])));
           const cross = m0.type === "l" ? otherK.d : m0.type === "d" ? otherK.l : null;
-          let cands = ctx.pools[m0.type].filter((m) => !today.has(dishOf(m)) && !cross?.has(dishOf(m)) && !allOf(m).some(([x]) => x === k || bad.has(x)));
+          let cands = ctx.pools[m0.type].filter((m) => freshOK(m, di) && !today.has(dishOf(m)) && !cross?.has(dishOf(m)) && !allOf(m).some(([x]) => x === k || bad.has(x)));
           // Replacements made from food already on the list, so taking one leftover out doesn't open another
           const onList = cands.filter((m) => m.items.every(([x]) => !fresh(x) || st.need[x] > 0 || st.need[x + "@2"] > 0));
           if (onList.length) cands = onList;
@@ -2412,7 +2416,7 @@ button.btn { border-radius: 0; }
       const type = SLOT_TYPE[(d.slots || ctx.slots)[si]] || "s", T = d.tk ? { ...ctx.T, k: d.tk } : ctx.T, sc = makeScorer(T);
       const today = new Set(d.ids.filter((x) => MEAL[x]).map((x) => dishOf(MEAL[x])));
       let best = null;
-      for (const m of (ctx.pools[type] || []).filter((m) => !today.has(dishOf(m)))) {
+      for (const m of onDay(ctx.pools[type], di).filter((m) => !today.has(dishOf(m)))) {
         const ms = d.ids.map((x, j) => (j === si ? m : MEAL[x] || null)).filter(Boolean);
         const v = optimize(ms, T, sc).s;
         if (!best || v < best.v) best = { m, v };
@@ -2554,14 +2558,14 @@ button.btn { border-radius: 0; }
   function topUpDays() {
     const before = ctx.costco ? weekShop(ctx, week.days).waste : 0, was = JSON.stringify(week.days);
     let changed = false;
-    week.days.forEach((d) => {
+    week.days.forEach((d, di) => {
       if (fixedDay(d)) return;
       const T = dayT(d), sc = makeScorer(T);
       for (let n = 0; n < 2; n++) {
         const kc = d.ids.reduce((a, id, i) => a + stepN(MEAL[id], d.ms[i])[0], 0);
         if (kc >= 0.93 * T.k) break;
         const sl = slotsOf(d), today = new Set(d.ids.map((id) => dishOf(MEAL[id])));
-        const cands = [...(ctx.pools.s || []).map((m) => [m, "Snack"]), ...(!sl.includes("Extra meal") ? (ctx.pools.b || []).map((m) => [m, "Extra meal"]) : [])].filter(([m]) => !today.has(dishOf(m)));
+        const cands = [...onDay(ctx.pools.s, di).map((m) => [m, "Snack"]), ...(!sl.includes("Extra meal") ? onDay(ctx.pools.b, di).map((m) => [m, "Extra meal"]) : [])].filter(([m]) => !today.has(dishOf(m)));
         let add = null;
         for (const [m, s] of cands) {
           const ms = [...d.ids.map((id) => MEAL[id]), m], o = optimize(ms, T, sc), v = o.s + ctx.appealScore(ms);
@@ -2851,7 +2855,7 @@ button.btn { border-radius: 0; }
         // (not fresh ones, which finish what's spare in packs already bought, nor on a day well short of its calories)
         const short = kc < 0.9 * dayT(d).k;
         let opts = sauceOptions(MEAL[id]).filter((k) => fits(k) && (short || isFresh(k, ctx.fcap) || (used[k] || 0) < SAUCE_MAX * week.days.length / 7));
-        if (afford) opts = opts.filter((k) => afford(k, di, false));
+        if (afford) opts = opts.filter((k) => !staleOn(k, di) && afford(k, di, false));
         const today = Object.values(d.sauce).map((x) => x.k);
         const fopts = opts.filter((k) => feat.includes(k) && (used[k] || 0) < FEAT_MAX && !today.includes(k));
         if (!ctx.sauce || full) opts = fopts;
@@ -3030,7 +3034,7 @@ button.btn { border-radius: 0; }
     const away = ["b", "l", "d"].reduce((a, t) => a + (homeFor(o, t, wd) ? 0 : AWAY[t]), 0);
     const T = { ...o.T, k: o.T.k * (1 - away), p: o.T.p * (1 - away), c: o.T.c * (1 - away), f: o.T.f * (1 - away) };
     const slots = [...(homeFor(o, "b", wd) && slotsOf(d).includes("Breakfast") ? ["b"] : []), ...slotsOf(d).filter((x) => x === "Snack").map(() => "s")];
-    const pool = (t) => (ctx.pools[t] || []).filter((m) => allowed(m, o.diets, o.avoid));
+    const pool = (t) => onDay(ctx.pools[t], di).filter((m) => allowed(m, o.diets, o.avoid));
     return { T, fixed, slots, P: { b: pool("b"), s: pool("s") }, sc: makeScorer(T) };
   }
   // big: { j, x } keeps meal j at portion x and fits the rest around it
@@ -3505,7 +3509,7 @@ button.btn { border-radius: 0; }
     seen.add(cur.id);
     const uses = {};
     week.days.forEach((d, j) => j !== di && d.ids.forEach((id) => (uses[id] = (uses[id] || 0) + 1)));
-    let pool = ctx.pools[cur.type] || ctx.treatPools[cur.type] || [];
+    let pool = onDay(ctx.pools[cur.type] || ctx.treatPools[cur.type], di);
     if (cur.type === "h" || cur.type === "i") { const f = pool.filter((m) => flavorOf(m) === flavorOf(cur)); if (f.length > 1) pool = f; }
     const other = new Set(day.ids.filter((id, j) => j !== si).map((id) => dishOf(MEAL[id])));
     let cands = pool.filter((m) => !seen.has(m.id) && !other.has(dishOf(m)) && rated[dishOf(m)] !== "never");

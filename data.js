@@ -408,7 +408,7 @@ window.BBD_DATA = (() => {
     bcsoup: ["Kirkland Signature broccoli cheddar soup, 2 × 830 ml", 1660, 12.09, "r"],
     mush: ["MUSH 15 g protein overnight oats, 12 × 172 ml", 2064, 23.64, "r"],
     bsand: ["Kirkland Signature breakfast sandwiches, 8 × 137 g", 1096, 27.49, "z"],
-    ewwrap: ["Kirkland Signature spinach and egg white wraps, 6 × 165 g", 990, 21.99, "x"],
+    ewwrap: ["Kirkland Signature spinach and egg white wraps, 6 × 165 g", 990, 21.99, "z"],
     drumstick: ["Chicken drumsticks, ~2.82 kg", 2820, 21.69, "z"],
     porkchop: ["Boneless centre cut pork loin chops, ~2.62 kg", 2620, 23.05, "z"],
     sausage: ["Kirkland Signature mild Italian sausage, ~1.73 kg", 1730, 18.96, "z"],
@@ -623,15 +623,18 @@ window.BBD_DATA = (() => {
     garam: ["Tata Sampann garam masala, 100 g", 100, 1.99, "p"],
     chutney: ["Patak's sweet mango chutney, 250 ml", 330, 7.49, "p"],
   };
-  // Fridge life in days for fresh food stored well (Chief, a chef of 20 years: beans, zucchini, mushrooms, cucumbers and
-  // most produce keep two weeks; tender greens are the risk). Fresh food not listed keeps 14 days. Under 14 days, a two-week
-  // plan buys it again on the day-8 top-up. tip: how to store it, shown when the first shop holds it into week 2.
+  // Fridge life in days for fresh food stored well, from Chief (a chef of 20 years): beans, zucchini, mushrooms, cucumbers and
+  // most produce keep two weeks; salads (kits, deli salads, tender greens) about a week; fresh berries and cut fruit 5 days;
+  // bananas a week; a whole pineapple two weeks in the fridge; egg white wraps 3 days once opened, so they're frozen
+  // (Costco keep "z"; 3 days counts only without a freezer); tzatziki a week once opened (kept to a week from the shop here).
+  // Fresh food not listed keeps 14 days. Under 14 days, a two-week plan buys it again on the day-8 top-up, and nothing
+  // is planned past it. tip: how to store it, shown when the first shop holds it into week 2.
   const FRIDGE = {
-    days: { spinach: 7, greens: 7, saladkit: 7, caesar: 7, grsalad: 7, quinsal: 7, penne: 7, tzatziki: 7, ewwrap: 7, banana: 7, raspberries: 7, pineapple: 7 },
+    days: { spinach: 7, greens: 7, saladkit: 7, caesar: 7, grsalad: 7, quinsal: 7, penne: 7, tzatziki: 7, ewwrap: 3, banana: 7, raspberries: 5, blueberries: 5 },
     tip: { mushroom: "paper bag in the fridge", cucumber: "wrapped, in the crisper", zucchini: "dry, in the crisper", greenbeans: "in a bag in the crisper",
       pepper: "in the crisper", tomato: "on the counter till ripe, then the fridge", asparagus: "stems in a little water in the fridge", brussels: "in a bag in the crisper",
       caulifl: "wrapped, in the fridge", romaine: "wrapped in a damp towel", bokchoy: "in a bag in the crisper", kalekit: "sealed, in the fridge",
-      grapes: "unwashed, in the fridge", blueberries: "unwashed, in the fridge" },
+      grapes: "unwashed, in the fridge", pineapple: "whole, in the fridge so it stops ripening" },
   };
   const KEEP = { p: ["Keeps", "Pantry or freezer. Carries over."], z: ["Freeze", "Freeze what you won't use in a few days."], r: ["Keeps a few weeks", "Fridge or a cool cupboard."], x: ["Use this week", "Won't keep. Not carried over."] };
   // Recipes at a base portion. Portions are scaled per day to hit your targets.
