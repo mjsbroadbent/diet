@@ -871,12 +871,13 @@ button.btn { border-radius: 0; }
   const DIETS = ["Vegetarian", "Vegan", "Pescatarian", "Keto", "Gluten-free", "Halal", "Kosher"];
 
   // Ingredients, per 100 g: [name, kcal, protein, carbs, fat, fiber, store section, tags, extra]
-  // extra: each = grams per countable unit (unit = label when counted in recipes), tbsp = grams per tablespoon, dry = dry/cooked ratio, ml = liquid
+  // extra: each = grams per countable unit (unit = label when counted in recipes), tbsp = grams per tablespoon, dry = dry/cooked ratio, ml = liquid,
+  //        hot = bought hot and ready to eat, so the planner puts the days that use it first
   const S = { P: "Produce", M: "Meat & fish", D: "Dairy, eggs & fridge", G: "Grains & bread", N: "Pantry", F: "Frozen" };
   const ING = {
     chicken:     ["Chicken breast", 120, 22.5, 0, 2.6, 0, S.M, "poultry"],
     thigh:       ["Chicken thighs, skinless", 145, 19, 0, 7.5, 0, S.M, "poultry"],
-    rchicken:    ["Rotisserie chicken (meat only)", 167, 25, 0, 7, 0, S.M, "poultry"],
+    rchicken:    ["Rotisserie chicken (meat only)", 167, 25, 0, 7, 0, S.M, "poultry", { hot: true }],
     turkey:      ["Ground turkey (93% lean)", 150, 19, 0, 8, 0, S.M, "poultry"],
     turkeyslice: ["Sliced turkey breast", 104, 17, 4, 2, 0, S.M, "poultry"],
     beef:        ["Lean ground beef (90%)", 176, 20, 0, 10, 0, S.M, "meat"],
@@ -2349,6 +2350,7 @@ button.btn { border-radius: 0; }
       if (!b.error) {
         // Days marked done stay exactly as eaten
         prev?.days?.forEach((d, i) => { if (d.passed && d.ids.every((id) => MEAL[id])) week.days[i] = d; });
+        hotFirst();
         rebalance(); finishUp(); ls.set("ad-week", week);
       }
       Object.keys(skipped).forEach((k) => delete skipped[k]);
@@ -2356,6 +2358,17 @@ button.btn { border-radius: 0; }
     renderMenu();
   }
 
+  // Food bought hot (rotisserie chicken) is best eaten right away: move the days that use it to the front of the week.
+  // Only open days trade places, and eating-out days only with each other, so eating out stays on its weekday.
+  function hotFirst() {
+    const hot = (d) => d.ids.filter((id) => MEAL[id].items.some(([k]) => (ING[k][8] || {}).hot)).length;
+    const out = (d) => d.ids.some((id) => MEAL[id].out);
+    [false, true].forEach((o) => {
+      const at = week.days.map((d, i) => i).filter((i) => !fixedDay(week.days[i]) && out(week.days[i]) === o);
+      const order = at.map((i, j) => [week.days[i], j]).sort((a, b) => hot(b[0]) - hot(a[0]) || a[1] - b[1]).map(([d]) => d);
+      at.forEach((i, j) => (week.days[i] = order[j]));
+    });
+  }
   const slotsOf = (d) => d.slots || ctx.slots;
   const fixedDay = (d) => d.passed || (d.log && Object.keys(d.log).length);
   // A day's target, after any trimming to absorb an off-plan meal earlier in the week
