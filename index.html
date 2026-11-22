@@ -184,6 +184,10 @@ aside { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 16px); displ
 button.btn { font: inherit; font-weight: 600; font-size: 14px; padding: 9px 16px; border-radius: 8px; border: 1px solid var(--accent); background: var(--accent); color: var(--on-accent); cursor: pointer; }
 button.btn:hover { filter: brightness(1.08); }
 .days { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 14px; }
+.wk2 { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; margin-top: 10px; padding-top: 14px; border-top: 2px solid var(--line); }
+.wk2 h3 { margin: 0; font-size: 20px; }
+.wk2 span { font-size: 14px; font-weight: 700; color: var(--accent); }
+.topup-tag { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 999px; font-size: 11px; font-weight: 800; vertical-align: 3px; background: var(--accent-soft); color: var(--accent); }
 .day { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px; display: grid; gap: 10px; align-content: start; min-width: 0; }
 .day-h { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
 .day-h h3 { font-family: var(--display); font-weight: 900; font-size: 19px; margin: 0; }
@@ -854,6 +858,10 @@ button.btn { border-radius: 0; }
 .planet .sum { grid-template-columns: minmax(0, 1fr) auto; padding: 12px 12px 12px 30px; border: 2px dashed #E9DFC7; border-radius: 0; color: #E9DFC7; opacity: 1; }
 .planet.locked .orb { background: #3A4170; filter: grayscale(1); }
 /* Planet and rocket art: one Gemini sheet in the cereal print style, cut into stickers */
+.wk2 { border-top: 3px dashed var(--ink); }
+.wk2 h3 { font-family: var(--display); font-weight: 400; font-size: 34px; letter-spacing: 0.03em; text-transform: uppercase; color: var(--ink); }
+.wk2 span { font-family: var(--slant); font-style: italic; font-weight: 900; text-transform: uppercase; color: var(--red); }
+.topup-tag { border-radius: 0; border: 2px solid var(--red); background: transparent; color: var(--red); font-family: var(--slant); font-style: italic; text-transform: uppercase; transform: rotate(-4deg); }
 .planet .orb { left: -40px; top: 2px; width: 56px; height: 56px; border: 0; border-radius: 0; box-shadow: none; background: center / contain no-repeat; filter: drop-shadow(2px 2px 0 rgba(26, 23, 20, .55)); }
 .planet .orb::after { content: none; }
 .planet.locked .orb { background-color: transparent; background-size: contain; background-position: center; background-repeat: no-repeat; filter: grayscale(.9) brightness(.8); }
@@ -1051,6 +1059,13 @@ button.btn { border-radius: 0; }
           </div>
         </div>
         <p class="hint" id="slotHint"></p>
+        <div class="f">Plan for
+          <div class="seg" role="radiogroup" aria-label="Plan length">
+            <label><input type="radio" name="weeks" id="weeks-1" value="1" checked><span>1 week</span></label>
+            <label><input type="radio" name="weeks" id="weeks-2" value="2"><span>2 weeks</span></label>
+          </div>
+        </div>
+        <p class="hint" id="weeksHint" hidden>One big Costco shop for 14 days, plus a short top-up for fresh food on day 8.</p>
         <details class="fold"><summary>Week starts on <b id="startSum">Monday</b></summary>
           <div class="seg" role="radiogroup" aria-label="Week starts on" id="startSeg"></div>
         </details>
@@ -2564,6 +2579,7 @@ button.btn { border-radius: 0; }
     const any = document.querySelector('input[name="out"]:checked');
     $("outStyleSeg").hidden = !any;
     $("startSum").textContent = DAY_NAMES[startDay()];
+    $("weeksHint").hidden = radio("weeks") !== "2";
     const od = [...document.querySelectorAll('input[name="out"]:checked')].map((x) => DAY_NAMES[+x.value].slice(0, 3));
     $("outSum").textContent = od.length ? od.join(", ") + " · " + (radio("outStyle") === "h" ? "healthy" : "indulgent") : "None";
     $("outHint").textContent = !any ? "Pick the days you'll eat dinner out." : radio("outStyle") === "h"
@@ -2665,7 +2681,7 @@ button.btn { border-radius: 0; }
       avoid: tags.avoid.join(","), likes: tags.likes.join(","), meals: radio("meals"), snacks: radio("snacks"), treat: radio("treat"),
       out: { days: [...document.querySelectorAll('input[name="out"]:checked')].map((x) => +x.value), style: radio("outStyle") },
       course: Object.fromEntries(COURSES.map((c) => [c.t, { effort: +EFFORT[+$("effort-" + c.t).value][0], variety: +VARIETY[+$("variety-" + c.t).value][0] }])),
-      store: radio("store"), packs: $("packs").checked, premade: $("premade").checked, sauce: $("sauce").checked, freezer: radio("freezer"), start: startDay(),
+      store: radio("store"), packs: $("packs").checked, premade: $("premade").checked, sauce: $("sauce").checked, freezer: radio("freezer"), start: startDay(), weeks: radio("weeks") === "2" ? 2 : 1,
       styles: [...document.querySelectorAll('input[name="style"]:checked')].map((x) => x.value), mix: $("mix").checked,
       cap: Math.max(0, parseFloat($("shopCap").value) || 0),
       // Household: { n } people eating the same menu. The household builder will add people: [...] here.
@@ -4095,11 +4111,18 @@ button.btn { border-radius: 0; }
       const dev = (d.tot[0] - DT.k) / DT.k;
       const cls = Math.abs(dev) <= 0.05 ? "ok" : Math.abs(dev) <= 0.1 ? "warn" : "bad";
       const off = (v, t) => (Math.abs(v - t) / t > 0.15 ? ' class="off"' : "");
+      if (di === 7) {
+        const st = typeof shopStats === "function" ? shopStats() : null;
+        const div = document.createElement("div");
+        div.className = "wk2";
+        div.innerHTML = `<h3>Week 2</h3><span>Top-up shop today${st?.topUp > 0.5 ? `: ${money(st.topUp)} of fresh food` : " for fresh food"}</span>`;
+        days.append(div);
+      }
       const el = document.createElement("article");
       el.className = "day" + (wd.passed ? " passed" : "") + (wd.passed && stampDay === di ? " stamp-in" : "");
       const SL = slotsOf(wd);
       el.innerHTML = `
-        <div class="day-h"><h3>${dayName(di)}${wd.passed ? ' <span class="logged">Done</span>' : ""}</h3><span class="pill ${cls}" title="${dev >= 0 ? "+" : ""}${Math.round(dev * 100)}% vs target">${fmt(d.tot[0])} kcal</span></div>
+        <div class="day-h"><h3>${dayName(di)}${di === 7 ? ' <span class="topup-tag">Top-up shop</span>' : ""}${wd.passed ? ' <span class="logged">Done</span>' : ""}</h3><span class="pill ${cls}" title="${dev >= 0 ? "+" : ""}${Math.round(dev * 100)}% vs target">${fmt(d.tot[0])} kcal</span></div>
         ${wd.tk != null ? `<p class="tk">Target ${wd.tk < T.k ? "trimmed" : "raised"} to ${fmt(wd.tk)} kcal to balance the rest of the week.</p>` : ""}
         <div class="macros">
           <span${d.tot[1] < DT.p * 0.85 ? ' class="off"' : ""}><b>P</b> ${fmt(d.tot[1])}/${DT.p} g</span>
@@ -4571,7 +4594,7 @@ button.btn { border-radius: 0; }
 
   function saveInputs() {
     const v = { radios: {}, diets: read().diets, fields: {} };
-    ["sex", "units", "activity", "goal", "meals", "snacks", "treat", "outStyle", "store", "freezer", "start"].forEach((n) => (v.radios[n] = radio(n)));
+    ["sex", "units", "activity", "goal", "meals", "snacks", "treat", "outStyle", "store", "freezer", "start", "weeks"].forEach((n) => (v.radios[n] = radio(n)));
     v.packs = $("packs").checked;
     v.premade = $("premade").checked;
     v.sauce = $("sauce").checked;
