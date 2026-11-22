@@ -2318,6 +2318,13 @@ button.btn { border-radius: 0; }
   }
 
   const stepsOf = (m) => (m.max ? STEPS[m.type].filter((x) => x <= m.max) : STEPS[m.type]);
+  // Nutrition of a meal at a portion step, after rounding to amounts you can measure (whole bottles, pieces),
+  // so the optimiser sees what the menu will actually show
+  const stepN = (m, x) => {
+    if (m.out || m.type === "o" || !m.items?.length) return m.n.map((v) => v * x);
+    const c = (m._rn ||= {});
+    return (c[x] ||= nutr(portion(m, x)));
+  };
   // Pick portion multipliers for a day's meals to land closest to the targets
   function optimize(meals, T, score, start) {
     const tot = [0, 0, 0, 0, 0];
@@ -2328,7 +2335,7 @@ button.btn { border-radius: 0; }
       const g = T.k / sumK;
       return steps.reduce((b, x) => (Math.abs(x - g) < Math.abs(b - g) ? x : b), 1);
     });
-    meals.forEach((m, i) => { for (let j = 0; j < 5; j++) tot[j] += m.n[j] * ms[i]; });
+    meals.forEach((m, i) => { const v = stepN(m, ms[i]); for (let j = 0; j < 5; j++) tot[j] += v[j]; });
     const sc = () => score(tot[0], tot[1], tot[2], tot[3], tot[4]) + 0.004 * ms.reduce((a, x) => a + Math.abs(x - 1), 0);
     let best = sc();
     for (let pass = 0; pass < 3; pass++) {
@@ -2336,12 +2343,12 @@ button.btn { border-radius: 0; }
       meals.forEach((m, i) => {
         for (const x of stepsOf(m)) {
           if (x === ms[i]) continue;
-          const d = x - ms[i];
-          for (let j = 0; j < 5; j++) tot[j] += m.n[j] * d;
+          const a = stepN(m, ms[i]), b = stepN(m, x);
+          for (let j = 0; j < 5; j++) tot[j] += b[j] - a[j];
           const old = ms[i]; ms[i] = x;
           const s = sc();
           if (s < best - 1e-9) { best = s; improved = true; }
-          else { ms[i] = old; for (let j = 0; j < 5; j++) tot[j] -= m.n[j] * d; }
+          else { ms[i] = old; for (let j = 0; j < 5; j++) tot[j] -= b[j] - a[j]; }
         }
       });
       if (!improved) break;
@@ -2362,7 +2369,7 @@ button.btn { border-radius: 0; }
     const atC = (k) => COSTCO[k] && !nostock.has(k) && (fcap > 0 || !FROZEN.has(k));
     const atAny = (k) => atC(k) || (mostly && NOFRILLS[k] && (fcap > 0 || !FROZEN.has(k)));
     // Mostly Costco: keep the original recipe when No Frills fills the gap, else the Costco version
-    const library = (mostly ? MEALS.map((m) => (m.items.every(([k]) => atAny(k)) ? m : MEAL["c" + m.id.slice(1)])).filter((m) => m.items.every(([k]) => atAny(k)))
+    const library = (mostly ? MEALS.map((m) => (m.items.every(([k]) => atAny(k)) ? m : MEAL["c" + m.id.slice(1)] || m)).filter((m) => m.items.every(([k]) => atAny(k)))
       : costco ? COSTCO_MEALS.filter((m) => m.items.every(([k]) => atC(k))) : MEALS)
       .filter((m) => s.premade || !m.tags.has("premade"));
     // Build-your-own bowls, sandwiches and plates, in the styles you picked
@@ -2551,6 +2558,38 @@ button.btn { border-radius: 0; }
     }
     renderMenu();
   }
+
+  // What the week's shop costs in whole packs, and what's left over. waste = fresh food that won't keep.
+  function shopStats() {
+    if (!ctx?.costco || !week?.days) return null;
+    const sum = {};
+    week.days.forEach((d, di) => dayData(d, di).meals.forEach((x) => x.items.forEach(({ k, g }) => (sum[k] = (sum[k] || 0) + g))));
+    let shop = 0, eaten = 0, waste = 0, left = 0;
+    for (const k in sum) {
+      const P = pk(k);
+      if (!P) continue;
+      const used = buyUnits(k, sum[k]), inPantry = Math.min(used, pantry[k] || 0);
+      const packs = used - inPantry > 0 ? Math.max(1, Math.ceil((used - inPantry) / P.size - 0.05)) : 0;
+      const over = Math.max(0, packs * P.size - (used - inPantry));
+      shop += packs * P.price; eaten += (used / P.size) * P.price;
+      if (over <= Math.max(20, P.size * 0.02)) continue;
+      const v = (over / P.size) * P.price;
+      left += v;
+      if (P.keep === "x" || (P.keep === "z" && ctx.fcap === 0)) waste += v;
+    }
+    return { shop, eaten, waste, left };
+  }
+  // Test hook for tests/harness.mjs: build a week from given settings and seed, without touching saved data
+  window.__bbd = {
+    MEAL, ING, compute, context, dayData, shopStats, allowed, read,
+    run(over, sd) {
+      const s = { ...read(), ...over, course: { ...read().course, ...(over.course || {}) } };
+      const r = compute(s);
+      seed = sd; pantry = {}; week = null; nostock.clear();
+      refreshMenu(s, r, true);
+      return { s, r, ctx, week };
+    },
+  };
 
   // Food bought hot (rotisserie chicken) is best eaten right away: move the days that use it to the front of the week.
   // Only open days trade places, and eating-out days only with each other, so eating out stays on its weekday.
