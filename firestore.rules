@@ -1,0 +1,9 @@
+rules_version = '2';
+// Big Box Diet: each signed-in person can read and write only their own synced plan (users/{uid}).
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+  }
+}

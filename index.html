@@ -258,6 +258,19 @@ button.btn:hover { filter: brightness(1.08); }
 .cost .lead { grid-column: span 2; }
 .plan-in { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; justify-content: space-between; }
 .plan-in .btns button { min-height: 44px; }
+/* Optional sign-in (sync.js puts .acct in the top bar and .sync-bar under it; repo site only) */
+.acct { margin-left: auto; }
+.acct + #install { margin-left: 0; }
+.acct-menu { position: relative; }
+.acct-menu summary { list-style: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+.acct-menu summary::-webkit-details-marker { display: none; }
+.acct-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); }
+.acct-menu[data-state="busy"] .acct-dot { background: var(--warn); }
+.acct-menu[data-state="off"] .acct-dot { background: var(--muted); }
+.acct-pop { position: absolute; right: 0; top: calc(100% + 6px); z-index: 30; width: min(300px, 86vw); padding: 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink); box-shadow: 0 6px 20px rgba(0,0,0,.15); }
+.acct-pop .note { margin: 0 0 10px; }
+.acct-pop .btns { display: flex; flex-wrap: wrap; gap: 8px; }
+.acct-pop button, .acct-menu summary, #signIn { min-height: 44px; }
 .gsec.kit .note { margin: 0 0 4px; }
 .cost .lead b { font-size: 34px; }
 .cost b small { font-size: 0.5em; font-family: var(--body); font-weight: 700; color: var(--muted); margin-left: 2px; }
@@ -800,6 +813,7 @@ button.btn { border-radius: 0; }
 <meta property="og:image:alt" content="Big Box Diet cereal box with a bowl of chicken, rice, broccoli and berries">
 <meta name="twitter:card" content="summary_large_image">
 <script>window.BBD_PWA = true; if ("serviceWorker" in navigator) addEventListener("load", () => navigator.serviceWorker.register("sw.js"));</script>
+<script src="sync.js"></script>
 <style>body { margin: 0; } img { max-width: 100%; }</style>
 </head>
 <body>
