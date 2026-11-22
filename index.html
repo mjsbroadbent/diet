@@ -98,6 +98,7 @@ input:focus-visible, select:focus-visible, button:focus-visible, .seg label:focu
 .course select { font-size: 14px; padding: 7px 8px; }
 @media (max-width: 480px) { .course { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .course b, .course.head span:first-child { grid-column: 1 / -1; } .course.head span:first-child { display: none; } }
 
+.say { display: contents; }
 .tags { display: flex; flex-wrap: wrap; gap: 6px; }
 .tags:empty { display: none; }
 .tag { display: inline-flex; align-items: center; gap: 4px; padding: 3px 4px 3px 10px; border-radius: 999px; font-size: 13px; font-weight: 500; color: var(--ink); background: var(--accent-soft); border: 1px solid var(--line); }
@@ -358,6 +359,26 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
 .day-tools .treat-h { background: #DDF5D9; color: #1E6B2E; }
 .day-tools .treat-i { background: #FFD9E6; color: #A3164D; }
 .day-tools button:hover { filter: brightness(1.04); }
+
+/* Allergy and likes fields are a chat: you speak on the left, the planner answers on the right */
+.say { display: block; position: relative; margin-bottom: 14px; }
+.say input[type="text"] { border: 2px solid var(--ink); border-radius: 22px; padding: 11px 16px; background: var(--surface); box-shadow: 3px 3px 0 var(--ink); font-style: italic; }
+.say::before, .say::after { content: ""; position: absolute; clip-path: polygon(0 0, 100% 0, 0 100%); pointer-events: none; }
+.say::before { left: 26px; bottom: -15px; width: 20px; height: 17px; background: var(--ink); }
+.say::after { left: 28.5px; bottom: -10px; width: 14px; height: 14px; background: var(--surface); }
+.tags { justify-content: flex-end; gap: 14px 10px; padding: 2px 4px 12px; }
+.tag, #likesTags .tag, #avoidTags .tag { position: relative; border: 2px solid var(--ink); border-radius: 18px; padding: 5px 6px 5px 14px; box-shadow: 2px 2px 0 var(--ink); font-family: var(--slant); font-style: italic; font-weight: 900; text-transform: uppercase; font-size: 12.5px; }
+#avoidTags .tag { background: var(--red); color: var(--surface); }
+#likesTags .tag { background: var(--blue); color: var(--surface); }
+.tag::before, .tag::after { content: ""; position: absolute; clip-path: polygon(0 0, 100% 0, 100% 100%); }
+.tag::before { right: 14px; bottom: -12px; width: 15px; height: 12px; background: var(--ink); }
+.tag::after { right: 16px; bottom: -8px; width: 10px; height: 8px; background: inherit; }
+.tag button { color: inherit; border-radius: 50%; }
+.tag button:hover { background: rgba(0, 0, 0, 0.25); }
+@media (prefers-reduced-motion: no-preference) {
+  .tag.new { animation: reply .35s cubic-bezier(.3, 1.6, .5, 1) both; transform-origin: 85% 100%; }
+  @keyframes reply { from { transform: scale(.2); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+}
 /* Vintage controls: no rounded app buttons in the cereal skin */
 :root { --star: polygon(50.0% 0.0%, 58.5% 13.0%, 71.7% 5.0%, 73.7% 20.3%, 89.1% 18.8%, 84.2% 33.5%, 98.7% 38.9%, 88.0% 50.0%, 98.7% 61.1%, 84.2% 66.5%, 89.1% 81.2%, 73.7% 79.7%, 71.7% 95.0%, 58.5% 87.0%, 50.0% 100.0%, 41.5% 87.0%, 28.3% 95.0%, 26.3% 79.7%, 10.9% 81.2%, 15.8% 66.5%, 1.3% 61.1%, 12.0% 50.0%, 1.3% 38.9%, 15.8% 33.5%, 10.9% 18.8%, 26.3% 20.3%, 28.3% 5.0%, 41.5% 13.0%); --fork: polygon(0 0, 100% 0, calc(100% - 7px) 50%, 100% 100%, 0 100%, 7px 50%); }
 /* Calorie counts on tilted ribbons */
@@ -407,8 +428,6 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
 input[type="number"], input[type="text"], select { border-radius: 0; border-color: var(--ink); }
 .ghost, .ghost.small { border-radius: 0; border-style: dashed; background: var(--surface); color: var(--ink); text-transform: uppercase; letter-spacing: 0.03em; }
 .ghost:hover { border-style: solid; background: var(--bg); }
-.tag { border-radius: 0; }
-.tag button { border-radius: 0; }
 .keep, .sauce-tag, .store-nf, .logged { border-radius: 0; border: 1.5px solid currentColor; text-transform: uppercase; letter-spacing: 0.03em; }
 .logged { display: inline-block; transform: rotate(-5deg); color: var(--red); background: transparent; border: 3px double var(--red); }
 .how, .warn, .cost div, .left, .badge { border-radius: 0; }
@@ -496,7 +515,7 @@ button.btn { border-radius: 0; }
         <legend>Dietary preferences</legend>
         <div class="chips" id="diets"></div>
         <label class="f">Allergies or foods to avoid
-          <input type="text" id="avoid" placeholder="Type a food and press Enter, e.g. peanuts or dairy">
+          <div class="say"><input type="text" id="avoid" placeholder="Type a food and press Enter, e.g. peanuts or dairy"></div>
           <div class="tags" id="avoidTags"></div>
         </label>
       </fieldset>
@@ -544,7 +563,7 @@ button.btn { border-radius: 0; }
         <label class="check"><input type="checkbox" id="sauce">
           <span>Sauce it up<small>Adds a spoonful of barbecue, teriyaki, sweet chili, sriracha, hot sauce, tzatziki, Dijon, pesto or salsa to meals it suits, for variety with no extra work. Calories included.</small></span></label>
         <label class="f">Foods you'd like to see more of (optional)
-          <input type="text" id="likes" placeholder="Type a food and press Enter, e.g. salmon">
+          <div class="say"><input type="text" id="likes" placeholder="Type a food and press Enter, e.g. salmon"></div>
           <div class="tags" id="likesTags"></div>
           <p class="hint">Meals containing these get picked more often.</p>
         </label>
@@ -1281,12 +1300,14 @@ button.btn { border-radius: 0; }
 
   // Tag inputs: Enter (or comma) turns the typed food into a removable tag
   const tags = { avoid: [], likes: [] };
+  let freshTags = 0;
   function renderTags(key) {
     const box = $(key + "Tags");
     box.innerHTML = "";
+    const fresh = freshTags; freshTags = 0;
     tags[key].forEach((t, i) => {
       const el = document.createElement("span");
-      el.className = "tag";
+      el.className = i >= tags[key].length - fresh ? "tag new" : "tag";
       el.textContent = t;
       const x = document.createElement("button");
       x.type = "button"; x.textContent = "×"; x.setAttribute("aria-label", "Remove " + t);
@@ -1300,7 +1321,7 @@ button.btn { border-radius: 0; }
     const input = $(key);
     const added = input.value.split(",").map((t) => t.trim()).filter(Boolean).filter((t) => !tags[key].some((x) => x.toLowerCase() === t.toLowerCase()));
     input.value = "";
-    if (added.length) { tags[key].push(...added); tagsChanged(key); }
+    if (added.length) { tags[key].push(...added); freshTags = added.length; tagsChanged(key); }
   }
   ["avoid", "likes"].forEach((key) => {
     const input = $(key);
