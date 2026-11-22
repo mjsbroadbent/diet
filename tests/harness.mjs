@@ -1,4 +1,4 @@
-// Planner test harness: builds 60 weeks (12 profiles x 5 seeds) in headless Chromium and checks the menu rules.
+// Planner test harness: builds 70 plans (14 profiles x 5 seeds) in headless Chromium and checks the menu rules.
 // Run from the repo root:  node tests/harness.mjs   (--verbose prints every week, --seeds=N changes the count)
 // Needs Playwright with Chromium (npm i -D playwright && npx playwright install chromium).
 import { createRequire } from "node:module";
@@ -28,12 +28,14 @@ const PROFILES = [
   { name: "Big man, gain, 2 snacks", s: { heightCm: 190, weightKg: 92, age: 24, goal: "gain", activity: 1.725, snacks: "2", treat: "i" } },
   { name: "Any store, eats out Fri/Sat, dirty snack", s: { store: "any", out: { days: [4, 5], style: "i" }, treat: "j" } },
   { name: "Mostly Costco, no freezer", s: { store: "mostly", freezer: "none", sex: "female", age: 33, heightCm: 172, weightKg: 75 } },
+  { name: "Two weeks, default man", s: { weeks: 2 } },
+  { name: "Two weeks, household of 2", s: { weeks: 2, hh: { n: 2, people: [{}, { name: "Jo", sex: "female", age: 33, heightCm: 165, weightKg: 60, activity: 1.55, goal: "maintain", diets: [] }] } } },
   { name: "Mix and match, quick dinners", s: { mix: true, course: { d: { effort: 25, variety: 3 }, l: { effort: 10, variety: 2 } } } },
 ];
 
 // Each rule returns a list of problems for one built week. Hard rules fail the run; soft ones are reported.
 const RULES = [
-  { id: "builds", hard: true, desc: "a week is built with 7 days", check: (w) => (w.error ? [w.error] : w.days.length === 7 ? [] : [`${w.days.length} days`]) },
+  { id: "builds", hard: true, desc: "a plan is built with 7 days (14 for two weeks)", check: (w) => (w.error ? [w.error] : w.days.length === w.nDays ? [] : [`${w.days.length} days`]) },
   { id: "slots", hard: true, desc: "every day fills every slot", check: (w) => w.days.flatMap((d, i) => (d.meals.length === d.slots.length ? [] : [`day ${i + 1}: ${d.meals.length} meals for ${d.slots.length} slots`])) },
   { id: "diet", hard: true, desc: "every meal fits the diet and avoid list", check: (w) => w.days.flatMap((d, i) => d.meals.filter((m) => !m.ok).map((m) => `day ${i + 1}: ${m.name}`)) },
   { id: "kcal", hard: true, desc: "each day within 15% of its calorie target", check: (w) => w.days.flatMap((d, i) => (Math.abs(d.kcal - d.tk) / d.tk > 0.15 ? [`day ${i + 1}: ${Math.round(d.kcal)} vs ${d.tk}`] : [])) },
@@ -58,12 +60,12 @@ const RULES = [
   { id: "rotation", hard: false, desc: "breakfasts, lunches and snacks with a few options rotate them: no finished meal more than an even share + 1", check: (w) => {
     const n = {};
     w.days.forEach((d) => d.meals.forEach((m) => { const v = w.cv[m.type]; if (!m.out && "bls".includes(m.type) && v > 1 && v < 7) { const k = m.type + ":" + m.name + (m.sauce ? " +" + m.sauce : ""); n[k] = (n[k] || 0) + 1; } }));
-    return Object.entries(n).filter(([k, c]) => c > Math.ceil(7 / w.cv[k[0]]) + 1).map(([k, c]) => `${k} x${c}`);
+    return Object.entries(n).filter(([k, c]) => c > Math.ceil(w.days.length / w.cv[k[0]]) + 1).map(([k, c]) => `${k} x${c}`);
   } },
   { id: "daily-repeat", hard: false, desc: "a course set to Daily repeats a finished meal (dish + sauce) at most once", check: (w) => {
     const n = {};
     w.days.forEach((d) => d.meals.forEach((m) => { if (!m.out && w.daily[m.type]) { const k = m.type + m.dish + m.sauce; n[k] = (n[k] || 0) + 1; } }));
-    return Object.entries(n).filter(([, c]) => c > 2).map(([k, c]) => `${k} x${c}`);
+    return Object.entries(n).filter(([, c]) => c > (2 * w.days.length) / 7).map(([k, c]) => `${k} x${c}`);
   } },
   { id: "prots-never", hard: true, desc: "no protein the person never eats", check: (w) => w.days.flatMap((d, i) => d.meals.filter((m) => !m.out && w.never.includes(m.main)).map((m) => `day ${i + 1}: ${m.name} [${m.main}]`)) },
   { id: "portion-size", hard: true, desc: "meal and snack portions between 3/4 and 1 1/2", check: (w) => [...w.days.flatMap((d, i) => d.meals.filter((m) => "blds".includes(m.type) && !m.out && (m.mult < 0.75 || m.mult > 1.5)).map((m) => `day ${i + 1}: ${m.name} x${m.mult}`)),
@@ -129,6 +131,7 @@ for (const prof of PROFILES) for (let k = 0; k < SEEDS; k++) {
     return { hh: (ctx.house?.n || 1) + (ctx.house?.others.length || 0), others, never, T: ctx.T, days, protein, shop: B.shopStats(), fz: { peak: B.freezerPeak(), cap: ctx.fcap }, cv: Object.fromEntries(Object.entries(ctx.course).map(([k, c]) => [k, c.variety])), labels, daily, quickDinner: ctx.course.d.effort <= 10 };
   }, { s: { ...base, ...prof.s }, seed });
   w.tight = !!prof.tight;
+  w.nDays = { ...base, ...prof.s }.weeks === 2 ? 14 : 7;
   w.treat = { ...base, ...prof.s }.treat;
   const fails = RULES.map((rule) => ({ rule, probs: rule.check(w) })).filter((x) => x.probs.length);
   results.push({ prof: prof.name, seed, w, fails });
