@@ -219,7 +219,11 @@ button.btn:hover { filter: brightness(1.08); }
 .gsec { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; min-width: 0; }
 .gsec h3 { font-family: var(--display); font-weight: 800; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin: 0 0 6px; }
 /* Grocery rows: the whole row ticks (44 px tall at least); row actions sit behind a menu button */
-.gi { display: grid; grid-template-columns: minmax(0, 1fr) 44px; align-items: start; border-top: 1px solid var(--line); }
+.gi { display: grid; grid-template-columns: minmax(0, 1fr) auto 44px; align-items: start; border-top: 1px solid var(--line); }
+.gi > .gl { grid-column: 1; } .gi > .gm { grid-column: 3; }
+.gfind { grid-column: 2; width: 44px; height: 44px; display: grid; place-items: center; border-radius: 8px; color: var(--accent); }
+.gfind:hover { background: var(--accent-soft); }
+@media print { .gfind { display: none !important; } }
 .gsec h3 + .gi { border-top: 0; }
 .gl { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 10px; align-items: start; min-height: 44px; padding: 10px 0; font-size: 14px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .gl input { width: 22px; height: 22px; margin: 0; accent-color: var(--accent); cursor: pointer; }
@@ -3673,13 +3677,14 @@ button.btn { border-radius: 0; }
   // Search links stand in for a cart (no store API is open to us): one tap finds the item at the store
   const shopLink = (store, q) => {
     q = q.replace(/\s*\(.*?\)/g, "").replace(/,[^,]*\d[^,]*$/, "").replace(/\s+/g, " ").trim();
-    return store === "nf"
-      ? `<a href="https://www.nofrills.ca/en/search?search-bar=${encodeURIComponent(q)}" target="_blank" rel="noopener">Find at No Frills ↗</a>`
-      : `<a href="https://sameday.costco.ca/store/costco-canada/s?k=${encodeURIComponent(q)}" target="_blank" rel="noopener">Find on Costco Same-Day ↗</a>`;
+    const [href, where] = store === "nf"
+      ? [`https://www.nofrills.ca/en/search?search-bar=${encodeURIComponent(q)}`, "No Frills"]
+      : [`https://sameday.costco.ca/store/costco-canada/s?k=${encodeURIComponent(q)}`, "Costco Same-Day"];
+    return `<a class="gfind" href="${href}" target="_blank" rel="noopener" aria-label="Find ${esc(q)} on ${where}" title="Find on ${where}"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2.6"/><path d="M15.5 15.5 21 21" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/></svg></a>`;
   };
-  function gRow(k, on, title, sub, acts, copy) {
+  function gRow(k, on, title, sub, acts, copy, find = "") {
     const plain = title.replace(/<[^>]+>/g, "").trim();
-    return `<div class="gi" data-copy="${esc(copy || plain)}"><label class="gl"><input type="checkbox" data-k="${k}" ${on ? "checked" : ""}><span>${title}${sub}</span></label>`
+    return `<div class="gi" data-copy="${esc(copy || plain)}"><label class="gl"><input type="checkbox" data-k="${k}" ${on ? "checked" : ""}><span>${title}${sub}</span></label>${find}`
       + `<details class="gm"><summary aria-label="More for ${plain.replace(/"/g, "&quot;")}" title="More"><span aria-hidden="true">⋯</span></summary><div class="gpop">${acts.join("")}</div></details></div>`;
   }
   function gCount() {
@@ -3777,8 +3782,8 @@ button.btn { border-radius: 0; }
         return gRow(r.k, checked.has(r.k) || !r.packs, `<span class="row2"><span>${r.nf ? `<span class="store-nf">No Frills</span> ` : ""}${r.prod}</span><span class="price">${r.packs ? money(r.cost) : ""}</span></span>`,
           `<small>${buy}<span class="keep ${r.keep}" title="${KEEP[r.keep][1]}">${KEEP[r.keep][0]}</span>${alt}</small>`,
           [r.packs ? `<button type="button" data-have="${r.k}">Already have it</button>` : `<button type="button" data-unhave="${r.k}">Don't have it</button>`,
-           r.nf ? "" : `<button type="button" data-nostock="${r.k}">Not at my Costco</button>`, shopLink(r.nf ? "nf" : "costco", r.prod)],
-          `${r.packs > 1 ? r.packs + " × " : ""}${r.prod}${r.nf ? " (No Frills)" : ""}${r.packs ? ", " + money(r.cost) : ""}`);
+           r.nf ? "" : `<button type="button" data-nostock="${r.k}">Not at my Costco</button>`],
+          `${r.packs > 1 ? r.packs + " × " : ""}${r.prod}${r.nf ? " (No Frills)" : ""}${r.packs ? ", " + money(r.cost) : ""}`, shopLink(r.nf ? "nf" : "costco", r.prod));
       }).join("");
       box.append(div);
     });
