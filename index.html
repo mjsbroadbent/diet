@@ -1722,29 +1722,31 @@ button.btn { border-radius: 0; }
   }/*NF*/;
   const NF_DATE = /*NFD*/"Nov 21, 2026"/*NFD*/;
   const NF_KEEP = { blackbeans: "p", lentils: "p", tempeh: "r", corntort: "z", ricenoodle: "p", ricecake: "p", pasta: "p", tamari: "p", coco: "p", darkchoc: "p" };
-  // Staples Costco doesn't sell, for the pantry rocket: key: [product, size in grams, ESTIMATED price, keep].
-  // Prices are rough Vancouver supermarket estimates (Nov 22 2026), not scanned; show them as estimates.
+  // Staples Costco doesn't sell, for the pantry rocket: key: [product, size in grams, price, keep, estimated?].
+  // Prices checked on Instacart search (Vancouver, Nov 22 2026; ELSE_DATE); a 5th element true marks a guessed price.
+  const ELSE_DATE = "Nov 22, 2026";
   const ELSEWHERE = {
-    gochujang: ["Gochujang, 500 g tub", 500, 6.99, "p"],
-    misopaste: ["White miso paste, 500 g tub", 500, 6.49, "p"],
-    furikake: ["Furikake, 50 g shaker", 50, 5.49, "p"],
-    hoisin: ["Hoisin sauce, 397 ml jar", 480, 3.99, "p"],
-    fishsauce: ["Fish sauce, 725 ml bottle", 870, 4.49, "p"],
-    currypaste: ["Thai red curry paste, 112 g jar", 112, 4.29, "p"],
-    tahini: ["Tahini, 454 g jar", 454, 7.99, "p"],
-    zaatar: ["Za'atar, 100 g bag", 100, 5.99, "p"],
-    harissa: ["Harissa paste, 200 g jar", 200, 5.99, "p"],
-    adobo: ["Chipotle peppers in adobo, 198 ml can", 198, 2.99, "p"],
-    garam: ["Garam masala, 100 g bag", 100, 4.49, "p"],
-    chutney: ["Mango chutney, 340 g jar", 340, 4.99, "p"],
+    gochujang: ["O Food gochujang, 500 g", 500, 6.29, "p"],
+    misopaste: ["Hanamaruki shiro miso paste, 500 g", 500, 5.99, "p"],
+    furikake: ["Ajishima Seto Fumi furikake, 50 g", 50, 3.29, "p"],
+    hoisin: ["Lee Kum Kee hoisin squeeze sauce, 443 ml", 530, 3.99, "p"],
+    fishsauce: ["Squid Brand fish sauce, 725 ml", 870, 3.49, "p"],
+    currypaste: ["Blue Dragon Thai red curry paste, 270 ml", 270, 4.99, "p"],
+    tahini: ["Nuts To You sesame tahini, 500 g", 500, 9.0, "p"],
+    zaatar: ["Tamam Lebanese za'atar, 454 g", 454, 7.69, "p"],
+    harissa: ["Mina harissa, 296 ml", 300, 9.99, "p"],
+    adobo: ["La Costeña chipotle peppers in adobo, 186 ml", 190, 3.79, "p"],
+    garam: ["Tata Sampann garam masala, 100 g", 100, 1.99, "p"],
+    chutney: ["Patak's sweet mango chutney, 250 ml", 330, 7.49, "p"],
   };
+
   // The pack you'd buy for k: Costco by default; No Frills when Costco doesn't have it or the smaller size wins this week.
   // price is the in-store price.
   function pk(k) {
     const nf = NOFRILLS[k];
     const atC = COSTCO[k] && !nostock.has(k);
     if (nf && (!atC || week?.src?.[k] === "nf")) return { prod: nf[0], size: nf[1], price: nf[2], keep: COSTCO[k]?.[3] || NF_KEEP[k] || "r", nf: true, unit: nf[1] };
-    if (!atC && !nf) { const e = ELSEWHERE[k]; return e ? { prod: e[0], size: e[1], price: e[2], keep: e[3], nf: false, est: true, unit: e[1] } : null; }
+    if (!atC && !nf) { const e = ELSEWHERE[k]; return e ? { prod: e[0], size: e[1], price: e[2], keep: e[3], nf: false, other: true, est: !!e[4], unit: e[1] } : null; }
     const c = COSTCO[k];
     return { prod: c[0], size: c[1], price: c[2] / INSTORE, keep: c[3], nf: false, unit: UNIT[k] || c[1] };
   }
