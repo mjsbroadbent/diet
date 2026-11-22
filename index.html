@@ -113,6 +113,11 @@ fieldset { min-inline-size: 0; }
 .ticks span:last-child { left: auto; right: 0; transform: none; }
 @media (max-width: 560px) { .sl:has([id^="variety-"]) .ticks span:not(:first-child):not(:last-child):not(.on) { font-size: 0; } .sl:has([id^="variety-"]) .ticks span:not(:first-child):not(:last-child):not(.on)::before { content: ""; display: block; width: 3px; height: 3px; margin-top: 6px; border-radius: 50%; background: currentColor; } }
 .ticks span.on { color: var(--ink); font-weight: 700; }
+.house-fold > summary { list-style: none; cursor: pointer; display: flex; align-items: center; min-height: 44px; font-size: 15px; font-weight: 700; }
+.house-fold > summary::-webkit-details-marker { display: none; }
+.house-fold > summary::before { content: "\25B8\FE0E"; display: inline-block; margin-right: 8px; transition: rotate .15s; }
+.house-fold[open] > summary::before { rotate: 90deg; }
+.house-fold > .hint { margin-top: 2px; }
 .hh-wrap { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 14px 20px; }
 .hh-wrap > #addPerson { flex: 1 1 220px; min-height: 48px; }
 .hh-wrap > #hhRow { flex: 0 1 auto; margin: 0; }
@@ -1083,7 +1088,8 @@ button.btn { border-radius: 0; }
 
       <fieldset data-step="you" id="houseSet">
         <legend>Your household</legend>
-        <p class="hint" id="houseHint">Cooking for more than you? Add each person and lunches and dinners are scaled to everyone's calories. Breakfasts and snacks are planned for each person.</p>
+        <details class="house-fold" id="houseFold"><summary>Cooking for more than you?</summary>
+        <p class="hint" id="houseHint">Add each person and lunches and dinners are scaled to everyone's calories. Breakfasts and snacks are planned for each person.</p>
         <div class="people" id="people"></div>
         <div class="hh-wrap">
         <button type="button" class="ghost" id="addPerson">+ Add a profile</button>
@@ -1094,6 +1100,7 @@ button.btn { border-radius: 0; }
           </div>
         </div>
         </div>
+        </details>
       </fieldset>
 
       <fieldset data-step="you">
@@ -4319,6 +4326,7 @@ button.btn { border-radius: 0; }
   const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone;
   $("install").hidden = standalone;
   boxToFooter();
+  if (+$("hhSize").value > 1 || $("people").children.length) $("houseFold").open = true;
   if (document.documentElement.classList.contains("splash")) {
     const endSplash = () => {
       if (!document.documentElement.classList.contains("splash")) return;
@@ -4601,6 +4609,7 @@ button.btn { border-radius: 0; }
       </div>`;
     }).join("");
     $("hhRow").hidden = list.length > 0;
+    if (list.length || +$("hhSize").value > 1) $("houseFold").open = true;
     $("houseHint").hidden = list.length > 0;
   }
   function readPeople() {
