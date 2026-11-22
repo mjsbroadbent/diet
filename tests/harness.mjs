@@ -68,7 +68,7 @@ const RULES = [
     ...(Math.abs(d.k - d.tk) / d.tk > 0.15 ? [`${o.name} day ${i + 1}: ${Math.round(d.k)} vs ${d.tk}`] : []),
     ...d.bad.map((n) => `${o.name} day ${i + 1}: ${n}`)])) },
   { id: "portion-label", hard: true, desc: "portion labels in plain words", check: (w) => (w.labels.filter((t) => /\d×/.test(t)).slice(0, 3)) },
-  { id: "budget", hard: false, desc: "first shop under $300 a person", check: (w) => (w.shop && w.shop.shop > 300 * w.hh ? [`$${Math.round(w.shop.shop)}`] : []) },
+  { id: "budget", hard: false, desc: "this week's food (pantry setup aside) within the weekly cap", check: (w) => (w.shop && w.shop.food > w.shop.cap + 0.5 ? [`$${Math.round(w.shop.food)} of $${w.shop.cap}${w.shop.kit > 0.5 ? ` (+$${Math.round(w.shop.kit)} pantry setup)` : ""}`] : []) },
   { id: "freezer", hard: true, desc: "frozen food fits the freezer on its busiest day", check: (w) => (w.fz && w.fz.peak > w.fz.cap + 1 ? [`${(w.fz.peak / 1000).toFixed(1)} kg of ${(w.fz.cap / 1000).toFixed(0)} kg`] : []) },
   { id: "waste", hard: true, desc: "no fresh food wasted ($0)", check: (w) => (w.shop && w.shop.waste > 0.005 ? [`$${Math.round(w.shop.waste)}`] : []) },
 ];
@@ -149,7 +149,10 @@ console.log(`\nAverage appeal of lunches and dinners: ${(ap.reduce((a, b) => a +
 const shops = results.filter((r) => r.w.shop).map((r) => r.w.shop);
 if (shops.length) {
   const st = (k) => { const v = shops.map((x) => x[k]).sort((a, b) => a - b); return `$${Math.round(v[0])} to $${Math.round(v[v.length - 1])}, median $${Math.round(v[v.length >> 1])}`; };
-  console.log(`\nCostco weeks: shop ${st("shop")} · eaten ${st("eaten")} · fresh waste ${st("waste")}`);
+  console.log(`\nCostco weeks: shop ${st("shop")} · eaten ${st("eaten")} · fresh waste ${st("waste")} · pantry setup ${st("kit")} · this week's food ${st("food")}`);
+  // The weekly cap covers this week's food; pantry setup is bought once and sits outside it. Goal: one-person weeks at least 80% under.
+  const solo = results.filter((r) => r.w.shop && r.w.hh === 1), under = solo.filter((r) => r.w.shop.food <= r.w.shop.cap + 0.5);
+  if (solo.length) console.log(`One-person weeks within the cap: ${under.length}/${solo.length} (${Math.round((100 * under.length) / solo.length)}%, goal 80%)`);
 }
 if (errors.length) console.log(`\nPage errors:\n  ${[...new Set(errors)].join("\n  ")}`);
 process.exit(hardFail ? 1 : 0);
