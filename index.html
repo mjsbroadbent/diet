@@ -1368,6 +1368,20 @@ button.btn { border-radius: 0; }
     artichoke:   ["Marinated artichoke hearts", 120, 2, 7, 9, 4, S.D, ""],
     sundried:    ["Sun-dried tomatoes in oil", 210, 4, 15, 14, 5, S.D, "", { tbsp: 10 }],
     normandy:    ["Normandy vegetable blend (frozen)", 30, 2, 5, 0.3, 2.5, S.F, ""],
+    // Pantry rocket staples (Nov 22 2026). Sesame oil is at Costco; the rest are from other stores (see ELSEWHERE). Label values rounded.
+    sesameoil:   ["Toasted sesame oil", 884, 0, 0, 100, 0, S.N, "sesame", { tbsp: 14 }],
+    gochujang:   ["Gochujang (Korean chili paste)", 210, 4, 45, 2, 3, S.N, "soy gluten", { tbsp: 20 }],
+    misopaste:   ["White miso paste", 200, 12, 26, 6, 5, S.N, "soy", { tbsp: 17 }],
+    furikake:    ["Furikake rice seasoning", 450, 15, 35, 25, 8, S.N, "sesame fish soy", { tbsp: 7 }],
+    hoisin:      ["Hoisin sauce", 220, 3, 44, 3, 2, S.N, "soy gluten sesame", { tbsp: 18 }],
+    fishsauce:   ["Fish sauce", 35, 5, 4, 0, 0, S.N, "fish", { tbsp: 18 }],
+    currypaste:  ["Thai red curry paste", 130, 3, 15, 7, 5, S.N, "", { tbsp: 16 }],
+    tahini:      ["Tahini", 595, 17, 21, 54, 9, S.N, "sesame", { tbsp: 15 }],
+    zaatar:      ["Za'atar", 300, 10, 35, 15, 20, S.N, "sesame", { tbsp: 7 }],
+    harissa:     ["Harissa paste", 100, 2, 10, 6, 5, S.N, "", { tbsp: 16 }],
+    adobo:       ["Chipotle peppers in adobo", 60, 1.5, 10, 2, 4, S.N, "", { tbsp: 16 }],
+    garam:       ["Garam masala", 380, 14, 45, 15, 25, S.N, "", { tbsp: 6 }],
+    chutney:     ["Mango chutney", 230, 0.5, 57, 0.2, 1, S.N, "", { tbsp: 20 }],
     cinnamon:    ["Ground cinnamon", 250, 4, 80, 1, 53, S.N, "", { tbsp: 8 }],
   };
 
@@ -1587,6 +1601,7 @@ button.btn { border-radius: 0; }
     sundried: ["Neri sun-dried tomatoes, 1 L (about 600 g drained)", 600, 9.67, "r"],
     normandy: ["Organic Normandy vegetable blend, 2.5 kg", 2500, 20.89, "p"],
     cinnamon: ["Kirkland Signature organic ground Saigon cinnamon, 303 g", 303, 8.24, "p"],
+    sesameoil: ["Ho-Ya toasted sesame oil, 1.65 L", 1500, 19.79, "p"],
   };
   // Library items Costco doesn't carry, and what replaces them (grams × factor)
   const SUB = { blackbeans: ["chickpeas", 1], lentils: ["chickpeas", 1], tempeh: ["tofu", 1.3], corntort: ["tortilla", 0.75], ricenoodle: ["riceramen", 1], ricecake: ["bread", 1.5], pasta: ["spaghetti", 1], tamari: ["soysauce", 1], coco: ["cocofull", 0.36], darkchoc: ["darkbites", 1.25] };
@@ -1607,6 +1622,7 @@ button.btn { border-radius: 0; }
     "oats brice wrice quinoa pasta spaghetti shortpasta chickpasta riceramen ricenoodle ricecake oil pb ab almonds walnuts chia pepitas honey maple " +
     "salsa tamari soysauce pesto marinara bbq teriyaki sriracha hotsauce sweetchili dijon butterch satay oyster mayo ranch balsglaze chilicrunch " +
     "montreal montchick tacoseas garlicparm everything tajin nosalt italian smpaprika frenchonion cinnamon " +
+    "sesameoil gochujang misopaste furikake hoisin fishsauce currypaste tahini zaatar harissa adobo garam chutney " +
     "berries mango edamame cauli stirfry corn peas mixveg roastveg normandy broccoli").split(" "));
   const FREEZER = { all: Infinity, std: 10000, low: 5000, none: 0 };
   // No Frills (Vancouver, in-store prices from nofrills.ca): key: [product, size in purchase units, price]
@@ -1719,13 +1735,29 @@ button.btn { border-radius: 0; }
   }/*NF*/;
   const NF_DATE = /*NFD*/"Nov 21, 2026"/*NFD*/;
   const NF_KEEP = { blackbeans: "p", lentils: "p", tempeh: "r", corntort: "z", ricenoodle: "p", ricecake: "p", pasta: "p", tamari: "p", coco: "p", darkchoc: "p" };
+  // Staples Costco doesn't sell, for the pantry rocket: key: [product, size in grams, ESTIMATED price, keep].
+  // Prices are rough Vancouver supermarket estimates (Nov 22 2026), not scanned; show them as estimates.
+  const ELSEWHERE = {
+    gochujang: ["Gochujang, 500 g tub", 500, 6.99, "p"],
+    misopaste: ["White miso paste, 500 g tub", 500, 6.49, "p"],
+    furikake: ["Furikake, 50 g shaker", 50, 5.49, "p"],
+    hoisin: ["Hoisin sauce, 397 ml jar", 480, 3.99, "p"],
+    fishsauce: ["Fish sauce, 725 ml bottle", 870, 4.49, "p"],
+    currypaste: ["Thai red curry paste, 112 g jar", 112, 4.29, "p"],
+    tahini: ["Tahini, 454 g jar", 454, 7.99, "p"],
+    zaatar: ["Za'atar, 100 g bag", 100, 5.99, "p"],
+    harissa: ["Harissa paste, 200 g jar", 200, 5.99, "p"],
+    adobo: ["Chipotle peppers in adobo, 198 ml can", 198, 2.99, "p"],
+    garam: ["Garam masala, 100 g bag", 100, 4.49, "p"],
+    chutney: ["Mango chutney, 340 g jar", 340, 4.99, "p"],
+  };
   // The pack you'd buy for k: Costco by default; No Frills when Costco doesn't have it or the smaller size wins this week.
   // price is the in-store price.
   function pk(k) {
     const nf = NOFRILLS[k];
     const atC = COSTCO[k] && !nostock.has(k);
     if (nf && (!atC || week?.src?.[k] === "nf")) return { prod: nf[0], size: nf[1], price: nf[2], keep: COSTCO[k]?.[3] || NF_KEEP[k] || "r", nf: true, unit: nf[1] };
-    if (!atC && !nf) return null;
+    if (!atC && !nf) { const e = ELSEWHERE[k]; return e ? { prod: e[0], size: e[1], price: e[2], keep: e[3], nf: false, est: true, unit: e[1] } : null; }
     const c = COSTCO[k];
     return { prod: c[0], size: c[1], price: c[2] / INSTORE, keep: c[3], nf: false, unit: UNIT[k] || c[1] };
   }
@@ -3387,6 +3419,19 @@ button.btn { border-radius: 0; }
     pepitas:    { g: 10, kind: "mix", types: "bs", no: ["pepitas"], goes: ["yogurt", "oats", "cottage", "cocoyog", "greens"] },
     darkbites:  { g: 7, kind: "mix", types: "bs", no: ["darkbites", "darkchoc"], goes: ["yogurt", "ycup", "oats", "cottage", "pb"] },
     cinnamon:   { g: 1, kind: "rub", types: "bs", goes: ["oats", "yogurt", "cottage", "apple", "banana", "ricotta", "bread"] },
+    sesameoil:  { g: 5, kind: "top", goes: ["wrice", "brice", "stirfry", "bokchoy", "broccoli", "riceramen", "egg", "tofu", "edamame", "cucumber", "spinach"] },
+    gochujang:  { g: 15, goes: ["wrice", "brice", "beef", "pork", "chicken", "thigh", "tofu", "egg", "riceramen", "stirfry", "porkchop"] },
+    misopaste:  { g: 10, goes: ["salmon", "cod", "tofu", "wrice", "brice", "bokchoy", "mushroom", "sweetpot", "broccoli"] },
+    furikake:   { g: 3, kind: "top", goes: ["wrice", "brice", "egg", "salmon", "tuna", "avocado", "edamame", "tofu", "pinksalmon"] },
+    hoisin:     { g: 20, goes: ["pork", "porkchop", "beef", "chicken", "thigh", "tofu", "wrice", "riceramen", "stirfry", "meatballs"] },
+    fishsauce:  { g: 5, goes: ["wrice", "stirfry", "chicken", "thigh", "shrimp", "pork", "beef", "riceramen", "egg", "bokchoy"] },
+    currypaste: { g: 15, goes: ["chicken", "thigh", "shrimp", "tofu", "wrice", "brice", "stirfry", "cauli", "sweetpot", "cod"] },
+    tahini:     { g: 15, salad: true, goes: ["chickpeas", "greens", "romaine", "quinoa", "pita", "roastveg", "cauli", "caulifl", "chicken", "salmon", "sweetpot"] },
+    zaatar:     { g: 2, kind: "rub", salad: true, types: "blds", goes: ["chicken", "thigh", "egg", "pita", "naan", "chickpeas", "greens", "quinoa", "cucumber", "cottage", "potato"] },
+    harissa:    { g: 12, goes: ["chicken", "thigh", "salmon", "egg", "chickpeas", "roastveg", "potato", "sweetpot", "beef", "sausage", "cauli"] },
+    adobo:      { g: 10, goes: ["chicken", "thigh", "beef", "turkey", "pork", "sweetpot", "blackbeans", "chickpeas", "tortilla", "corntort", "egg", "potato"] },
+    garam:      { g: 2, kind: "rub", goes: ["chicken", "thigh", "chickpeas", "lentils", "cauli", "caulifl", "potato", "sweetpot", "peas", "wrice", "egg"] },
+    chutney:    { g: 20, goes: ["chicken", "thigh", "cheddar", "naan", "pork", "porkchop", "rchicken", "wrice", "ham"] },
   };
   const SAUCED = new Set([...Object.keys(SAUCE).filter((k) => SAUCE[k].kind !== "fresh" && SAUCE[k].kind !== "mix"), "marinara", "coco", "cocofull", "hummus", "saladkit", "ctsoup", "lentsoup", "kimchi", "broth", "butterch", "satay", "kalekit", "grsalad", "caesar", "quinsal", "bcsoup", "udon", "bulgogi", "chipchick"]);
   function sauceOptions(m) {
@@ -3399,7 +3444,7 @@ button.btn { border-radius: 0; }
       if (!sc.goes.some((x) => ks.includes(x)) || sc.no?.some((x) => ks.includes(x))) return false;
       // Salads get a dressing-style sauce, not a glaze
       if ((ks.includes("greens") || /salad/i.test(m.name)) && !sc.salad) return false;
-      if (ctx.costco && (!COSTCO[k] || nostock.has(k)) && !NOFRILLS[k]) return false;
+      if (ctx.costco && (!COSTCO[k] || nostock.has(k)) && !NOFRILLS[k] && !(ELSEWHERE[k] && (staples.has(k) || pantry[k] > 0))) return false;
       const n = m.n.map((v, j) => v + (ING[k][1 + j] * sc.g) / 100);
       return allowed({ tags: new Set([...m.tags, ...ING[k][7].split(" ").filter(Boolean)]), text: m.text + " " + ING[k][0].toLowerCase(), n }, ctx.diets, ctx.avoid);
     });
@@ -4440,6 +4485,84 @@ button.btn { border-radius: 0; }
     ["Grains and pasta", ["oats", "wrice", "brice", "quinoa", "pasta", "spaghetti", "shortpasta"]],
     ["Cans, broth and seeds", ["cantom", "chickpeas", "blackbeans", "tuna", "cchicken", "broth", "coco", "chia", "pepitas"]],
   ].map(([h, ks]) => [h, ks.filter((k) => ING[k])]);
+  // ---------- Pantry rocket ----------
+  // Planets from Earth outward: the basics first, then flavour families. Items may come from Costco or another store
+  // (ELSEWHERE, estimated prices). ABOUT says what each item is and what it goes on; the meals it unlocks come from
+  // the recipes that use it plus the SAUCE goes list. Keys missing from ING are dropped.
+  const PLANETS = [
+    { id: "earth", name: "Earth", tag: "The basics every kitchen runs on.", keys: ["oil", "wrice", "oats", "spaghetti", "cantom", "broth", "soysauce", "pb", "honey", "dijon", "hotsauce", "nosalt"] },
+    { id: "smoke", name: "Planet Smokehouse", tag: "Barbecue, steakhouse rubs and diner classics.", keys: ["bbq", "montreal", "montchick", "garlicparm", "ranch", "everything", "frenchonion", "mayo"] },
+    { id: "salsa", name: "Planet Salsa", tag: "Tex-Mex heat, smoke and lime.", keys: ["salsa", "tacoseas", "smpaprika", "tajin", "adobo", "blackbeans"] },
+    { id: "olive", name: "Planet Olive", tag: "Mediterranean jars, herbs and sesame.", keys: ["pesto", "olives", "artichoke", "sundried", "balsglaze", "italian", "tahini", "zaatar", "harissa"] },
+    { id: "seoul", name: "Planet Seoul", tag: "Korean chili, sesame and funk.", keys: ["gochujang", "sesameoil", "kimchi", "sriracha", "chilicrunch"] },
+    { id: "umami", name: "Planet Umami", tag: "Japanese savoury: miso, teriyaki and rice sprinkles.", keys: ["teriyaki", "misopaste", "furikake", "riceramen"] },
+    { id: "wok", name: "Planet Wok", tag: "Chinese and Thai sauces for the stir-fry pan.", keys: ["oyster", "hoisin", "fishsauce", "currypaste", "coco", "satay", "sweetchili"] },
+    { id: "masala", name: "Planet Masala", tag: "Indian spice, chutney and simmer sauce.", keys: ["garam", "chutney", "butterch", "lentils"] },
+    { id: "sweet", name: "Planet Sweet Tooth", tag: "Breakfast toppings and mix-ins.", keys: ["maple", "cinnamon", "chia", "ab", "granola", "darkbites"] },
+  ].map((pl) => ({ ...pl, keys: pl.keys.filter((k) => ING[k]) }));
+  const ABOUT = {
+    oil: "Olive oil. For searing, roasting and dressing almost everything.",
+    wrice: "Jasmine rice. The base for bowls, stir-fries and plates.",
+    oats: "Rolled oats. Overnight oats, porridge and smoothies.",
+    spaghetti: "Dry pasta. Keeps for a year; pairs with any jarred sauce.",
+    cantom: "Canned diced tomatoes. Chili, curry, soup and quick pasta sauce.",
+    broth: "Chicken broth. Soups, rice cooked with flavour and pan sauces.",
+    soysauce: "Soy sauce. Salty umami for rice, eggs, stir-fries and marinades.",
+    pb: "Peanut butter. Toast, oats, smoothies and peanut sauces.",
+    honey: "Honey. Yogurt, oats, glazes and dressings.",
+    dijon: "Dijon mustard. Salmon, pork, chicken and vinaigrettes.",
+    hotsauce: "Frank's RedHot. Eggs, chicken, potatoes and wings.",
+    nosalt: "No-salt herb seasoning. Flavour on anything without the sodium.",
+    bbq: "Japanese barbecue sauce. A sweet soy glaze for chicken, pork, salmon and tofu.",
+    montreal: "Montreal steak spice. Coarse pepper, garlic and salt for steak, burgers and potatoes.",
+    montchick: "Montreal chicken seasoning. Rub it on chicken, pork chops and roast vegetables.",
+    garlicparm: "Garlic parmesan seasoning. Potatoes, broccoli, chicken and pasta.",
+    ranch: "Ranch dressing. Salads, wraps, wings and a dip for crispy chicken.",
+    everything: "Everything bagel seasoning. Sesame, garlic and onion crunch for eggs, avocado and salmon.",
+    frenchonion: "Crispy fried onions. Crunch on green beans, salads, burgers and potatoes.",
+    mayo: "Mayonnaise. Sandwiches, tuna and egg salad, quick aioli.",
+    salsa: "Salsa. Eggs, tacos, burrito bowls and baked potatoes.",
+    tacoseas: "Taco seasoning. Ground beef or turkey, chicken, beans and roast sweet potato.",
+    smpaprika: "Smoked paprika. A smoky red rub for chicken, potatoes, chickpeas and eggs.",
+    tajin: "Tajín. Chili-lime salt for fruit, corn, cucumber and shrimp.",
+    adobo: "Chipotle peppers in adobo. Smoky heat for chili, tacos, mayo and marinades.",
+    blackbeans: "Black beans. Burrito bowls, tacos, quesadillas and chili.",
+    pesto: "Basil pesto. Pasta, chicken, sandwiches and eggs.",
+    olives: "Kalamata olives. Salads, pasta, pita plates and fish.",
+    artichoke: "Marinated artichoke hearts. Salads, pasta, pizza and pita.",
+    sundried: "Sun-dried tomatoes. Sweet-tart bites for pasta, salads, eggs and gnocchi.",
+    balsglaze: "Balsamic glaze. A sweet drizzle on salads, roast vegetables, chicken and steak.",
+    italian: "Italian seasoning. Dried herbs for chicken, pasta, potatoes and eggs.",
+    tahini: "Tahini. Sesame paste for dressings, grain bowls, chickpeas and roast vegetables.",
+    zaatar: "Za'atar. Thyme, sesame and sumac for eggs, chicken, pita and yogurt dips.",
+    harissa: "Harissa. North African chili paste for chicken, eggs, chickpeas and roast vegetables.",
+    gochujang: "Gochujang. Sweet, spicy Korean chili paste for rice bowls, beef, pork, chicken and eggs.",
+    sesameoil: "Toasted sesame oil. A few drops finish rice, noodles, greens and stir-fries.",
+    kimchi: "Kimchi. Spicy fermented cabbage for fried rice, bowls, eggs and noodles. Keeps for months in the fridge.",
+    sriracha: "Sriracha. Garlicky chili sauce for rice, eggs, noodles and tuna.",
+    chilicrunch: "Chili crunch. Crispy chili oil spooned over eggs, rice, noodles and dumplings.",
+    teriyaki: "Teriyaki sauce. A soy glaze for chicken, salmon, tofu and rice bowls.",
+    misopaste: "White miso. Salty fermented soybean paste for glazed salmon, soups, dressings and veg.",
+    furikake: "Furikake. Sesame, seaweed and salt sprinkled on rice, eggs, salmon and avocado.",
+    riceramen: "Rice ramen noodles. Quick noodle bowls and soups, gluten-free.",
+    oyster: "Oyster sauce. Glossy savoury sauce for stir-fries, greens and beef.",
+    hoisin: "Hoisin. Sweet, thick Chinese sauce for pork, chicken, noodles and lettuce wraps.",
+    fishsauce: "Fish sauce. A few drops add deep salty flavour to stir-fries, rice and marinades.",
+    currypaste: "Thai red curry paste. Stir into coconut milk for a curry with chicken, shrimp or tofu.",
+    coco: "Coconut milk. Curries, soups and overnight oats.",
+    satay: "Peanut satay sauce. Noodles, chicken skewers and tofu.",
+    sweetchili: "Sweet chili sauce. Dip for shrimp, dumplings and crispy chicken.",
+    garam: "Garam masala. Warm Indian spice blend for chicken, chickpeas, lentils and potatoes.",
+    chutney: "Mango chutney. Sweet and tangy with curry, chicken, cheese and naan.",
+    butterch: "Butter chicken sauce. Simmer chicken or chickpeas in it and serve over rice.",
+    lentils: "Lentils. Soups, curries and lentil bolognese.",
+    maple: "Maple syrup. Oats, yogurt and glazes.",
+    cinnamon: "Cinnamon. Oats, yogurt, apples and toast.",
+    chia: "Chia seeds. Thicken overnight oats, puddings and smoothies.",
+    ab: "Almond butter. Toast, oats, apples and smoothies.",
+    granola: "Granola. Crunch on yogurt and cottage cheese.",
+    darkbites: "Dark chocolate bites. A little sweet on yogurt or oats.",
+  };
   // Pantry starter kit: long-life staples ranked by how many of this person's meals they open up per dollar.
   // A meal counts by how much the planner wants it (appeal, proteins you eat, your ratings), so a staple behind
   // well-liked meals ranks above one behind meals you'd rarely see. Sauces also count the meals "Sauce it up" can dress with them.
