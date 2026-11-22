@@ -22,7 +22,7 @@ const PROFILES = [
   { name: "Household of 3, vegetarian", s: { hh: { n: 3, people: [{}, { name: "Sam", sex: "male", age: 31, heightCm: 183, weightKg: 85, activity: 1.725, goal: "maintain", diets: ["Vegetarian"], home: { l: [false, false, false, false, false, true, true] } }, { name: "Kid", sex: "female", age: 15, heightCm: 160, weightKg: 50, activity: 1.55, goal: "maintain", diets: ["Vegetarian"], avoid: "nut" }] }, sex: "female", age: 29, heightCm: 165, weightKg: 62, goal: "maintain", diets: ["Vegetarian"], snacks: "2" } },
   { name: "Family of 4, young kids", s: { hh: { n: 4, people: [{}, { name: "Alex", sex: "female", age: 36, heightCm: 168, weightKg: 66, activity: 1.375, goal: "maintain", diets: [] }, { name: "Ben", sex: "male", age: 9, heightCm: 133, weightKg: 28, activity: 1.55, goal: "maintain", diets: [], avoid: "nut", home: { l: [false, false, false, false, false, true, true] } }, { name: "Cleo", sex: "female", age: 6, heightCm: 115, weightKg: 20, activity: 1.55, goal: "maintain", diets: [], home: { l: [false, false, false, false, false, true, true] } }] } } },
   { name: "Vegan, 2 meals", s: { diets: ["Vegan"], meals: "2", snacks: "1", sex: "female", heightCm: 170, weightKg: 68, age: 41 } },
-  { name: "Vegan keto", tight: true, s: { diets: ["Vegan", "Keto"] } },
+  { name: "Vegan keto", tight: true, seeds: [6, 7, 10, 15], s: { diets: ["Vegan", "Keto"] } },
   { name: "Keto man", s: { diets: ["Keto"], weightKg: 95, age: 45 } },
   { name: "Gluten-free, nut allergy", s: { diets: ["Gluten-free"], avoid: "nut", prots: { beef: 0, pork: 0 }, sex: "female", heightCm: 160, weightKg: 70, age: 52 } },
   { name: "Pescatarian, treats", s: { diets: ["Pescatarian"], treat: "h", sex: "female", heightCm: 168, weightKg: 58, goal: "maintain" } },

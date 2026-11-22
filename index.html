@@ -2117,10 +2117,11 @@ button.btn { border-radius: 0; }
   // At the plan's end, an opened pack already past its days is lost too; one with time to go is "finish within N days" (left),
   // carried into the next plan with those days.
   function openSim(per) {
-    const lost = {}, ev = [], at = {}, N = per.length;
+    const lost = {}, ev = [], at = {}, frz = [], N = per.length;
     // An opened pack carried over from the last plan is used first, and keeps only the days it has left
     for (const k in openStock) { const o = openStock[k], L = openLife(k); if (L && o.g > 0 && (pantry[k] || 0) >= o.g - 1) at[k] = { r: o.g, f: o.days - L }; }
-    const loss = (kk, s, d) => { const k = baseK(kk); if (s.r <= openMin(openUnit(k)) || openFreezes(k)) return; lost[kk] = (lost[kk] || 0) + s.r; ev.push({ kk, k, f: s.f, d, g: s.r }); };
+    // (one that freezes goes in the freezer the day its time runs out, and takes up room there from then on)
+    const loss = (kk, s, d) => { const k = baseK(kk); if (s.r <= openMin(openUnit(k))) return; if (openFreezes(k)) { frz.push({ k, from: Math.max(0, s.f + openLife(k)), g: s.r }); return; } lost[kk] = (lost[kk] || 0) + s.r; ev.push({ kk, k, f: s.f, d, g: s.r }); };
     per.forEach((n, d) => { for (const kk in n) {
       const k = baseK(kk), L = openLife(k), U = L && openUnit(k);
       if (!U || !(n[kk] > 1e-6)) continue;
@@ -2138,7 +2139,7 @@ button.btn { border-radius: 0; }
       if (daysLeft < 1 || (daysLeft < openLife(k) / 2 && s.r > 1.5 * pace * daysLeft)) loss(kk, s, N);
       else left[kk] = { g: s.r, days: daysLeft, freeze: openFreezes(k) };
     }
-    return { lost, ev, left };
+    return { lost, ev, left, frz };
   }
   const openWorth = (kk, g) => { const P = pk(baseK(kk)); return P ? (g / P.size) * P.price : 0; };
   const ownedK = (k) => (k.endsWith("@2") ? 0 : pantry[k] || 0);
@@ -2565,13 +2566,48 @@ button.btn { border-radius: 0; }
         const b2 = buildWeek(ctx, seed + k * 7919);
         if (!b2.error && weekShop(ctx, b2.days).waste < weekShop(ctx, b.days).waste) b = b2;
       }
-      week = b.error ? { error: b.error } : { key, inputs: inputsOf(s, r), seed, days: b.days, rulesV: RULES_V, ...(broke ? { replanNote: "Your week was planned again to fit your protein and household settings. Days you've marked done stay as they were." } : {}) };
-      if (!b.error) {
+      const plan = (b) => {
+        week = b.error ? { error: b.error } : { key, inputs: inputsOf(s, r), seed, days: b.days, rulesV: RULES_V, ...(broke ? { replanNote: "Your week was planned again to fit your protein and household settings. Days you've marked done stay as they were." } : {}) };
+        if (b.error) return;
         // Days marked done stay exactly as eaten
         prev?.days?.forEach((d, i) => { if (d.passed && d.ids.every((id) => MEAL[id])) week.days[i] = d; });
         hotFirst(); topUpDays();
-        rebalance(); finishUp(); openRepair(); ls.set("ad-week", week);
+        rebalance(); finishUp(); openRepair();
+      };
+      plan(b);
+      // Zero waste, last resort: food still thrown out once the week is finished (often an opened tub nothing else uses up
+      // in time) means planning again from other draws, keeping the least wasteful; failing that, without the food that went to waste
+      // A redraw must keep the hard limits too: food bought hot (one chicken's worth per shop, first 3 days) and the freezer
+      const cost = () => {
+        let over = 0;
+        const hot = {};
+        week.days.forEach((d, di) => houseItems(dayData(d, di)).forEach(({ k, g }) => { if (!isHot(k)) return; if (di % 7 >= HOT_DAYS) over += 1; const sk = k + "/" + Math.floor(di / 7); hot[sk] = (hot[sk] || 0) + g; }));
+        for (const sk in hot) if (hot[sk] > hotCap(sk.split("/")[0]) + 1) over += 1;
+        if (ctx.fcap < Infinity && freezerPeak() > ctx.fcap) over += 1;
+        return 100 * over + (shopStats()?.waste || 0);
+      };
+      if (ctx.costco && !b.error && cost() > 0.005) {
+        let best = { w: cost(), week };
+        for (let k = 3; k <= 6 && best.w > 0.005; k++) {
+          const b2 = buildWeek(ctx, seed + k * 7919);
+          if (b2.error) continue;
+          plan(b2);
+          const w = cost();
+          if (w < best.w - 0.005) best = { w, week };
+        }
+        const pools0 = ctx.pools;
+        for (let k = 0; k < 2 && best.w > 0.005; k++) {
+          week = best.week;
+          const out = new Set((shopStats()?.wasted || []).map(([x]) => x));
+          const fewer = Object.fromEntries(Object.entries(pools0).map(([ty, p]) => { const f = p.filter((m) => !m.items.some(([x]) => out.has(x))); return [ty, f.length >= 3 ? f : p]; }));
+          ctx.pools = fewer;
+          const b2 = buildWeek(ctx, seed + (7 + k) * 7919);
+          if (!b2.error) { plan(b2); const w = cost(); if (w < best.w - 0.005) best = { w, week }; }
+          ctx.pools = pools0;
+        }
+        week = best.week;
       }
+      if (!b.error) ls.set("ad-week", week);
       Object.keys(skipped).forEach((k) => delete skipped[k]);
     }
     renderMenu();
@@ -2585,7 +2621,9 @@ button.btn { border-radius: 0; }
     const hv = { ...pantry };
     let peak = 0;
     const days = needs || week.days.map((d, di) => { const n = {}; houseItems(dayData(d, di)).forEach(({ k, g }) => (n[k] = (n[k] || 0) + buyUnits(k, g))); return n; });
-    days.forEach((n) => {
+    // Opened jars frozen once their fridge days run out take room too
+    const frz = openSim(days).frz;
+    days.forEach((n, di) => {
       for (const k in n) {
         const P = pk(k);
         if (!P) continue;
@@ -2595,6 +2633,7 @@ button.btn { border-radius: 0; }
       }
       let load = 0;
       for (const k in hv) if (hv[k] > 0 && inFreezer(k, ctx.fcap)) load += hv[k];
+      frz.forEach((f) => { if (di >= f.from) load += f.g; });
       if (load > peak) { peak = load; freezerPeak[needs ? "atN" : "at"] = Object.fromEntries(Object.entries(hv).filter(([k, v]) => v > 0 && inFreezer(k, ctx.fcap)).map(([k, v]) => [k, Math.round(v)])); }
     });
     return peak;
@@ -2633,7 +2672,7 @@ button.btn { border-radius: 0; }
   }
   // The plan's opened packs, day by day, from what's really on the plates (finishing extras and everyone's own meals too)
   function openPlan() {
-    if (!ctx?.costco || !week?.days) return { lost: {}, ev: [], left: {} };
+    if (!ctx?.costco || !week?.days) return { lost: {}, ev: [], left: {}, frz: [] };
     return openSim(week.days.map((d, di) => { const n = {}; houseItems(dayData(d, di)).forEach(({ k, g }) => { const kk = keyOf(k, di); n[kk] = (n[kk] || 0) + buyUnits(k, g); }); return n; }));
   }
   // Test hook for tests/harness.mjs: build a week from given settings and seed, without touching saved data
@@ -2764,7 +2803,8 @@ button.btn { border-radius: 0; }
           if (best || m0.out || !m0.items.some(([k]) => k === e.k)) return;
           const today = new Set(d.ids.filter((x, j) => j !== si).map((x) => dishOf(MEAL[x])));
           const cross = m0.type === "l" ? other.d : m0.type === "d" ? other.l : null;
-          let cands = ctx.pools[m0.type].filter((m) => !m.items.some(([k]) => k === e.k) && freshOK(m, di) && !today.has(dishOf(m)) && !cross?.has(dishOf(m)));
+          // (no food bought hot: its one-chicken, first-3-days limit was settled earlier)
+          let cands = ctx.pools[m0.type].filter((m) => !m.items.some(([k]) => k === e.k) && !hotIn(m) && freshOK(m, di) && !today.has(dishOf(m)) && !cross?.has(dishOf(m)));
           const known = cands.filter((m) => m.items.every(([k]) => onList.has(k) || !(isFresh(k, ctx.fcap) || openLife(k))));
           if (known.length) cands = known;
           const T = dayT(d), fit = (ids) => { const o = optimize(ids.map((x) => MEAL[x]), T, makeScorer(T)); o.s += ctx.appealScore(ids.map((x) => MEAL[x])); return o; };
