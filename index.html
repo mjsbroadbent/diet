@@ -4002,7 +4002,7 @@ button.btn { border-radius: 0; }
   const shopLink = (store, q) => {
     q = q.replace(/\s*\(.*?\)/g, "").replace(/,[^,]*\d[^,]*$/, "").replace(/\s+/g, " ").trim();
     const [href, where] = store === "nf"
-      ? [`https://www.nofrills.ca/en/search?search-bar=${encodeURIComponent(q)}`, "No Frills"]
+      ? [`https://www.instacart.ca/store/s?k=${encodeURIComponent(q)}`, "Instacart"]
       : [`https://sameday.costco.ca/store/costco-canada/s?k=${encodeURIComponent(q)}`, "Costco Same-Day"];
     return `<a class="gfind" href="${href}" target="_blank" rel="noopener" aria-label="Find ${esc(q)} on ${where}" title="Find on ${where}"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2.6"/><path d="M15.5 15.5 21 21" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/></svg></a>`;
   };
