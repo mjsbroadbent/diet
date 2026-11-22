@@ -635,6 +635,16 @@ window.BBD_DATA = (() => {
       pepper: "in the crisper", tomato: "on the counter till ripe, then the fridge", asparagus: "stems in a little water in the fridge", brussels: "in a bag in the crisper",
       caulifl: "wrapped, in the fridge", romaine: "wrapped in a damp towel", bokchoy: "in a bag in the crisper", kalekit: "sealed, in the fridge",
       grapes: "unwashed, in the fridge", pineapple: "whole, in the fridge so it stops ripening" },
+    // Opened or cut (Chief: salsa, hummus, most dairy except firm cheese, most canned food; whole fruit and big veg once cut):
+    // days it keeps from its first planned use, however long it keeps sealed or whole. Best guesses for Chief to correct.
+    open: { yogurt: 7, cottage: 7, milk: 7, soymilk: 7, oatmilk: 7, ricotta: 5, feta: 7, tzatziki: 7, cocoyog: 7, eggwhite: 4,
+      hummus: 7, salsa: 7, marinara: 5, butterch: 4, pesto: 7, alfredo: 4,
+      cantom: 4, chickpeas: 4, blackbeans: 4, lentils: 4, tuna: 2, coco: 4, cocofull: 4, broth: 5, ctsoup: 3, lentsoup: 3,
+      pineapple: 4, avocado: 2, cucumber: 5, onion: 7, pepper: 5, zucchini: 5, tomato: 3, squash: 5 },
+    // What gets opened (or cut) at a time, where it isn't one sub-pack (UNIT) or one piece: grams or ml
+    unit: { hummus: 565, milk: 2000, squash: 1000 },
+    // Opened and not finished in time: these can go in the freezer instead, when there is one
+    freeze: ["marinara", "butterch", "pesto", "broth", "coco", "cocofull", "cantom", "chickpeas", "blackbeans", "lentils", "ctsoup", "lentsoup", "pineapple", "eggwhite"],
   };
   const KEEP = { p: ["Keeps", "Pantry or freezer. Carries over."], z: ["Freeze", "Freeze what you won't use in a few days."], r: ["Keeps a few weeks", "Fridge or a cool cupboard."], x: ["Use this week", "Won't keep. Not carried over."] };
   // Recipes at a base portion. Portions are scaled per day to hit your targets.

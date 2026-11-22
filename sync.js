@@ -21,7 +21,7 @@
 
   // What follows you between devices: the plan (same keys as a share link) plus ticks and ratings.
   // The look, the open step and install state stay per device.
-  var KEYS = ["ad-inputs", "ad-seed", "ad-week", "ad-nostock", "ad-staples", "ad-pantry", "ad-have", "ad-checked", "ad-rate", "ad-swapped"];
+  var KEYS = ["ad-inputs", "ad-seed", "ad-week", "ad-nostock", "ad-staples", "ad-pantry", "ad-have", "ad-open", "ad-checked", "ad-rate", "ad-swapped"];
   var META = "ad-sync"; // { uid, stamp, hash }: the account and the cloud version this device last matched
   var raw = Storage.prototype.getItem, put = Storage.prototype.setItem, del = Storage.prototype.removeItem;
   var get = function (k) { try { return raw.call(localStorage, k); } catch (e) { return null; } };

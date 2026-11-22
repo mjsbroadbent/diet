@@ -99,6 +99,7 @@ const RULES = [
   { id: "hh-mixed", hard: true, desc: "meat eater sharing with a vegetarian: the meat eater still gets meat or fish in at least a third of lunches and dinners", check: (w) => (w.mixed && w.meatShare < 1 / 3 ? [`${Math.round(w.meatShare * 100)}% of lunches and dinners`] : []) },
   { id: "sometimes", hard: true, desc: "a protein set to Sometimes is in at most 3 lunches and dinners a week (unless the page says the settings leave too few proteins)", check: (w) => w.ceil.slice(0, 3) },
   { id: "fridge-life", hard: true, desc: "no fresh food is planned past its fridge life from the shop it was bought on (day 1, or the day-8 top-up)", check: (w) => w.stale.slice(0, 4) },
+  { id: "opened-life", hard: true, desc: "an opened tub, carton or can (or cut fruit and veg) is eaten within its opened life, or frozen; none is left to spoil", check: (w) => w.opened.slice(0, 4) },
   { id: "pieces", hard: true, desc: "food eaten by the piece is served whole (halves only for banana, avocado, naan, scoops)", check: (w) => w.pieces.slice(0, 4) },
   { id: "waste", hard: true, desc: "no fresh food wasted ($0)", check: (w) => (w.shop && w.shop.waste > 0.005 ? [`$${Math.round(w.shop.waste)}`] : []) },
 ];
@@ -186,13 +187,31 @@ for (const prof of PROFILES) for (let k = 0; k < SEEDS + (prof.seeds?.length || 
       const life = B.fridge(it.k), from = B.keyOf(it.k, di).endsWith("@2") ? 7 : 0;
       if (di - from >= life) stale.push(`day ${di + 1}: ${it.k} (keeps ${life} days from day ${from + 1})`);
     })));
+    // Opened life: eat each opened pack in order; any of it eaten past its days, or left at the end past its days (or, under half its days to go, more than the plan's pace eats in them), fails
+    const opened = [], per = week.days.map((d, di) => { const n = {}, dd = B.dayData(d, di);
+      dd.meals.forEach((x) => x.items.forEach((it) => { const kk = B.keyOf(it.k, di); n[kk] = (n[kk] || 0) + (it.hg ?? it.g); }));
+      (dd.own || []).forEach((o) => o.meals.forEach((x) => x.items.forEach((it) => { const kk = B.keyOf(it.k, di); n[kk] = (n[kk] || 0) + it.g; })));
+      return n; });
+    const at = {};
+    per.forEach((n, di) => { for (const kk in n) {
+      const k = kk.replace(/@2$/, ""), o = B.open(k);
+      if (!o.life || !o.unit || o.freezes) continue;
+      const s = (at[kk] ||= { r: 0, f: 0 });
+      for (let g = n[kk]; g > 1e-6;) {
+        if (s.r <= 1e-6) { if (g <= Math.max(5, 0.02 * o.unit)) break; s.r = o.unit; s.f = di; }
+        const x = Math.min(s.r, g);
+        if (di - s.f >= o.life && x > Math.max(20, 0.05 * o.unit)) opened.push(`day ${di + 1}: ${k} opened day ${s.f + 1} (keeps ${o.life} days open)`);
+        s.r -= x; g -= x;
+      }
+    } });
+    for (const kk in at) { const k = kk.replace(/@2$/, ""), o = B.open(k), s = at[kk]; if (s.r > Math.max(20, 0.05 * o.unit) && (s.f + o.life - per.length < 1 || (s.f + o.life - per.length < o.life / 2 && s.r > 1.5 * (per.reduce((x, n) => x + (n[kk] || 0), 0) / per.length) * (s.f + o.life - per.length)))) opened.push(`${k}: ${Math.round(s.r)} g opened day ${s.f + 1} left to spoil`); }
     const ings = new Set();
     week.days.forEach((d, di) => { const dd = B.dayData(d, di); dd.meals.forEach((x) => x.items.forEach((it) => ings.add(it.k))); (dd.own || []).forEach((o) => o.meals.forEach((x) => x.items.forEach((it) => ings.add(it.k)))); });
-    return { stale, hhBad, meatShare, ceil, pieces, ings: [...ings], hh: (ctx.house?.n || 1) + (ctx.house?.others.length || 0), others, never, T: ctx.T, days, protein, shop: B.shopStats(), fz: { peak: B.freezerPeak(), cap: ctx.fcap }, cv: Object.fromEntries(Object.entries(ctx.course).map(([k, c]) => [k, c.variety])), labels, daily, quickDinner: ctx.course.d.effort <= 10 };
+    return { opened, stale, hhBad, meatShare, ceil, pieces, ings: [...ings], hh: (ctx.house?.n || 1) + (ctx.house?.others.length || 0), others, never, T: ctx.T, days, protein, shop: B.shopStats(), fz: { peak: B.freezerPeak(), cap: ctx.fcap }, cv: Object.fromEntries(Object.entries(ctx.course).map(([k, c]) => [k, c.variety])), labels, daily, quickDinner: ctx.course.d.effort <= 10 };
   }, { s: S, seed });
   w.tight = !!prof.tight;
   w.mixed = !!prof.mixed;
-  w.stale ||= []; w.hhBad ||= []; w.ceil ||= []; w.pieces ||= [];
+  w.opened ||= []; w.stale ||= []; w.hhBad ||= []; w.ceil ||= []; w.pieces ||= [];
   w.ings = new Set(w.ings || []);
   w.low = !!prof.low;
   w.nDays = S.weeks === 2 ? 14 : 7;
@@ -209,18 +228,18 @@ for (const prof of PROFILES) for (let k = 0; k < SEEDS + (prof.seeds?.length || 
 // From week 3 the pantry should be eaten down: the shop near what's eaten, and food stock (pantry setup aside) not growing.
 const chains = [];
 if (!only || "chained".includes(only.toLowerCase())) for (let k = 0; k < SEEDS; k++) {
-  let pan = {};
+  let pan = {}, opn = {};
   const wk = [];
   for (let n = 0; n < 4; n++) {
-    const o = await page.evaluate(({ s, seed, pan }) => {
+    const o = await page.evaluate(({ s, seed, pan, opn }) => {
       const B = window.__bbd;
-      const { week } = B.run(s, seed, pan);
+      const { week } = B.run(s, seed, pan, opn);
       if (week.error) return { error: week.error };
       const st = B.shopStats(), nx = B.carry();
-      return { shop: st.shop, eaten: st.eaten, waste: st.waste, kit: st.kit, restock: st.restock, nx, stock: B.stockValue(nx, true) };
-    }, { s: {}, seed: 1000 + k * 7919 + n * 31, pan });
+      return { shop: st.shop, eaten: st.eaten, waste: st.waste, kit: st.kit, restock: st.restock, nx, opn: B.carryOpen(), stock: B.stockValue(nx, true) };
+    }, { s: {}, seed: 1000 + k * 7919 + n * 31, pan, opn });
     if (o.error) { wk.push(o); break; }
-    wk.push(o); pan = o.nx;
+    wk.push(o); pan = o.nx; opn = o.opn;
   }
   chains.push({ seed: 1000 + k * 7919, wk });
 }
