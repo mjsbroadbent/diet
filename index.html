@@ -4336,6 +4336,31 @@ button.btn { border-radius: 0; }
     ["Grains and pasta", ["oats", "wrice", "brice", "quinoa", "pasta", "spaghetti", "shortpasta"]],
     ["Cans, broth and seeds", ["cantom", "chickpeas", "blackbeans", "tuna", "cchicken", "broth", "coco", "chia", "pepitas"]],
   ].map(([h, ks]) => [h, ks.filter((k) => ING[k])]);
+  // Pantry starter kit: long-life staples ranked by how many of this person's meals they open up per dollar.
+  // A meal counts by how much the planner wants it (appeal, proteins you eat, your ratings), so a staple behind
+  // well-liked meals ranks above one behind meals you'd rarely see. Sauces also count the meals "Sauce it up" can dress with them.
+  // Returns [{ k, name, meals, price, perDollar }], best first, leaving out what's already ticked or in the pantry.
+  function starterKit(n = 8) {
+    if (!ctx?.pools) return [];
+    const meals = [...new Set(["b", "l", "d", "s"].flatMap((t) => ctx.pools[t] || []))];
+    const out = [];
+    STAPLES.forEach(([, ks]) => ks.forEach((k) => {
+      if (staples.has(k) || (pantry[k] || 0) > 0) return;
+      const P = pk(k);
+      if (!P?.price) return;
+      let w = 0, c = 0;
+      meals.forEach((m) => {
+        const uses = m.items.some(([x]) => x === k);
+        const dress = !uses && ctx.sauce && SAUCE[k] && !m.out && m.items.some(([x]) => SAUCE[k].goes.includes(x));
+        if (!uses && !dress) return;
+        w += ctx.want(m) * (uses ? 1 : 0.3);
+        if (uses) c++;
+      });
+      if (w > 0) out.push({ k, name: stapleName(k), meals: c, price: Math.round(P.price * 100) / 100, perDollar: w / P.price });
+    }));
+    return out.sort((a, b) => b.perDollar - a.perDollar).slice(0, n);
+  }
+  if (window.__bbd) window.__bbd.starterKit = starterKit;
   const staples = new Set(ls.get("ad-staples") || []);
   const stapleName = (k) => ING[k][0].replace(/ \((cooked|dry|canned, drained|canned or cooked|canned)\)/, "").replace(/, drained$/, "");
   function applyStaples() {
