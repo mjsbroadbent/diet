@@ -11,7 +11,7 @@ self.addEventListener("fetch", (e) => {
   if (host !== location.hostname && !/^fonts\.(googleapis|gstatic)\.com$/.test(host)) return;
   e.respondWith(caches.open(CACHE).then(async (c) => {
     const hit = await c.match(e.request, { ignoreSearch: true });
-    const net = fetch(e.request.url.startsWith(location.origin) ? new Request(e.request, { cache: "no-cache" }) : e.request).then((r) => { if (r.ok || r.type === "opaque") c.put(e.request, r.clone()); return r; }).catch(() => hit);
+    const net = (e.request.url.startsWith(location.origin) ? fetch(e.request.url, { cache: "no-cache" }) : fetch(e.request)).then((r) => { if (r.ok || r.type === "opaque") c.put(e.request, r.clone()); return r; }).catch(() => hit);
     return hit || net;
   }));
 });
