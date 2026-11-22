@@ -212,6 +212,8 @@ button.btn:hover { filter: brightness(1.08); }
 .gsec .why { display: block; margin-top: 2px; }
 .btns { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 10px; align-items: stretch; }
 .day-tools { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.day { display: flex; flex-direction: column; }
+.day > .day-tools { margin-top: auto; }
 .day-tools button { font: inherit; font-size: 12px; font-weight: 700; padding: 6px 4px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
 .day-tools button:hover { border-color: var(--accent); }
 .day.passed { opacity: 0.72; }
