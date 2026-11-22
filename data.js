@@ -1201,7 +1201,7 @@ window.BBD_DATA = (() => {
     olives:     { g: 25, kind: "top", salad: true, goes: ["greens", "romaine", "chickpeas", "feta", "quinoa", "pita", "cucumber", "spaghetti", "pasta", "shortpasta", "cod", "tilapia"] },
     artichoke:  { g: 40, kind: "top", salad: true, goes: ["greens", "romaine", "spaghetti", "pasta", "shortpasta", "quinoa", "pita", "mozz", "ricotta", "chickpeas"] },
     sundried:   { g: 15, kind: "top", salad: true, goes: ["spaghetti", "pasta", "shortpasta", "greens", "quinoa", "egg", "ricotta", "mozz", "feta", "chickpeas", "gnocchi"] },
-    avocado:    { g: 50, kind: "fresh", salad: true, no: ["avocado"], goes: ["egg", "chicken", "rchicken", "tortilla", "corntort", "wrice", "brice", "salmon", "smsalmon", "tuna", "beef", "turkey", "bread", "blackbeans"] },
+    avocado:    { g: 75, kind: "fresh", salad: true, no: ["avocado"], goes: ["egg", "chicken", "rchicken", "tortilla", "corntort", "wrice", "brice", "salmon", "smsalmon", "tuna", "beef", "turkey", "bread", "blackbeans"] },
     cherry:     { g: 60, kind: "fresh", salad: true, no: ["cherry", "tomato", "marinara"], goes: ["spaghetti", "pasta", "shortpasta", "egg", "chicken", "quinoa", "pita", "greens", "romaine", "mozz", "gnocchi", "tortilla"] },
     cucumber:   { g: 60, kind: "fresh", salad: true, no: ["cucumber"], goes: ["wrice", "brice", "salmon", "chicken", "pita", "quinoa", "tuna", "smsalmon", "tofu", "naan", "greens"] },
     spinach:    { g: 30, kind: "fresh", salad: true, no: ["spinach", "greens"], goes: ["spaghetti", "pasta", "shortpasta", "egg", "gnocchi", "tortelloni", "chickpasta", "quinoa", "tortilla", "bread"] },

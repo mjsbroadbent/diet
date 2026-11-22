@@ -1926,7 +1926,7 @@ button.btn { border-radius: 0; }
     let d = 0;
     const packCost = (picked, ms) => {
       const need = {};
-      picked.forEach((m, i) => { const pl = plates(d, m.type); m.items.forEach(([k, g]) => (need[k] = (need[k] || 0) + buyUnits(k, g * ms[i] * pl))); });
+      picked.forEach((m, i) => { const pl = plates(d, m.type); portionOf(m, ms[i]).forEach(({ k, g }) => (need[k] = (need[k] || 0) + buyUnits(k, g * pl))); });
       let cost = 0, add = 0, rem = 0, used = 0, food = 0, fromOld = 0, carry = 0;
       for (const k in need) {
         const P = pk(k), short = need[k] - (have[k] || 0);
@@ -2032,8 +2032,8 @@ button.btn { border-radius: 0; }
       spent += best.c; spentAll += best.call;
       { const hu = hotOf(best.ids.map((id) => MEAL[id]), best.ms); for (const k in hu) hotUsed[k] = (hotUsed[k] || 0) + hu[k]; }
       best.ids.forEach((id, i) => { uses[id] = (uses[id] || 0) + 1; const uk = useKey(MEAL[id], (best.slots || slots)[i] === "Extra meal"); dUses[uk] = (dUses[uk] || 0) + 1; chosen[MEAL[id].type].add(akey(MEAL[id])); if (!MEAL[id].out) servedAs[dishOf(MEAL[id])] ||= MEAL[id].type; });
-      if (ctx.costco) best.ids.forEach((id, i) => MEAL[id].items.forEach(([k, g]) => {
-        const u = buyUnits(k, g * best.ms[i] * plates(d, MEAL[id].type)), short = u - (have[k] || 0);
+      if (ctx.costco) best.ids.forEach((id, i) => portionOf(MEAL[id], best.ms[i]).forEach(({ k, g }) => {
+        const u = buyUnits(k, g * plates(d, MEAL[id].type)), short = u - (have[k] || 0);
         if (old[k] > 0) old[k] -= Math.min(old[k], u);
         if (short > 0) { const z = pk(k).size; have[k] = (have[k] || 0) + Math.ceil(short / z) * z; }
         have[k] -= u;
@@ -2236,12 +2236,20 @@ button.btn { border-radius: 0; }
   }
 
 
-  // Round a scaled recipe to amounts you can actually measure
+  // Food eaten by the piece comes in whole pieces on every plate: never 2 1/2 eggs or half an orange.
+  // Anything counted in units (eggs, wraps, buns, bars, sausages...) plus fruit eaten whole. Halves only where people
+  // really do that: half a banana or avocado, a split bagel or English muffin, a large naan or pita, half a scoop.
+  // Bagged salad kits are counted in bags but eaten like any salad, so they aren't piece food.
+  const BY_PIECE = new Set(["orange", "clementine", "kiwi", "apple", "pear", "banana", "avocado"]);
+  const HALVES = new Set(["whey", "pea", "naan", "pita", "bagel", "emuffin", "banana", "avocado"]);
+  const NOT_PIECES = new Set(["saladkit", "kalekit"]);
+  const pieceStep = (k) => { const x = ING[k]?.[8] || {}; if (!x.each || NOT_PIECES.has(k) || !(x.unit || BY_PIECE.has(k))) return 0; return HALVES.has(k) && !x.whole ? x.each / 2 : x.each; };
+  // Round a scaled recipe to amounts you can actually measure; the optimiser scores these rounded amounts,
+  // so the rest of the day (rice, yogurt, oil, the other meals) makes up the calories a whole egg adds or takes away
   function portion(m, mult) {
     return m.items.map(([k, g]) => {
-      const d = ING[k], x = d[8] || {};
       const raw = g * mult;
-      const step = x.unit ? (x.whole ? x.each : x.each / 2) : raw < 40 ? 5 : 10;
+      const x = ING[k][8] || {}, step = pieceStep(k) || (x.unit ? x.each / 2 : raw < 40 ? 5 : 10);
       return { k, g: Math.max(step, Math.round(raw / step) * step) };
     });
   }
@@ -2259,7 +2267,8 @@ button.btn { border-radius: 0; }
       return `${qtr(c)} ${Math.round(c * 4) / 4 > 1 ? "cups" : "cup"}`;
     }
     if (M.h[k]) { const h = Math.max(0.5, Math.round((g / M.h[k]) * 2) / 2); return `${half(h)} ${h > 1 ? "handfuls" : "handful"}`; }
-    if (M.n[k]) { const [e, one, many] = M.n[k], c = Math.max(0.5, Math.round((g / e) * 2) / 2); return `${half(c)} ${c > 1 ? many : one}`; }
+    // Small pieces (shrimp, cherry tomatoes, ravioli) are counted whole; a breast or fillet can be cut in half
+    if (M.n[k]) { const [e, one, many] = M.n[k], c = e <= 40 ? Math.max(1, Math.round(g / e)) : Math.max(0.5, Math.round((g / e) * 2) / 2); return `${half(c)} ${c > 1 ? many : one}`; }
     if (M.of[k]) {
       const [whole, name] = M.of[k], f = g / whole;
       if (f >= 0.875) return `${half(Math.round(f * 2) / 2)} ${name}${f >= 1.25 ? "s" : ""}`;
@@ -2267,6 +2276,13 @@ button.btn { border-radius: 0; }
       return `${F.reduce((a, b) => (Math.abs(b[0] - f) < Math.abs(a[0] - f) ? b : a))[1]} of a ${name}`;
     }
     return "";
+  }
+  // A finishing amount: pieces for food eaten by the piece ("+1 egg"), else grams
+  function finText(k, g) {
+    const x = ING[k][8] || {}, st = pieceStep(k);
+    if (!st) return `${fmt(g)} ${x.ml ? "ml" : "g"}`;
+    const n = Math.round((g / x.each) * 2) / 2;
+    return x.unit ? `${half(n)} ${n > 1 ? x.unit[1] : x.unit[0]}` : `${half(n)} more`;
   }
   function amountText(k, g) {
     const d = ING[k], x = d[8] || {};
@@ -2439,7 +2455,7 @@ button.btn { border-radius: 0; }
   }
   // Test hook for tests/harness.mjs: build a week from given settings and seed, without touching saved data
   window.__bbd = {
-    MEAL, ING, compute, context, dayData, shopStats, freezerPeak, allowed, read, buildWeek, optimize, weekShop,
+    MEAL, ING, pieceStep, compute, context, dayData, shopStats, freezerPeak, allowed, read, buildWeek, optimize, weekShop,
     // pan: what's already in the pantry (a chained week starts from carry())
     run(over, sd, pan) {
       const s = { ...read(), ...over, course: { ...read().course, ...(over.course || {}) } };
@@ -2564,11 +2580,20 @@ button.btn { border-radius: 0; }
   // Whole pieces (wraps, sandwiches) left over get eaten when that's at most one more piece for each meal that uses them
   let FINISH_X = 1.25;
   const wholeOK = (k, over, n) => { const x = ING[k][8] || {}; return !!(x.whole && x.each) && over <= n * x.each + 1; };
+  // Food eaten by the piece (eggs, oranges) goes the same way: a whole egg on one plate, not a fraction on several.
+  // open: [day, slot, household grams, plates]; a piece on your plate means one for each plate cooked, so meals for
+  // one go first, and a shared meal only takes a piece when the pan doesn't end up with much more than is left over
   function shares(k, add, open, openG, rnd) {
-    const x = ING[k][8] || {};
-    if (!x.whole || !x.each) return open.map(([, , g, pl]) => rnd((add * g) / openG / pl));
-    const out = open.map(() => 0), order = open.map((_, i) => i).sort((a, b) => open[a][2] - open[b][2]);
-    for (let n = Math.round(add / x.each), j = 0; n > 0; n--, j++) { const i = order[j % order.length]; out[i] += Math.round(x.each / open[i][3]); }
+    const st = pieceStep(k);
+    if (!st) return open.map(([, , g, pl]) => rnd((add * g) / openG / pl));
+    const out = open.map(() => 0), order = open.map((_, i) => i).sort((a, b) => open[a][3] - open[b][3] || open[a][2] - open[b][2]);
+    const slack = rnd === Math.ceil ? st - 1 : st / 2;
+    let left = add;
+    for (let j = 0, miss = 0; j < 400 && miss < order.length; j++) {
+      const i = order[j % order.length], unit = st * open[i][3];
+      if (left < 1 || left < unit - slack) { miss++; continue; }
+      out[i] += st; left -= unit; miss = 0;
+    }
     return out;
   }
   function finishUp0() {
@@ -2639,6 +2664,7 @@ button.btn { border-radius: 0; }
         const sh = shares(k, add, open, openG, Math.ceil);
         open.forEach(([di, si, g, pl], oi) => {
           const e = sh[oi];
+          if (e < 1) return;
           const ex = (week.extra[di + ":" + si] ||= {});
           ex[k] = (ex[k] || 0) + e;
           again.add(di);
@@ -3082,8 +3108,10 @@ button.btn { border-radius: 0; }
       });
       const tot = at.reduce((a, x) => a + x.g, 0);
       if (!tot) continue;
-      at.forEach((x) => {
-        const e = Math.ceil((addG * x.g) / tot / x.pl);
+      const sh = shares(k, addG, at.map((x) => [x.di, x.si, x.g, x.pl]), tot, Math.ceil);
+      at.forEach((x, ai) => {
+        const e = sh[ai];
+        if (e < 1) return;
         const ex = x.o ? ((x.o.fx ||= {})[x.j] ||= {}) : (week.extra[x.di + ":" + x.si] ||= {});
         ex[k] = (ex[k] || 0) + e;
       });
@@ -3104,7 +3132,8 @@ button.btn { border-radius: 0; }
       const sc = day.sauce?.[i];
       if (sc?.k && sc.id === day.ids[i] && SAUCE[sc.k]) items.push({ k: sc.k, g: SAUCE[sc.k].g, sauce: true });
       const pl = plates(di, m.type);
-      items.forEach((it) => (it.hg = it.g * pl));
+      // Pieces cooked for the household are whole too (3 eggs in the pan, not 3.4)
+      items.forEach((it) => { const st = pl !== 1 && pieceStep(it.k); it.hg = st ? Math.max(st, Math.round((it.g * pl) / st) * st) : it.g * pl; });
       return { m, items, n: nutr(items), mult: day.ms[i], plates: pl };
     });
     const tot = [0, 0, 0, 0, 0];
@@ -3218,7 +3247,7 @@ button.btn { border-radius: 0; }
           ${wd.log?.[i] ? `<button type="button" class="swap" data-undo>Undo</button>` : wd.addedTreats?.includes(i) ? `<button type="button" class="swap" data-rm aria-label="Remove treat on ${dayName(di)}">Remove</button>` : x.m.out || wd.passed ? "" : `<button type="button" class="swap" aria-label="Swap ${SL[i]} on ${dayName(di)}">Swap</button>`}
           <div class="mt"><span class="kc">${x.m.out ? "about " : ""}${fmt(x.n[0])} kcal</span> · P ${fmt(x.n[1])} · C ${fmt(T.keto ? x.n[2] - x.n[4] : x.n[2])} · F ${fmt(x.n[3])}${x.m.out ? " · loose estimate" : ` · ${x.m.min} min${x.m.tags.has("premade") ? " · premade" : ""}${portionNote}`}${x.plates > 1.25 ? ` · cook ${half(Math.round(x.plates * 2) / 2)} plates` : ""}</div>
           ${x.m.out ? `<p class="hint">${x.m.how}</p>` : `<details><summary>Ingredients and method</summary>
-            <ul>${x.items.map(({ k, g, fin, sauce }) => `<li>${amountText(k, g)}${sauce ? ` <span class="sauce-tag">Sauced up</span>${wd.passed ? "" : ` <button type="button" class="ghost small" data-sauce="${di}:${i}">Different sauce</button>`}` : ""}${fin ? ` <span class="logged" title="Includes ${fmt(fin)} ${(ING[k][8] || {}).ml ? "ml" : "g"} so nothing is left in the package">+${fmt(fin)} ${(ING[k][8] || {}).ml ? "ml" : "g"} to use it up</span>` : ""}</li>`).join("")}</ul>
+            <ul>${x.items.map(({ k, g, fin, sauce }) => `<li>${amountText(k, g)}${sauce ? ` <span class="sauce-tag">Sauced up</span>${wd.passed ? "" : ` <button type="button" class="ghost small" data-sauce="${di}:${i}">Different sauce</button>`}` : ""}${fin ? ` <span class="logged" title="Includes ${fmt(fin)} ${(ING[k][8] || {}).ml ? "ml" : "g"} so nothing is left in the package">+${finText(k, fin)} to use it up</span>` : ""}</li>`).join("")}</ul>
             <p>${x.m.how}</p></details>`}`;
         if (wd.log?.[i]) mm.querySelector("[data-undo]").addEventListener("click", () => undoLog(di, i));
         else if (wd.addedTreats?.includes(i)) mm.querySelector("[data-rm]").addEventListener("click", () => removeTreat(di, i));

@@ -94,6 +94,7 @@ const RULES = [
   { id: "freezer", hard: true, desc: "frozen food fits the freezer on its busiest day", check: (w) => (w.fz && w.fz.peak > w.fz.cap + 1 ? [`${(w.fz.peak / 1000).toFixed(1)} kg of ${(w.fz.cap / 1000).toFixed(0)} kg`] : []) },
   { id: "pick-one", hard: true, desc: "one of each pick-one group in a plan: protein powder (whey or plant), milk (dairy, soy or oat), rice (white or brown)", check: (w) =>
     [["whey", "pea"], ["milk", "soymilk", "oatmilk"], ["wrice", "brice"]].map((g) => g.filter((k) => w.ings.has(k))).filter((g) => g.length > 1).map((g) => g.join(" + ")) },
+  { id: "pieces", hard: true, desc: "food eaten by the piece is served whole (halves only for banana, avocado, bagel, English muffin, naan, pita, scoops)", check: (w) => w.pieces.slice(0, 4) },
   { id: "waste", hard: true, desc: "no fresh food wasted ($0)", check: (w) => (w.shop && w.shop.waste > 0.005 ? [`$${Math.round(w.shop.waste)}`] : []) },
 ];
 
@@ -148,9 +149,19 @@ for (const prof of PROFILES) for (let k = 0; k < SEEDS + (prof.seeds?.length || 
       own?.meals.forEach((x) => x.items.forEach(({ k: ing, g }) => { k += (B.ING[ing][1] * g) / 100; p += (B.ING[ing][2] * g) / 100; }));
       return { k, p, tk: own?.tk ?? o.T.k, ms: (d.own || []).find((y) => y.who === o.who)?.ms || [], own: own?.meals.map((x) => x.m.name) || [], bad: (own?.meals || []).filter((x) => !B.allowed(x.m, o.diets, o.avoid)).map((x) => x.m.name) };
     }) }));
+    // Whole pieces: the harness keeps its own list, so a change to the engine's rule can't quietly pass itself
+    const FRUIT = ["orange", "clementine", "kiwi", "apple", "pear", "banana", "avocado"], HALF = ["whey", "pea", "naan", "pita", "bagel", "emuffin", "banana", "avocado"], BAGS = ["saladkit", "kalekit"];
+    const pieces = [];
+    const chk = (k, g, where) => {
+      const x = B.ING[k][8] || {};
+      if (!x.each || BAGS.includes(k) || !(x.unit || FRUIT.includes(k))) return;
+      const n = (g / x.each) * (HALF.includes(k) && !x.whole ? 2 : 1);
+      if (Math.abs(n - Math.round(n)) > 0.01 || n < 0.99) pieces.push(`${where}: ${+(g / x.each).toFixed(2)} ${x.unit ? x.unit[1] : k}`);
+    };
+    week.days.forEach((d, di) => { const dd = B.dayData(d, di); dd.meals.forEach((x) => x.items.forEach((it) => { chk(it.k, it.g, `day ${di + 1} ${x.m.name}`); if (it.hg != null && x.plates !== 1) chk(it.k, it.hg, `day ${di + 1} ${x.m.name} (cooked for ${x.plates.toFixed(1)} plates)`); })); (dd.own || []).forEach((o) => o.meals.forEach((x) => x.items.forEach((it) => chk(it.k, it.g, `day ${di + 1} person ${o.who + 1} ${x.m.name}`)))); });
     const ings = new Set();
     week.days.forEach((d, di) => { const dd = B.dayData(d, di); dd.meals.forEach((x) => x.items.forEach((it) => ings.add(it.k))); (dd.own || []).forEach((o) => o.meals.forEach((x) => x.items.forEach((it) => ings.add(it.k)))); });
-    return { ings: [...ings], hh: (ctx.house?.n || 1) + (ctx.house?.others.length || 0), others, never, T: ctx.T, days, protein, shop: B.shopStats(), fz: { peak: B.freezerPeak(), cap: ctx.fcap }, cv: Object.fromEntries(Object.entries(ctx.course).map(([k, c]) => [k, c.variety])), labels, daily, quickDinner: ctx.course.d.effort <= 10 };
+    return { pieces, ings: [...ings], hh: (ctx.house?.n || 1) + (ctx.house?.others.length || 0), others, never, T: ctx.T, days, protein, shop: B.shopStats(), fz: { peak: B.freezerPeak(), cap: ctx.fcap }, cv: Object.fromEntries(Object.entries(ctx.course).map(([k, c]) => [k, c.variety])), labels, daily, quickDinner: ctx.course.d.effort <= 10 };
   }, { s: S, seed });
   w.tight = !!prof.tight;
   w.ings = new Set(w.ings || []);
