@@ -216,6 +216,17 @@ button.btn:hover { filter: brightness(1.08); }
 .meal summary { cursor: pointer; color: var(--muted); font-size: 12.5px; }
 .meal ul { margin: 6px 0; padding-left: 18px; display: grid; gap: 2px; font-variant-numeric: tabular-nums; }
 .meal p { margin: 4px 0 0; color: var(--muted); }
+/* Cooked bases: tap "White rice, cooked: 180 g" for how much to cook, and the batch for the week */
+.meal li > .basic { display: inline; }
+.meal .basic > summary { display: inline; list-style: none; color: inherit; font-size: inherit; text-decoration: underline dotted; text-underline-offset: 3px; }
+.meal .basic > summary::-webkit-details-marker { display: none; }
+.basic-card { margin: 6px 0 8px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink); font-size: 13px; }
+.basic-card p, .meal .basic-card p { margin: 4px 0; color: var(--ink); }
+.basic-card ol { margin: 4px 0; padding-left: 18px; display: grid; gap: 2px; }
+.basic-card h4 { margin: 8px 0 2px; font-size: 13px; }
+.basic-card .hint { margin-top: 4px; }
+.cook-ahead { margin: 0 0 12px; }
+.cook-ahead .basic-card { margin-top: 8px; }
 .prots { display: grid; gap: 6px; margin: 4px 0 10px; }
 .prot { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px; font-size: 14px; }
 .prot .seg3 { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
@@ -1227,6 +1238,7 @@ button.btn { border-radius: 0; }
       <button type="button" class="btn" id="shuffle">Shuffle menu</button>
     </div>
     <div class="warn" id="menuWarn" hidden></div>
+    <details class="fold cook-ahead" id="cookAhead" hidden><summary>Cook ahead</summary><div id="cookAheadBody"></div></details>
     <div class="days" id="days"></div>
   </section>
   <div class="step-next" data-step="week"><button type="button" class="btn" data-go="shop">Next: shopping list</button></div>
@@ -1284,7 +1296,7 @@ button.btn { border-radius: 0; }
   </footer>
 </div>
 
-<script src="data.js?v=1"></script>
+<script src="data.js?v=3"></script>
 <script>
 (() => {
   // ---------- Reference data ----------
@@ -1306,7 +1318,7 @@ button.btn { border-radius: 0; }
   const DIETS = ["Vegetarian", "Vegan", "Pescatarian", "Keto", "Gluten-free", "Halal", "Kosher"];
 
   // Menu data (ingredients, packs, recipes, parts, ratings, measures, sauces, rocket) lives in data.js
-  const { S, ING, INSTORE, COSTCO, SUB, UNIT, FROZEN, STAPLE, FREEZER, NOFRILLS, NF_DATE, NF_KEEP, ELSE_DATE, ELSEWHERE, KEEP, FRIDGE = { days: {}, tip: {} }, APPEAL, SWEET, MEASURE, SAUCE, PLANETS, ABOUT, MEAL_ROWS, PARTS } = window.BBD_DATA;
+  const { BASICS, S, ING, INSTORE, COSTCO, SUB, UNIT, FROZEN, STAPLE, FREEZER, NOFRILLS, NF_DATE, NF_KEEP, ELSE_DATE, ELSEWHERE, KEEP, FRIDGE = { days: {}, tip: {} }, APPEAL, SWEET, MEASURE, SAUCE, PLANETS, ABOUT, MEAL_ROWS, PARTS } = window.BBD_DATA;
 
 
   // The pack you'd buy for k: Costco by default; No Frills when Costco doesn't have it or the smaller size wins this week.
@@ -2392,6 +2404,60 @@ button.btn { border-radius: 0; }
     return s;
   }
 
+  // ---------- Cook ahead: cooked bases (rice, quinoa, pasta, noodles, potatoes) ----------
+  // Display only: the grocery list and macros don't change. Recipe grams are cooked rice, dry pasta or raw potatoes (BASICS.per).
+  const BASIC_OF = {};
+  Object.entries(BASICS).forEach(([id, b]) => b.keys.forEach((k) => { if (ING[k]) BASIC_OF[k] = id; }));
+  const cupsText = (c) => (c < 0.25 - 1e-9 ? `${half(Math.max(0.5, Math.round(c * 16 * 2) / 2))} tbsp` : `${qtr(c)} ${Math.round(c * 4) / 4 > 1 ? "cups" : "cup"}`);
+  // How much to start with for g grams as the recipe lists them, in grams and a kitchen measure
+  function basicAmount(b, k, g) {
+    if (b.per === "raw") { const m = measureText(k, g) || (ING[k][8]?.each ? `${half(Math.max(0.5, Math.round((g / ING[k][8].each) * 2) / 2))}` : ""); return { start: `${fmt(g)} g ${b.name}${m ? ` (about ${m})` : ""}`, out: "" }; }
+    const dry = b.per === "cooked" ? g / b.yield : g, cooked = b.per === "cooked" ? g : g * b.yield;
+    const cups = b.cup ? dry / b.cup : 0;
+    let start = `${fmt(dry)} g dry ${b.name}${cups ? ` (about ${cupsText(cups)})` : ""}`;
+    if (b.water) { const w = cups * b.water; start += ` + ${fmt(Math.round(w * 24) * 10)} ml water (about ${cupsText(w)})`; }
+    return { start, out: `makes about ${fmt(cooked)} g cooked` };
+  }
+  // Every upcoming use of a base in the plan, in day order, as [day, slot, meal name, grams for everyone eating it]
+  function basicUses(id, all) {
+    const out = [];
+    all.forEach((d, di) => { if (week.days[di].passed) return; const SL = slotsOf(week.days[di]);
+      d.meals.forEach((x, i) => { const g = x.items.filter((it) => BASIC_OF[it.k] === id).reduce((a, it) => a + (it.hg ?? it.g), 0); if (g > 0) out.push({ di, slot: SL[i], name: x.m.name, g, k: x.items.find((it) => BASIC_OF[it.k] === id).k }); }); });
+    return out;
+  }
+  // Batches that each keep in the fridge until their last meal: one cooked on the first day it's needed covers every use before it runs out
+  function basicBatches(id, all) {
+    const b = BASICS[id], uses = basicUses(id, all), out = [];
+    uses.forEach((u) => { const cur = out[out.length - 1]; if (cur && u.di < cur.di + b.life) cur.uses.push(u); else out.push({ di: u.di, uses: [u] }); });
+    return out;
+  }
+  const shortDay = (di) => dayName(di).slice(0, 3);
+  function batchHTML(id, all) {
+    const b = BASICS[id], bs = basicBatches(id, all);
+    if (!bs.length) return "";
+    const n = bs.reduce((a, x) => a + x.uses.length, 0);
+    if (n < 2) return `<p class="hint">Only one meal this week uses ${b.name}, so cook it fresh.</p>`;
+    return bs.map((x, j) => {
+      const g = x.uses.reduce((a, u) => a + u.g, 0), a = basicAmount(b, x.uses[0].k, g);
+      const covers = x.uses.map((u) => `${shortDay(u.di)} ${u.slot.toLowerCase()}`).join(", ");
+      return `<p><b>${bs.length > 1 ? `Batch ${j + 1}, cook` : "Cook"} on ${dayName(x.di)}:</b> ${a.start}${a.out ? `, ${a.out}` : ""}. Covers ${covers}.</p>`;
+    }).join("") + `<p class="hint">Keeps ${b.life} days in the fridge. ${b.store}</p>`;
+  }
+  // The tappable line in a meal's ingredients: how much to cook for this meal, the method, and the batch for the week
+  function basicLine(k, g, hg, all, di, i) {
+    const id = BASIC_OF[k], b = BASICS[id], a = basicAmount(b, k, hg), plates = all[di].meals[i].plates;
+    return `<details class="basic"><summary>${amountText(k, g)}</summary><div class="basic-card">
+      <p><b>For this meal${plates > 1 ? ` (${half(plates)} plates)` : ""}:</b> ${a.start}${a.out ? `, ${a.out}` : ""}.</p>
+      <ol>${b.how.map((s) => `<li>${s}</li>`).join("")}</ol>
+      <h4>Batch for the week</h4>${batchHTML(id, all)}</div></details>`;
+  }
+  // Week step: every base used by 2 or more upcoming meals, folded away until opened
+  function renderCookAhead(all) {
+    const box = $("cookAhead"); if (!box) return;
+    const ids = all ? Object.keys(BASICS).filter((id) => basicUses(id, all).length >= 2) : [];
+    box.hidden = !ids.length;
+    $("cookAheadBody").innerHTML = ids.map((id) => `<div class="basic-card"><h4>${BASICS[id].name[0].toUpperCase() + BASICS[id].name.slice(1)}</h4>${batchHTML(id, all)}</div>`).join("");
+  }
   // ---------- Menu state and rendering ----------
   let ctx = null, week = null, seed = ls.get("ad-seed") || 1 + Math.floor(Math.random() * 1e9);
   let pantry = ls.get("ad-pantry") || {};
@@ -3450,10 +3516,12 @@ button.btn { border-radius: 0; }
       renderHidden();
       mealSplitHTML = ""; if ($("mealSplit")) $("mealSplit").innerHTML = ""; $("miniMeals").innerHTML = "";
       $("menuSummary").textContent = "";
+      renderCookAhead(null);
       return;
     }
     const T = ctx.T;
     const all = week.days.map(dayData);
+    renderCookAhead(all);
     renderMealSplit(all);
     const avg = [0, 0, 0, 0, 0];
     all.forEach((d) => d.tot.forEach((v, j) => (avg[j] += v / all.length)));
@@ -3536,7 +3604,7 @@ button.btn { border-radius: 0; }
           ${x.twins?.length ? `<div class="tw">${x.twins.map((tw) => `For ${tw.who.map((o) => esc(o.name)).join(" and ")}: ${esc(partName(tw.t))} instead`).join(" · ")}</div>` : ""}
           <div class="mt"><span class="kc">${x.m.out ? "about " : ""}${fmt(x.n[0])} kcal</span> · P ${fmt(x.n[1])} · C ${fmt(T.keto ? x.n[2] - x.n[4] : x.n[2])} · F ${fmt(x.n[3])}${x.m.out ? " · loose estimate" : ` · ${x.m.min} min${x.m.tags.has("premade") ? " · premade" : ""}${portionNote}`}${x.plates > 1.25 ? ` · cook ${half(Math.round(x.plates * 2) / 2)} plates` : ""}</div>
           ${x.m.out ? `<p class="hint">${x.m.how}</p>` : `<details><summary>Ingredients and method</summary>
-            <ul>${x.items.filter((it) => !it.other).map(({ k, g, fin, sauce }) => `<li>${amountText(k, g)}${sauce ? ` <span class="sauce-tag">Sauced up</span>${wd.passed ? "" : ` <button type="button" class="ghost small" data-sauce="${di}:${i}">Different sauce</button>`}` : ""}${fin ? ` <span class="logged" title="Includes ${fmt(fin)} ${(ING[k][8] || {}).ml ? "ml" : "g"} so nothing is left in the package">+${finText(k, fin)} to use it up</span>` : ""}</li>`).join("")}${(x.twins || []).map((tw) => `<li class="tw-li">For ${tw.who.map((o) => esc(o.name)).join(" and ")} instead: ${tw.items.map(({ k, g }) => amountText(k, g)).join(", ")}</li>`).join("")}</ul>
+            <ul>${x.items.filter((it) => !it.other).map(({ k, g, hg, fin, sauce }) => `<li>${BASIC_OF[k] ? basicLine(k, g, hg ?? g, all, di, i) : amountText(k, g)}${sauce ? ` <span class="sauce-tag">Sauced up</span>${wd.passed ? "" : ` <button type="button" class="ghost small" data-sauce="${di}:${i}">Different sauce</button>`}` : ""}${fin ? ` <span class="logged" title="Includes ${fmt(fin)} ${(ING[k][8] || {}).ml ? "ml" : "g"} so nothing is left in the package">+${finText(k, fin)} to use it up</span>` : ""}</li>`).join("")}${(x.twins || []).map((tw) => `<li class="tw-li">For ${tw.who.map((o) => esc(o.name)).join(" and ")} instead: ${tw.items.map(({ k, g }) => amountText(k, g)).join(", ")}</li>`).join("")}</ul>
             <p>${x.m.how}</p>${(x.twins || []).map((tw) => `<p>For ${tw.who.map((o) => esc(o.name)).join(" and ")}: ${esc(partHow(tw.t).replace(/\b\d+ (eggs|patties|burgers)\b/, "the $1"))}</p>`).join("")}</details>`}`;
         if (wd.log?.[i]) mm.querySelector("[data-undo]").addEventListener("click", () => undoLog(di, i));
         else if (wd.addedTreats?.includes(i)) mm.querySelector("[data-rm]").addEventListener("click", () => removeTreat(di, i));
