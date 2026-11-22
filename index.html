@@ -257,6 +257,7 @@ button.btn:hover { filter: brightness(1.08); }
 .gbar .note { margin-right: auto; }
 .gbar .ghost { min-height: 44px; }
 .cost .lead { grid-column: span 2; }
+.cost .over { display: block; margin-bottom: 4px; font-style: normal; font-weight: 700; color: var(--bad); }
 .plan-in { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; justify-content: space-between; }
 .plan-in .btns button { min-height: 44px; }
 /* Optional sign-in (sync.js puts .acct in the top bar and .sync-bar under it; repo site only) */
@@ -4261,7 +4262,7 @@ button.btn { border-radius: 0; }
     $("cost").hidden = false;
     $("cost").innerHTML = `
       <div class="lead"><span>What you eat costs</span><b>${money(eaten / nDays)}<small> a day</small></b><span>${money(eaten)} of food over ${nDays} days${shop > eaten * 1.25 && carryVal > 1 ? `. The shop costs more because Costco packs are big: ${money(carryVal)} of it carries into next week.` : "."}</span></div>
-      <div><span>This week's shop, in-store</span><b>${money(shop)}</b><span>${kit > 0.5 ? `${money(kit)} pantry setup, bought once · ${money(shop - kit)} this week's food<br>` : ""}${shopNF ? `${money(shop - shopNF)} Costco · ${money(shopNF)} other stores` : `${money(shop * INSTORE)} on Costco Same-Day`}</span></div>
+      <div><span>This week's shop, in-store</span><b>${money(shop)}</b><span>${Number.isFinite(ctx.cap) && shop - kit > ctx.cap + 0.5 ? `<em class="over">Closest we can get this week is ${money(shop - kit)}, over your $${Math.round(ctx.cap)} cap.</em>` : ""}${kit > 0.5 ? `${money(kit)} pantry setup, bought once · ${money(shop - kit)} this week's food<br>` : ""}${shopNF ? `${money(shop - shopNF)} Costco · ${money(shopNF)} other stores` : `${money(shop * INSTORE)} on Costco Same-Day`}</span></div>
       <div><span>Carries over to next week</span><b>${money(carryVal)}</b><span>${wasteVal > 0.5 ? money(wasteVal) + " of fresh food won't keep" : "Mostly pantry and freezer"}</span></div>
       <div><span>Freezer, busiest day</span><b>${(fzPeak / 1000).toFixed(1)} kg</b><span>${fcap === Infinity ? `No limit set · ${(fzLeft / 1000).toFixed(1)} kg left at week's end` : fcap === 0 ? "No freezer, so no frozen packs" : `of ${fcap / 1000} kg${fzPeak > fcap ? ". Over your space: try Shuffle" : ""} · ${(fzLeft / 1000).toFixed(1)} kg left at week's end`}</span></div>`;
     $("groceryNote").textContent = ctx.mostly
