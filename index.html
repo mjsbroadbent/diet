@@ -225,6 +225,7 @@ button.btn:hover { filter: brightness(1.08); }
 .gbar .note { margin-right: auto; }
 .gbar .ghost { min-height: 44px; }
 .cost .lead { grid-column: span 2; }
+.gsec.kit .note { margin: 0 0 4px; }
 .cost .lead b { font-size: 34px; }
 .cost b small { font-size: 0.5em; font-family: var(--body); font-weight: 700; color: var(--muted); margin-left: 2px; }
 @media (max-width: 380px) { .cost .lead { grid-column: 1 / -1; } }
@@ -3524,11 +3525,12 @@ button.btn { border-radius: 0; }
     const carryVal = rows.filter((r) => r.packs && r.keep !== "x" && !(r.keep === "z" && fcap === 0))
       .reduce((a, r) => a + (Math.max(0, r.packs * r.size - (r.used - r.inPantry)) / r.size) * r.price, 0);
     const nDays = week.days.length || 7;
+    const kit = rows.filter((r) => r.packs && isStaple(r.k)).reduce((a, r) => a + r.cost, 0);
 
     $("cost").hidden = false;
     $("cost").innerHTML = `
       <div class="lead"><span>What you eat costs</span><b>${money(eaten / nDays)}<small> a day</small></b><span>${money(eaten)} of food over ${nDays} days${shop > eaten * 1.25 && carryVal > 1 ? `. The shop costs more because Costco packs are big: ${money(carryVal)} of it carries into next week.` : "."}</span></div>
-      <div><span>This week's shop, in-store</span><b>${money(shop)}</b><span>${shopNF ? `${money(shop - shopNF)} Costco · ${money(shopNF)} No Frills` : `${money(shop * INSTORE)} on Costco Same-Day`}</span></div>
+      <div><span>This week's shop, in-store</span><b>${money(shop)}</b><span>${kit > 0.5 ? `${money(kit)} pantry setup, bought once · ${money(shop - kit)} this week's food<br>` : ""}${shopNF ? `${money(shop - shopNF)} Costco · ${money(shopNF)} No Frills` : `${money(shop * INSTORE)} on Costco Same-Day`}</span></div>
       <div><span>Carries over to next week</span><b>${money(carryVal)}</b><span>${wasteVal > 0.5 ? money(wasteVal) + " of fresh food won't keep" : "Mostly pantry and freezer"}</span></div>
       <div><span>Freezer, busiest day</span><b>${(fzPeak / 1000).toFixed(1)} kg</b><span>${fcap === Infinity ? `No limit set · ${(fzLeft / 1000).toFixed(1)} kg left at week's end` : fcap === 0 ? "No freezer, so no frozen packs" : `of ${fcap / 1000} kg${fzPeak > fcap ? ". Over your space: try Shuffle" : ""} · ${(fzLeft / 1000).toFixed(1)} kg left at week's end`}</span></div>`;
     $("groceryNote").textContent = ctx.mostly
@@ -3536,13 +3538,13 @@ button.btn { border-radius: 0; }
       : "Costco packs for the week above, at warehouse prices (Same-Day runs about 7.5% higher). Tick items off as you shop.";
 
     const bySec = {};
-    rows.filter((r) => !r.idle).forEach((r) => (bySec[ING[r.k][6]] ||= []).push(r));
+    rows.filter((r) => !r.idle).forEach((r) => (bySec[r.packs && isStaple(r.k) ? KIT : ING[r.k][6]] ||= []).push(r));
     const box = $("grocery");
     box.innerHTML = "";
-    Object.values(S).filter((sec) => bySec[sec]).forEach((sec) => {
+    [KIT, ...Object.values(S)].filter((sec) => bySec[sec]).forEach((sec) => {
       const div = document.createElement("div");
-      div.className = "gsec";
-      div.innerHTML = `<h3>${sec}</h3>` + bySec[sec].sort((a, b) => b.cost - a.cost || a.prod.localeCompare(b.prod)).map((r) => {
+      div.className = "gsec" + (sec === KIT ? " kit" : "");
+      div.innerHTML = `<h3>${sec}</h3>${sec === KIT ? `<p class="note">Staples that keep for months. Buy them once and they're in your pantry for next week.</p>` : ""}` + bySec[sec].sort((a, b) => b.cost - a.cost || a.prod.localeCompare(b.prod)).map((r) => {
         const u = unit(r.k);
         const need = `uses ${mass(r.used, u)}${dry(r.k)}`;
         const buy = r.packs ? `${r.packs > 1 ? r.packs + " packs · " : ""}${need}${r.inPantry ? `, ${mass(r.inPantry, u)} from your pantry` : ""}` : `<span class="pantry">In your pantry</span> · ${need}`;
@@ -3577,6 +3579,10 @@ button.btn { border-radius: 0; }
     }).join("") : `<div class="li"><span>Nothing left over.</span></div>`;
     $("carry").hidden = !leftovers.some((r) => r.keep !== "x");
   }
+
+  // Pantry staples (the Pantry step's list) that this week's shop has to buy get their own "buy once" group
+  const KIT = "Pantry setup, buy once";
+  const isStaple = (k) => { try { return STAPLES.some(([, ks]) => ks.includes(k)); } catch { return false; } };
 
   function renderHidden() {
     const el = $("hiddenItems");
