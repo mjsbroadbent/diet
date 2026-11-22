@@ -1032,6 +1032,42 @@ button.btn { border-radius: 0; }
     mush:        ["MUSH protein overnight oats", 125, 8.8, 17.5, 2.6, 2.3, S.D, "premade oats dairy", { each: 172, full: true, whole: true, unit: ["cup MUSH overnight oats", "cups MUSH overnight oats"] }],
     bsand:       ["Breakfast sandwiches", 255, 13, 20, 13.5, 1, S.D, "premade egg dairy pork gluten", { each: 137, full: true, whole: true, unit: ["breakfast sandwich", "breakfast sandwiches"] }],
     ewwrap:      ["Spinach and egg white wraps (deli)", 170, 11, 18, 6, 2, S.D, "premade egg dairy gluten", { each: 165, full: true, whole: true, unit: ["egg white wrap", "egg white wraps"] }],
+    // Round 5: Costco Same-Day aisles (meat, deli, bakery, pantry, produce, snacks), Nov 22 2026, label values rounded
+    drumstick:   ["Chicken drumsticks (bone-in, as bought)", 130, 13, 0, 8.5, 0, S.M, "poultry", { each: 125, unit: ["drumstick", "drumsticks"] }],
+    porkchop:    ["Boneless pork loin chops", 143, 21, 0, 6, 0, S.M, "pork"],
+    sausage:     ["Mild Italian sausages", 300, 15, 2, 26, 0, S.M, "pork", { each: 115, full: true, unit: ["Italian sausage", "Italian sausages"] }],
+    ham:         ["Extra lean cooked ham", 105, 18, 2, 3, 0, S.M, "pork"],
+    cchicken:    ["Canned chicken breast, drained", 120, 24, 0, 2, 0, S.N, "poultry"],
+    bchstrips:   ["Breaded chicken strips (frozen)", 230, 16, 15, 11, 1, S.F, "poultry gluten"],
+    ricotta:     ["Ricotta", 150, 9, 4, 11, 0, S.D, "dairy"],
+    texmex:      ["Shredded Tex Mex cheese", 380, 23, 2, 31, 0, S.D, "dairy"],
+    kimchi:      ["Kimchi", 20, 1.5, 3, 0.5, 2, S.D, "fish"],
+    dumpling:    ["Pork dumplings (frozen)", 220, 9, 26, 9, 1.5, S.F, "premade pork gluten soy sesame", { each: 30, full: true, unit: ["dumpling", "dumplings"] }],
+    riceramen:   ["Rice ramen noodles (dry)", 350, 7, 78, 1.5, 2, S.G, ""],
+    chickpasta:  ["Chickpea pasta (dry)", 350, 20, 55, 6, 8, S.G, ""],
+    shortpasta:  ["Penne or short pasta (dry)", 371, 13, 75, 1.5, 3.2, S.G, "gluten"],
+    broth:       ["Chicken broth", 5, 0.6, 0.4, 0.2, 0, S.N, "poultry", { ml: 1 }],
+    buns:        ["Hamburger buns", 270, 9, 49, 4, 2, S.G, "gluten", { each: 60, full: true, unit: ["bun", "buns"] }],
+    ciabatta:    ["Ciabatta buns", 260, 9, 50, 2.5, 2, S.G, "gluten", { each: 85, full: true, unit: ["ciabatta bun", "ciabatta buns"] }],
+    ketotort:    ["Keto tortillas", 155, 11, 38, 5.5, 24, S.G, "gluten soy", { each: 45, full: true, unit: ["keto tortilla", "keto tortillas"] }],
+    clementine:  ["Clementines", 47, 0.85, 12, 0.15, 1.7, S.P, "", { each: 75 }],
+    grapes:      ["Grapes", 69, 0.7, 18, 0.2, 0.9, S.P, ""],
+    blueberries: ["Blueberries (fresh)", 57, 0.7, 14.5, 0.3, 2.4, S.P, ""],
+    raspberries: ["Raspberries", 52, 1.2, 12, 0.7, 6.5, S.P, ""],
+    kiwi:        ["Kiwis", 61, 1.1, 15, 0.5, 3, S.P, "", { each: 75 }],
+    pineapple:   ["Pineapple", 50, 0.5, 13, 0.1, 1.4, S.P, ""],
+    orange:      ["Oranges", 47, 0.9, 12, 0.1, 2.4, S.P, "", { each: 150 }],
+    pear:        ["Pears", 57, 0.4, 15, 0.1, 3.1, S.P, "", { each: 180 }],
+    caulifl:     ["Cauliflower florets", 25, 1.9, 5, 0.3, 2, S.P, ""],
+    romaine:     ["Romaine hearts", 17, 1.2, 3.3, 0.3, 2.1, S.P, ""],
+    bokchoy:     ["Baby bok choy", 13, 1.5, 2.2, 0.2, 1, S.P, ""],
+    squash:      ["Butternut squash", 45, 1, 12, 0.1, 2, S.P, ""],
+    littlepot:   ["Little potatoes", 77, 2, 17, 0.1, 2.2, S.P, ""],
+    pretzel:     ["Pretzel crisps", 390, 10, 80, 3, 3, S.N, "gluten"],
+    pitachips:   ["Pita chips", 470, 10, 63, 20, 3, S.N, "gluten"],
+    nutbar:      ["Nut bars", 500, 14, 33, 36, 5, S.N, "treenut peanut", { each: 40, full: true, whole: true, unit: ["nut bar", "nut bars"] }],
+    rxbar:       ["RXBAR protein bars", 380, 23, 44, 15, 9, S.N, "egg treenut peanut", { each: 52, full: true, whole: true, unit: ["RXBAR", "RXBARs"] }],
+    ycup:        ["Greek yogurt cups, flavoured", 95, 8, 11, 2.5, 0, S.D, "dairy", { each: 100, full: true, whole: true, unit: ["Greek yogurt cup", "Greek yogurt cups"] }],
   };
 
   // ---------- Costco ----------
@@ -1187,19 +1223,55 @@ button.btn { border-radius: 0; }
     mush: ["MUSH 15 g protein overnight oats, 12 × 172 ml", 2064, 23.64, "r"],
     bsand: ["Kirkland Signature breakfast sandwiches, 8 × 137 g", 1096, 27.49, "z"],
     ewwrap: ["Kirkland Signature spinach and egg white wraps, 6 × 165 g", 990, 21.99, "x"],
+    drumstick: ["Chicken drumsticks, ~2.82 kg", 2820, 21.69, "z"],
+    porkchop: ["Boneless centre cut pork loin chops, ~2.62 kg", 2620, 23.05, "z"],
+    sausage: ["Kirkland Signature mild Italian sausage, ~1.73 kg", 1730, 18.96, "z"],
+    ham: ["Extra lean cooked ham, 2 × 500 g", 1000, 15.39, "r"],
+    cchicken: ["Kirkland Signature canned chicken breast, 6 × 354 g (about 1.5 kg drained)", 1530, 21.99, "p"],
+    bchstrips: ["Hampton House breaded chicken strips, 2 kg", 2000, 27.49, "p"],
+    ricotta: ["Bari ricotta, 1 kg", 1000, 10.99, "r"],
+    texmex: ["Kirkland Signature shredded Tex Mex cheese, 2 × 625 g", 1250, 20.89, "r"],
+    kimchi: ["Jongga kimchi, 1.5 kg", 1500, 12.09, "r"],
+    dumpling: ["Bibigo steamed pork dumplings, 1.1 kg", 1100, 20.89, "p"],
+    riceramen: ["Lotus Foods organic rice ramen noodles, 850 g", 850, 14.29, "p"],
+    chickpasta: ["Chickapea chickpea and yellow pea pasta, 6 × 227 g", 1362, 21.99, "p"],
+    shortpasta: ["Antonio Amato pasta variety pack (penne, fusilli and more), 4.5 kg", 4500, 14.29, "p"],
+    broth: ["Kirkland Signature chicken broth, 6 × 946 ml", 5676, 13.19, "p"],
+    buns: ["Dempster's hamburger buns, 16", 960, 6.37, "z"],
+    ciabatta: ["9-grain ciabatta buns, 18", 1530, 7.69, "z"],
+    ketotort: ["Oroweat keto tortillas, 651 g", 651, 9.67, "z"],
+    clementine: ["Clementines, 2.27 kg", 2270, 12.09, "r"],
+    grapes: ["Green seedless grapes, 1.36 kg", 1360, 14.29, "x"],
+    blueberries: ["Blueberries, 510 g", 510, 14.29, "x"],
+    raspberries: ["Raspberries, 340 g", 340, 6.37, "x"],
+    kiwi: ["Kiwis, 1.36 kg", 1360, 14.73, "r"],
+    pineapple: ["Pineapple (about 900 g of fruit)", 900, 7.14, "x"],
+    orange: ["Oranges, 2.27 kg", 2270, 9.89, "r"],
+    pear: ["Anjou pears, 2.72 kg", 2720, 10.99, "r"],
+    caulifl: ["Cauliflower florets, 907 g", 907, 7.69, "x"],
+    romaine: ["Romaine hearts, 6", 1100, 9.89, "x"],
+    bokchoy: ["Baby bok choy, 1 kg", 1000, 6.59, "x"],
+    squash: ["Butternut squash, 3 (about 3 kg)", 3000, 6.04, "r"],
+    littlepot: ["The Little Potato Company mixed potato nuggets, 2.27 kg", 2270, 8.79, "r"],
+    pretzel: ["Snack Factory pretzel crisps, 737 g", 737, 9.34, "p"],
+    pitachips: ["Cedar Valley sea salt pita chips, 760 g", 760, 13.19, "p"],
+    nutbar: ["Kirkland Signature nut bars, 24 × 40 g", 960, 19.79, "p"],
+    rxbar: ["RXBAR protein bar variety pack, 14 × 52 g", 728, 26.39, "p"],
+    ycup: ["3% Greek yogurt variety pack, 24 × 100 g", 2400, 18.14, "r"],
   };
   // Library items Costco doesn't carry, and what replaces them (grams × factor)
-  const SUB = { blackbeans: ["chickpeas", 1], lentils: ["chickpeas", 1], tempeh: ["tofu", 1.3], corntort: ["tortilla", 0.75], ricenoodle: ["wrice", 3], ricecake: ["bread", 1.5], pasta: ["spaghetti", 1], tamari: ["soysauce", 1], coco: ["cocofull", 0.36], darkchoc: ["darkbites", 1.25] };
+  const SUB = { blackbeans: ["chickpeas", 1], lentils: ["chickpeas", 1], tempeh: ["tofu", 1.3], corntort: ["tortilla", 0.75], ricenoodle: ["riceramen", 1], ricecake: ["bread", 1.5], pasta: ["spaghetti", 1], tamari: ["soysauce", 1], coco: ["cocofull", 0.36], darkchoc: ["darkbites", 1.25] };
   // The unit you actually open inside a Costco pack (a box, can, tub or tray). Default: the whole pack.
   const UNIT = { chicken: 580, thigh: 560, turkey: 1000, turkeyslice: 300, beef: 600, steak: 400, pork: 670, bacon: 500, tuna: 130, eggwhite: 500, tofu: 454,
     yogurt: 650, cottage: 750, feta: 600, soymilk: 946, cocofull: 400, chickpeas: 300, spaghetti: 500, bread: 675, tortilla: 600, cantom: 796, cauli: 500,
     pb: 1000, honey: 750, salsa: 1050, marinara: 1250, icebar: 70,
     bbq: 480, hotsauce: 740, tzatziki: 454, saladkit: 340, lasagna: 1500, pizza: 555, yakisoba: 255, yakitori: 255, ctsoup: 830, lentsoup: 398, pita: 390, emuffin: 342, tortelloni: 500, shake: 340, protbar: 50, beefstick: 32, cheesestr: 21, bwrap: 128,
-    ravioli: 1250, gnocchi: 480, butterch: 650, kalekit: 397, bcsoup: 830, bagel: 660, tunapoke: 125, chparm: 150, sfrice: 300, mush: 172, bsand: 137, ewwrap: 165, chimi: 142 };
+    ravioli: 1250, gnocchi: 480, butterch: 650, kalekit: 397, bcsoup: 830, bagel: 660, tunapoke: 125, chparm: 150, sfrice: 300, mush: 172, bsand: 137, ewwrap: 165, chimi: 142,
+    ham: 500, cchicken: 255, texmex: 625, chickpasta: 227, broth: 946, buns: 480, ketotort: 326, ycup: 100, nutbar: 40, rxbar: 52 };
   // Freezer: frozen-aisle packs always need it; fresh meat, bread and the like go in to keep past a few days
   const FROZEN = new Set(["berries", "broccoli", "edamame", "cauli", "stirfry", "corn", "shrimp", "strawberries", "icecream", "icebar",
     "frittata", "bwrap", "lasagna", "pizza", "yakisoba", "yakitori", "gyoza", "chstrips", "salmonburger", "meatballs", "mango",
-    "pinksalmon", "haddock", "tunapoke", "wedges", "peas", "mixveg", "roastveg", "chparm", "chimi", "taquito", "mandu", "sfrice"]);
+    "pinksalmon", "haddock", "tunapoke", "wedges", "peas", "mixveg", "roastveg", "chparm", "chimi", "taquito", "mandu", "sfrice", "bchstrips", "dumpling"]);
   const FREEZER = { all: Infinity, std: 10000, low: 5000, none: 0 };
   // No Frills (Vancouver, in-store prices from nofrills.ca): key: [product, size in purchase units, price]
   const NOFRILLS = /*NF*/{
@@ -1289,6 +1361,25 @@ button.btn { border-radius: 0; }
     ricecake: ["Galil No Salt Thin Rice Cakes", 100, 2.29],
     pasta: ["PC Blue Menu Whole Grain Spaghetti", 375, 2.5],
     tamari: ["San J Tamari Soy Sauce", 296, 7.0],
+    tilapia: ["Seaquest Tilapia Fillets frozen", 400, 7.5],
+    haddock: ["PC Haddock and Hops Battered Wild Haddock Fillets", 550, 15.0],
+    tsausage: ["Lilydale Maple Turkey Breakfast Sausage", 375, 7.99],
+    bagel: ["No Name Plain Bagels, 6", 510, 2.5],
+    gnocchi: ["PC Splendido Gnocchi", 500, 3.0],
+    ravioli: ["Ziggy's Cheese and Spinach Ravioli", 600, 6.0],
+    wedges: ["Cavendish Farms Kettle-Style Wedges", 750, 3.5],
+    peas: ["No Name Green Peas frozen", 750, 3.0],
+    mixveg: ["No Name Mixed Vegetables frozen", 750, 3.0],
+    roastveg: ["PC Vegetable Medley frozen", 750, 5.0],
+    brussels: ["Brussels Sprout Bag", 907, 9.99],
+    celery: ["Celery Stalks, single", 500, 3.79],
+    butterch: ["Patak's Butter Chicken Cooking Sauce", 400, 4.5],
+    satay: ["Blue Dragon Peanut Satay Sauce", 325, 4.99],
+    kalekit: ["Eat Smart Sweet Kale Salad Kit", 340, 6.99],
+    mush: ["MUSH Protein Overnight Oats, single cup", 172, 2.99],
+    bsand: ["Schneiders Sausage & Egg Breakfast Sandwiches, 2", 280, 7.44],
+    taquito: ["El Monterey Chicken & Cheese Taquitos", 595, 14.99],
+    mandu: ["Bibigo Beef Bulgogi Mandu", 680, 9.99],
   }/*NF*/;
   const NF_DATE = /*NFD*/"Nov 21, 2026"/*NFD*/;
   const NF_KEEP = { blackbeans: "p", lentils: "p", tempeh: "r", corntort: "z", ricenoodle: "p", ricecake: "p", pasta: "p", tamari: "p", coco: "p", darkchoc: "p" };
@@ -1474,6 +1565,39 @@ button.btn { border-radius: 0; }
     ["s", "Hummus and celery", [["hummus",60],["celery",120]], "Dip and go.", 1],
     ["s", "MUSH oats cup", [["mush",172]], "Straight from the fridge.", 1, 1],
     ["i", "Two chicken taquitos", [["taquito",114]], "Baked crisp, about 15 minutes.", 15],
+    // Round 5 (Nov 22 2026)
+    ["b", "Ricotta toast with blueberries", [["bread",80],["ricotta",80],["blueberries",80],["honey",8]], "Toast the bread, spread thickly with ricotta, and top with blueberries and a drizzle of honey.", 5],
+    ["b", "Ham and egg English muffin", [["emuffin",57],["ham",50],["egg",50],["cheddar",15]], "Toast the muffin, fry an egg, warm the ham, and stack with the cheddar.", 6],
+    ["b", "Ham and cheese omelette", [["egg",150],["ham",60],["cheddar",20],["spinach",30]], "Whisk 3 eggs, pour into a hot buttered pan, add diced ham, spinach and cheddar, and fold.", 10],
+    ["b", "Yogurt cup with blueberries and granola", [["ycup",100],["blueberries",80],["granola",30]], "Top a yogurt cup with blueberries and granola.", 2, 2],
+    ["b", "Raspberry chia overnight oats", [["oats",60],["milk",200],["chia",10],["raspberries",80],["yogurt",80]], "Mix oats, milk, chia and yogurt in a jar the night before, and top with raspberries.", 5],
+    ["b", "Homemade breakfast burrito", [["tortilla",60],["egg",100],["tsausage",50],["texmex",20],["salsa",30]], "Scramble the eggs with chopped sausage, then roll up in the tortilla with cheese and salsa.", 10],
+    ["b", "Cottage cheese pineapple bowl", [["cottage",250],["pineapple",120],["walnuts",10]], "Top cottage cheese with pineapple and chopped walnuts.", 3],
+    ["b", "Kiwi yogurt bowl", [["yogurt",250],["kiwi",150],["granola",30]], "Top the yogurt with sliced kiwi and granola.", 3],
+    ["l", "Pork dumpling soup", [["dumpling",180],["broth",400],["bokchoy",100],["soysauce",10]], "Bring the broth to a simmer, add the frozen dumplings for 6 minutes and the bok choy for the last 2. Season with soy sauce.", 12],
+    ["l", "Kimchi fried rice with egg", [["wrice",200],["kimchi",80],["egg",100],["ham",50],["oil",7]], "Fry chopped kimchi and ham 2 minutes, add the rice and fry until crisp, then top with 2 fried eggs.", 12],
+    ["l", "Shrimp ramen bowl", [["riceramen",70],["broth",400],["shrimp",120],["bokchoy",100],["egg",50],["soysauce",10]], "Simmer the broth, add the noodles, shrimp and bok choy for 4 minutes, and top with a soft-boiled egg.", 15],
+    ["d", "Homemade chicken noodle soup", [["broth",500],["chicken",120],["carrot",60],["celery",40],["spaghetti",40]], "Simmer diced chicken, carrot and celery in the broth for 15 minutes, then add broken spaghetti for 9 minutes.", 30],
+    ["d", "Sausage and potato sheet pan", [["sausage",115],["littlepot",250],["pepper",100],["onion",50],["oil",5]], "Toss halved potatoes, pepper and onion with oil on a tray with the sausage, and roast at 220°C / 425°F for 30 minutes.", 35],
+    ["d", "Butternut squash soup and grilled cheese", [["squash",300],["broth",250],["onion",50],["bread",80],["cheddar",30]], "Simmer cubed squash and onion in broth 20 minutes and blend. Toast a cheddar sandwich in a dry pan.", 35],
+    ["d", "Pork chops with apples and green beans", [["porkchop",170],["apple",150],["greenbeans",120],["oil",5]], "Sear the chops 4 minutes a side, then soften sliced apple in the same pan. Steam the green beans.", 22],
+    ["d", "Baked ziti", [["shortpasta",90],["marinara",150],["ricotta",60],["mozz",30],["spinach",40]], "Boil the pasta, toss with marinara, spinach and ricotta, top with mozzarella and bake at 200°C / 400°F for 20 minutes.", 35],
+    ["d", "Ham and pea pasta", [["shortpasta",85],["ham",80],["peas",80],["parm",10],["milk",60]], "Cook the pasta with the peas for the last 2 minutes, then toss with diced ham, milk and parmesan until creamy.", 15],
+    ["s", "Clementines and almonds", [["clementine",150],["almonds",20]], "Two clementines and a small handful of almonds.", 1],
+    ["s", "Grapes and cheese strings", [["grapes",120],["cheesestr",42]], "A bunch of grapes and two cheese strings.", 1],
+    ["s", "Greek yogurt cup", [["ycup",100]], "Straight from the fridge.", 1, 2],
+    ["s", "Nut bar", [["nutbar",40]], "Keep one in your bag.", 1, 1],
+    ["s", "RXBAR", [["rxbar",52]], "Keep one in your bag.", 1, 1],
+    ["s", "Pretzel crisps and hummus", [["pretzel",30],["hummus",60]], "Dip and go.", 1],
+    ["s", "Ham and cheese roll-ups", [["ham",80],["cheddar",20],["cucumber",60]], "Roll ham around cheddar and cucumber sticks.", 3],
+    ["s", "Pear with peanut butter", [["pear",180],["pb",16]], "Slice the pear and dip in peanut butter.", 2],
+    ["s", "Orange and a beef stick", [["orange",150],["beefstick",32]], "An orange and a beef stick.", 1, 1.5],
+    ["s", "Cottage cheese with kiwi", [["cottage",150],["kiwi",150]], "Top cottage cheese with sliced kiwi.", 2],
+    ["h", "Pineapple and dark chocolate bites", [["pineapple",150],["darkbites",15]], "Fresh pineapple with a few chocolate bites.", 1],
+    ["h", "Raspberries and yogurt", [["raspberries",120],["yogurt",80],["honey",5]], "Raspberries over yogurt with a little honey.", 2],
+    ["h", "Frozen grapes", [["grapes",150]], "Freeze a bunch of grapes the night before for a sorbet-like snack.", 1],
+    ["i", "Pita chips and tzatziki", [["pitachips",45],["tzatziki",45]], "A bowl of pita chips with tzatziki to dip.", 1],
+    ["i", "Pork dumplings with sweet chili", [["dumpling",150],["sweetchili",20]], "Pan-fry the dumplings from frozen with a splash of water under a lid, about 8 minutes. Dip in sweet chili.", 10],
   ].map(([type, name, items, how, min, max], i) => mkMeal("m" + i, type, name, items, how, min, max));
   // max: the biggest portion multiplier that still makes sense (no one drinks three shakes for breakfast)
   function mkMeal(id, type, name, items, how, min, max) {
@@ -1489,8 +1613,8 @@ button.btn { border-radius: 0; }
     return { id, type, name, items, how, min, n, tags, text, max };
   }
   // Costco versions: swap in what the warehouse stocks and rename to match
-  const RENAME = [[/Black bean/g, "Chickpea"], [/Lentil/g, "Chickpea"], [/Tempeh/g, "Tofu"], [/Peanut tofu noodles/, "Peanut tofu rice"], [/Rice cakes with almond butter/, "Almond butter toast"], [/Tuna rice cakes/, "Tuna on toast"]];
-  const REWORD = [[/black beans|\bbeans\b/g, "chickpeas"], [/\blentils\b/g, "chickpeas"], [/canned chickpeas/g, "the chickpeas"], [/tempeh/g, "tofu"], [/Cook the noodles/g, "Heat the rice"], [/the rice cakes/g, "the toast"], [/onto rice cakes/g, "onto toast"], [/tamari/g, "soy sauce"]];
+  const RENAME = [[/Black bean/g, "Chickpea"], [/Lentil/g, "Chickpea"], [/Tempeh/g, "Tofu"], [/Rice cakes with almond butter/, "Almond butter toast"], [/Tuna rice cakes/, "Tuna on toast"]];
+  const REWORD = [[/black beans|\bbeans\b/g, "chickpeas"], [/\blentils\b/g, "chickpeas"], [/canned chickpeas/g, "the chickpeas"], [/tempeh/g, "tofu"], [/the rice cakes/g, "the toast"], [/onto rice cakes/g, "onto toast"], [/tamari/g, "soy sauce"]];
   const COSTCO_MEALS = MEALS.map((m) => {
     if (!m.items.some(([k]) => SUB[k])) return m;
     const items = m.items.map(([k, g]) => (SUB[k] ? [SUB[k][0], Math.round(g * SUB[k][1])] : [k, g]));
@@ -1610,6 +1734,69 @@ button.btn { border-radius: 0; }
       chickpizza: ["Chicken and spinach", [["chstrips",90],["marinara",50],["spinach",25],["mozz",30]], "Spread with marinara, top with spinach, chicken and mozzarella, and bake at 220°C / 425°F for 8 to 10 minutes.", 12, ["naan", "pita", "tortilla"], true],
     },
   };
+  // Round 5 parts (Nov 22 2026)
+  Object.assign(PARTS.protein, {
+    drumstick: ["Roast drumsticks", [["drumstick",250]], "Season the drumsticks and roast at 220°C / 425°F for 35 minutes.", 38],
+    porkchop: ["Seared pork chops", [["porkchop",160],["oil",4]], "Season the chops and sear 4 minutes a side.", 10],
+    sausage: ["Italian sausage", [["sausage",115]], "Pan-fry or grill the sausage 12 to 14 minutes, turning often.", 15, ["kale", "greek", "caesar", "naanveg"]],
+    bchstrips: ["Crispy chicken strips", [["bchstrips",160]], "Bake the chicken strips from frozen at 220°C / 425°F for 18 minutes.", 20, ["rice", "brice", "naanveg", "kimchirice", "noodle", "bokrice"]],
+    ham: ["Ham steak", [["ham",150]], "Sear thick slices of ham in a hot pan 2 minutes a side.", 5, ["kale", "greek", "caesar", "noodle", "kimchirice"]],
+  });
+  Object.assign(PARTS.side, {
+    littlepot: ["little potatoes and zucchini", [["littlepot",250],["zucchini",150],["oil",7]], "Roast halved little potatoes for 25 minutes, adding sliced zucchini for the last 12.", 28],
+    squash: ["roast squash and green beans", [["squash",300],["greenbeans",100],["oil",7]], "Roast cubed butternut squash at 220°C / 425°F for 25 minutes and steam the green beans.", 30],
+    caulibroc: ["roast cauliflower and broccoli", [["caulifl",200],["broccoli",120],["oil",8]], "Roast the cauliflower and broccoli with oil at 220°C / 425°F for 20 minutes.", 22],
+    bokrice: ["rice and garlic bok choy", [["wrice",160],["bokchoy",150],["soysauce",8],["oil",4]], "Heat the rice. Stir-fry halved bok choy with garlic and soy sauce for 3 minutes.", 8],
+    noodle: ["sesame noodles and bok choy", [["riceramen",70],["bokchoy",120],["soysauce",10]], "Boil the noodles 4 minutes, add the bok choy for the last minute, drain and toss with soy sauce and sesame.", 8],
+    kimchirice: ["kimchi fried rice", [["wrice",170],["kimchi",60],["egg",50],["oil",5]], "Fry chopped kimchi 2 minutes, add the rice and fry until crisp, then stir through a beaten egg.", 10],
+    cornsalad: ["corn and a romaine salad", [["corn",120],["romaine",120],["oil",7]], "Heat the corn. Toss chopped romaine with oil and lemon.", 5],
+    pastasalad: ["pasta salad", [["shortpasta",70],["cucumber",60],["cherry",60],["feta",15],["oil",7]], "Toss cooked pasta with cucumber, tomatoes, feta, oil and vinegar. Keeps 3 days in the fridge.", 15],
+  });
+  ["bulgogi", "tofu", "eggs", "haddock", "chparm", "meatballs"].forEach((k) => (PARTS.protein[k][4] ||= []).push(...{ bulgogi: ["pastasalad", "squash"], tofu: ["pastasalad"], eggs: ["pastasalad", "noodle"], haddock: ["kimchirice", "noodle", "bokrice"], chparm: ["kimchirice", "noodle", "bokrice"], meatballs: ["kimchirice", "noodle", "bokrice"] }[k]));
+  Object.assign(PARTS.base, {
+    noodle: ["noodle bowl", [["riceramen",70]], "Boil the rice ramen 4 minutes and drain.", 6],
+    chickpasta: ["chickpea pasta bowl", [["chickpasta",85]], "Boil the chickpea pasta 8 minutes.", 10],
+    romaine: ["romaine bowl", [["romaine",120],["cucumber",60]], "Chop romaine and cucumber into a bowl.", 3],
+    pastasal: ["pasta salad bowl", [["shortpasta",80],["cucumber",50],["cherry",50]], "Cook the pasta, rinse it cool, and toss with cucumber and tomatoes.", 12],
+    kimchirice: ["kimchi rice bowl", [["wrice",170],["kimchi",50]], "Heat the rice and pile the kimchi alongside.", 3],
+  });
+  Object.entries({ teriyaki: ["noodle", "kimchirice"], bulgogi: ["noodle", "kimchirice"], satay: ["noodle", "chickpasta"], chili: ["noodle", "kimchirice", "romaine"], teritofu: ["noodle", "kimchirice"],
+    pesto: ["chickpasta", "pastasal"], meatball: ["chickpasta"], taco: ["romaine"], greek: ["romaine", "pastasal"], bbq: ["romaine"], chipotle: ["romaine"], medchick: ["romaine", "pastasal"],
+    salmon: ["romaine", "noodle"], smsalmon: ["romaine"], eggavo: ["kimchirice", "noodle"] }).forEach(([k, bs]) => PARTS.topping[k][4].push(...bs));
+  Object.assign(PARTS.topping, {
+    kimchipork: ["Spicy pork and kimchi", [["porkchop",130],["kimchi",50],["bokchoy",100],["sriracha",8]], "Stir-fry thin pork strips 4 minutes, add bok choy and kimchi for 2 minutes, and finish with sriracha.", 12, ["rice", "brice", "cauli", "noodle"]],
+    sausagepep: ["Sausage and peppers", [["sausage",100],["pepper",100],["onion",50],["marinara",60]], "Brown sliced sausage with pepper and onion 8 minutes, then add marinara and simmer 3 minutes.", 14, ["pasta", "chickpasta", "potato", "rice"]],
+    hamegg: ["Ham and egg", [["ham",80],["egg",50],["peas",60],["soysauce",10]], "Fry diced ham and peas 3 minutes, scramble in an egg and season with soy sauce.", 8, ["rice", "brice", "cauli", "kimchirice"]],
+    ricottachick: ["Chicken, ricotta and spinach", [["ricotta",80],["chstrips",100],["spinach",40],["pesto",10]], "Toss warm chicken and spinach with ricotta and pesto until the spinach wilts.", 6, ["pasta", "chickpasta"]],
+    chsalad: ["Chicken salad", [["cchicken",120],["yogurt",40],["celery",40],["grapes",60]], "Mix drained chicken with yogurt, diced celery and halved grapes.", 5, ["greens", "romaine", "quinoa", "pastasal"]],
+    texmex: ["Tex-Mex chicken", [["cchicken",110],["corn",50],["salsa",40],["texmex",20]], "Warm the chicken with corn and salsa, then top with cheese.", 5, ["rice", "brice", "greens", "romaine", "cauli", "potato"]],
+    shrimpbok: ["Garlic shrimp and bok choy", [["shrimp",130],["bokchoy",100],["soysauce",12],["sriracha",5]], "Sear the shrimp with garlic 3 minutes, add the bok choy and soy sauce for 2 minutes, and finish with sriracha.", 8, ["noodle", "rice", "brice", "cauli"]],
+    squashchick: ["Roast squash and chickpea", [["squash",150],["chickpeas",100],["feta",20],["oil",5]], "Roast cubed squash and chickpeas at 220°C / 425°F for 25 minutes and crumble feta over.", 28, ["quinoa", "greens", "romaine", "rice"]],
+    terisalmon: ["Teriyaki salmon", [["pinksalmon",130],["edamame",50],["teriyaki",20]], "Bake the salmon from frozen 15 minutes, brush with teriyaki, and add edamame.", 18, ["rice", "brice", "noodle", "cauli", "quinoa"]],
+    caesarbowl: ["Chicken Caesar", [["chstrips",120],["caesar",80]], "Toss warm chicken strips through the Caesar salad.", 3, ["romaine", "greens", "pastasal"]],
+    fajita: ["Steak fajita", [["steak",120],["pepper",80],["onion",40],["salsa",30]], "Sear thin steak strips with pepper and onion and fajita spice for 5 minutes, and top with salsa.", 12, ["rice", "brice", "romaine", "greens", "cauli", "quinoa"]],
+    crispy: ["Crispy chicken", [["bchstrips",130],["corn",50],["bbq",20],["romaine",40]], "Bake the chicken strips from frozen 18 minutes, slice, and toss with corn, romaine and barbecue sauce.", 20, ["romaine", "greens", "rice", "potato"]],
+  });
+  Object.assign(PARTS.bread, {
+    buns: ["bun", [["buns",60]], "Toast the bun.", 2, "on a bun"],
+    ciabatta: ["ciabatta", [["ciabatta",85]], "Split and toast the ciabatta.", 3, "ciabatta"],
+    ketotort: ["keto tortilla", [["ketotort",45]], "Warm the keto tortilla.", 1, "keto wrap", "keto tortilla pizza"],
+  });
+  Object.entries({ turkey: ["ciabatta", "ketotort"], tunamelt: ["ciabatta"], eggsalad: ["ketotort", "ciabatta"], chipotle: ["ketotort", "ciabatta"], steak: ["ciabatta", "buns"], pesto: ["ciabatta"],
+    salmonburger: ["buns"], turkeyburger: ["buns"], souvlaki: ["ketotort"], caesar: ["ketotort"], bbqpizza: ["ketotort"], margherita: ["ketotort"], meatballpizza: ["ketotort", "ciabatta"], chickpizza: ["ketotort"] })
+    .forEach(([k, bs]) => PARTS.filling[k][4].push(...bs));
+  PARTS.filling.meatballpizza[6] = { ciabatta: "Meatball sub" };
+  Object.assign(PARTS.filling, {
+    hamcheddar: ["Ham and cheddar", [["ham",100],["cheddar",20],["dijon",8],["greens",15]], "Layer the ham and cheddar with Dijon and greens.", 3, ["bread", "ciabatta", "bagel", "tortilla", "ketotort", "emuffin"]],
+    chsalad: ["Chicken salad", [["cchicken",100],["yogurt",30],["celery",30],["greens",15]], "Mix drained chicken with yogurt, diced celery, salt and pepper, and fill with it and the greens.", 5, ["bread", "ciabatta", "tortilla", "pita", "ketotort", "buns"]],
+    sausage: ["Italian sausage and peppers", [["sausage",115],["pepper",60],["onion",30],["dijon",8]], "Grill the sausage 12 minutes with sliced pepper and onion, and pile in with mustard.", 15, ["buns", "ciabatta"]],
+    crispy: ["Crispy chicken", [["bchstrips",120],["greens",20],["hotsauce",10],["tomato",40]], "Bake the chicken strips from frozen 18 minutes, toss in hot sauce, and fill with greens and tomato.", 20, ["buns", "tortilla", "ciabatta"]],
+    quesadilla: ["Chicken quesadilla", [["cchicken",90],["texmex",40],["salsa",40],["pepper",40]], "Fill half the tortilla with chicken, cheese and pepper, fold, and crisp in a dry pan 2 to 3 minutes a side. Salsa to dip.", 8, ["tortilla", "ketotort"], false, { tortilla: "Chicken quesadilla", ketotort: "Keto chicken quesadilla" }],
+    blt: ["BLT", [["bacon",50],["tomato",60],["romaine",30],["yogurt",15]], "Crisp the bacon and stack with tomato, romaine and a little yogurt mayo.", 10, ["bread", "ciabatta", "buns"]],
+    ricottapizza: ["Spinach ricotta", [["ricotta",60],["spinach",30],["mozz",25],["mushroom",40]], "Spread with ricotta, top with spinach, sliced mushrooms and mozzarella, and bake at 220°C / 425°F for 8 to 10 minutes.", 12, ["naan", "pita", "tortilla", "ketotort"], true],
+    hawaiian: ["Hawaiian", [["ham",70],["pineapple",50],["marinara",50],["mozz",30]], "Spread with marinara, top with ham, pineapple and mozzarella, and bake at 220°C / 425°F for 8 to 10 minutes.", 12, ["naan", "pita", "tortilla", "ketotort"], true],
+    sausagepizza: ["Sausage and pepper", [["sausage",70],["pepper",40],["marinara",50],["mozz",25]], "Spread with marinara, top with crumbled sausage, pepper and mozzarella, and bake at 220°C / 425°F for 10 to 12 minutes.", 14, ["naan", "pita", "tortilla"], true],
+  });
   const COMBOS = (() => {
     const out = [];
     const add = (style, anchor, name, items, how, min) => ["l", "d"].forEach((t) => {
@@ -1629,7 +1816,7 @@ button.btn { border-radius: 0; }
     }
     for (const [fk, f] of Object.entries(P.filling)) for (const bk of f[4]) {
       const b = P.bread[bk];
-      add("sand", bk + "." + fk, `${f[0]} ${f[5] ? b[5] : b[4]}`, [...b[1], ...f[1]], f[5] ? f[2].replace(/^Spread/, `Spread the ${b[0]}`) : `${b[2]} ${f[2]}`, b[3] + f[3]);
+      add("sand", bk + "." + fk, f[6]?.[bk] || `${f[0]} ${f[5] ? b[5] : b[4]}`, [...b[1], ...f[1]], f[5] ? f[2].replace(/^Spread/, `Spread the ${b[0]}`) : `${b[2]} ${f[2]}`, b[3] + f[3]);
     }
     return out;
   })();
@@ -2219,17 +2406,17 @@ button.btn { border-radius: 0; }
   // "Sauce it up": one spoonful of something on a meal for variety, counted in the day's calories.
   // goes: ingredients it suits. Skipped on meals that already have a sauce, curries, soups and premade meals.
   const SAUCE = {
-    bbq:        { g: 30, goes: ["chicken", "thigh", "rchicken", "chstrips", "pork", "beef", "steak", "salmon", "salmonburger", "meatballs", "potato", "sweetpot", "tofu"] },
+    bbq:        { g: 30, goes: ["chicken", "thigh", "rchicken", "chstrips", "pork", "beef", "steak", "salmon", "salmonburger", "meatballs", "potato", "sweetpot", "tofu", "drumstick", "porkchop", "bchstrips", "littlepot"] },
     teriyaki:   { g: 30, goes: ["wrice", "brice", "stirfry", "chicken", "thigh", "salmon", "tofu", "shrimp", "edamame", "steak"], no: ["soysauce", "tamari"] },
     sweetchili: { g: 25, goes: ["shrimp", "chicken", "chstrips", "tofu", "salmon", "gyoza", "wrice", "stirfry", "salmonburger", "tilapia", "pinksalmon", "mandu"] },
     sriracha:   { g: 10, goes: ["wrice", "brice", "egg", "eggwhite", "tofu", "shrimp", "stirfry", "tuna", "smsalmon", "gyoza", "yakisoba", "yakitori", "avocado", "sfrice", "mandu", "bulgogi"] },
-    hotsauce:   { g: 10, goes: ["chicken", "chstrips", "egg", "eggwhite", "potato", "cauli", "thigh", "rchicken", "eggbites", "bwrap", "turkey", "tsausage", "bsand", "ewwrap", "wedges"] },
+    hotsauce:   { g: 10, goes: ["chicken", "chstrips", "egg", "eggwhite", "potato", "cauli", "thigh", "rchicken", "eggbites", "bwrap", "turkey", "tsausage", "bsand", "ewwrap", "wedges", "bchstrips", "drumstick", "cchicken"] },
     tzatziki:   { g: 45, goes: ["pita", "naan", "chicken", "chstrips", "salmon", "potato", "cucumber", "chickpeas", "rchicken", "meatballs", "quinoa", "pinksalmon", "tilapia"] },
-    dijon:      { g: 10, goes: ["salmon", "pork", "chicken", "steak", "potato", "greenbeans", "turkeyslice", "smsalmon", "cod", "thigh", "tilapia", "pinksalmon"] },
+    dijon:      { g: 10, goes: ["salmon", "pork", "chicken", "steak", "potato", "greenbeans", "turkeyslice", "smsalmon", "cod", "thigh", "tilapia", "pinksalmon", "porkchop", "ham", "sausage"] },
     pesto:      { g: 15, goes: ["spaghetti", "pasta", "chicken", "salmon", "tortelloni", "egg", "zucchini", "potato", "quinoa", "cod", "mozz"] },
     salsa:      { g: 45, goes: ["egg", "tortilla", "corntort", "chickpeas", "blackbeans", "beef", "turkey", "rchicken", "sweetpot", "eggwhite"] },
   };
-  const SAUCED = new Set([...Object.keys(SAUCE), "marinara", "coco", "cocofull", "hummus", "saladkit", "ctsoup", "lentsoup", "butterch", "satay", "kalekit", "grsalad", "caesar", "quinsal", "bcsoup", "udon", "bulgogi", "chipchick"]);
+  const SAUCED = new Set([...Object.keys(SAUCE), "marinara", "coco", "cocofull", "hummus", "saladkit", "ctsoup", "lentsoup", "kimchi", "broth", "butterch", "satay", "kalekit", "grsalad", "caesar", "quinsal", "bcsoup", "udon", "bulgogi", "chipchick"]);
   function sauceOptions(m) {
     if (m.out || !"bld".includes(m.type) || m.tags.has("premade")) return [];
     const ks = m.items.map(([k]) => k);
