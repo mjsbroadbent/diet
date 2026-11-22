@@ -111,6 +111,11 @@ fieldset { min-inline-size: 0; }
 .ticks span:last-child { left: auto; right: 0; transform: none; }
 @media (max-width: 560px) { .sl:has([id^="variety-"]) .ticks span:not(:first-child):not(:last-child):not(.on) { font-size: 0; } .sl:has([id^="variety-"]) .ticks span:not(:first-child):not(:last-child):not(.on)::before { content: ""; display: block; width: 3px; height: 3px; margin-top: 6px; border-radius: 50%; background: currentColor; } }
 .ticks span.on { color: var(--ink); font-weight: 700; }
+.flav-pop { position: fixed; z-index: 60; display: flex; gap: 6px; padding: 6px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18); }
+.flav-pop button { padding: 8px 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); font: inherit; font-size: 14px; cursor: pointer; }
+.flav-pop button.on { border-color: var(--accent); font-weight: 700; }
+.day-tools [data-treat], [aria-label="Daily treat"] label { -webkit-user-select: none; user-select: none; }
+[aria-label="Daily treat"][data-salty] input:checked + span::after { content: " · salty"; font-size: 0.8em; }
 .fold summary { cursor: pointer; font-size: 13px; font-weight: 500; color: var(--muted); padding: 2px 0; }
 .fold summary b { color: var(--ink); font-weight: 700; margin-left: 4px; }
 .fold[open] summary { margin-bottom: 6px; }
@@ -609,6 +614,12 @@ button.btn { border-radius: 0; }
 #mix:checked { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 30'%3E%3Ccircle cx='15' cy='14' r='13' fill='%23D3272E' transform='translate%281.3 -1%29'/%3E%3Cg stroke='%231A1714' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' fill='none'%3E%3Ccircle cx='15' cy='14' r='13' stroke-width='1.8'/%3E%3Cpath d='M7 9.5h3.5c4.5 0 6 9 10.5 9h3'/%3E%3Cpath d='M7 18.5h3.5c4.5 0 6-9 10.5-9h3'/%3E%3Cpath d='M21.5 6.8l2.7 2.7-2.7 2.7'/%3E%3Cpath d='M21.5 15.8l2.7 2.7-2.7 2.7'/%3E%3C/g%3E%3C/svg%3E"); }
 #mix:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; }
 @media (prefers-reduced-motion: no-preference) { #mix:checked { animation: shuf .35s ease-out; } @keyframes shuf { 0% { transform: rotate(-180deg) scale(.7); } 100% { transform: rotate(4deg); } } }
+
+/* Sweet or salty picker: a little printed tab */
+.flav-pop { border: 2px solid var(--ink); border-radius: 0; background: var(--surface); box-shadow: 3px 3px 0 var(--ink); transform: rotate(-1.5deg); }
+.flav-pop button { border: 2px solid var(--ink); border-radius: 0; font-family: var(--label); text-transform: uppercase; letter-spacing: 0.03em; font-weight: 800; }
+.flav-pop button.on { background: var(--red); color: #fff; }
+.flav-pop button:hover { background: var(--blue); color: #fff; }
 </style>
 <script>
   (function () { var k; try { k = JSON.parse(localStorage.getItem("ad-skin")); } catch (e) {} k = k === "light" || k === "dark" ? k : "cereal";
@@ -1624,6 +1635,11 @@ button.btn { border-radius: 0; }
     ["l", "Beyond burger lettuce wraps", [["beyond",113],["romaine",80],["tomato",60],["avocado",40],["dijon",8]], "Cook the patty 4 minutes a side, slice, and wrap in romaine leaves with tomato, avocado and mustard.", 10],
     ["d", "Chickpea coconut curry with rice", [["chickpeas",150],["cocofull",60],["cantom",120],["spinach",50],["wrice",150]], "Simmer chickpeas, tomatoes and coconut milk with curry powder 12 minutes, stir in spinach, and serve over rice.", 18],
     ["d", "Tofu and broccoli in peanut satay", [["tofu",180],["broccoli",150],["satay",35],["brice",150]], "Crisp cubed tofu 8 minutes, add broccoli and a splash of water for 3 minutes, then toss with satay sauce. Serve over brown rice.", 15],
+    // Healthy salty treats (Nov 22 2026), for "hold for sweet or salty"
+    ["h", "Salted edamame", [["edamame",120]], "Microwave the frozen edamame for 3 minutes and toss with flaky salt.", 3],
+    ["h", "Cucumber and hummus", [["cucumber",150],["hummus",45]], "Cut the cucumber into thick coins and dip.", 2],
+    ["h", "Pretzel crisps and hummus", [["pretzel",25],["hummus",40]], "A small bowl of pretzel crisps with hummus to dip.", 1],
+    ["h", "Cheese string and almonds", [["cheesestr",21],["almonds",15]], "One cheese string and a small handful of almonds.", 1],
   ].map(([type, name, items, how, min, max], i) => mkMeal("m" + i, type, name, items, how, min, max));
   // max: the biggest portion multiplier that still makes sense (no one drinks three shakes for breakfast)
   function mkMeal(id, type, name, items, how, min, max) {
@@ -1887,6 +1903,10 @@ button.btn { border-radius: 0; }
   };
   OUT.p = { id: "op", type: "o", out: true, name: "Pizza, 3 slices", items: [], min: 0, n: [850, 36, 100, 33, 6], tags: new Set(), text: "",
     how: "Loose estimate for three slices of a large cheese or pepperoni pizza." };
+  // Treat flavour: sweet if any ingredient is sweet, otherwise salty. Treats default to sweet; hold a treat button to pick.
+  const SWEET = new Set(["darkchoc", "strawberries", "berries", "honey", "banana", "icecream", "icebar", "cookie", "mango", "darkbites", "pineapple", "raspberries", "grapes", "blueberries"]);
+  const flavorOf = (m) => (m.items.some(([k]) => SWEET.has(k)) ? "sweet" : "salty");
+  let dailyFlav = "sweet";
   const MEAL = Object.fromEntries([...MEALS, ...COSTCO_MEALS, ...COMBOS, OUT.h, OUT.i, OUT.p].map((m) => [m.id, m]));
   // A logged meal with your own calorie guess: 20% protein, 40% carbs, 40% fat
   function customMeal(kcal) {
@@ -1992,7 +2012,8 @@ button.btn { border-radius: 0; }
     $("styleFold").hidden = !slots.some((sl) => sl === "Lunch" || sl === "Dinner");
     syncSliders();
     $("slotHint").textContent = "Each day: " + slots.join(", ").toLowerCase().replace(/^./, (x) => x.toUpperCase()) + "." +
-      (t === "h" ? " Healthy treats are dark chocolate or fruit." : t === "i" ? " Indulgent treats are ice cream, cookies or chips." : "") + (t !== "none" ? " The treat is a fixed portion, and the rest of the day shrinks to fit it." : "");
+      (t === "h" ? (dailyFlav === "salty" ? " Healthy treats are salty: edamame, hummus dips, cheese and almonds." : " Healthy treats are dark chocolate or fruit.")
+        : t === "i" ? (dailyFlav === "salty" ? " Indulgent treats are salty: chips, pizza, taquitos or dumplings." : " Indulgent treats are ice cream, cookies or chocolate.") : "") + (t !== "none" ? " Hold Healthy or Indulgent to switch sweet or salty." : "") + (t !== "none" ? " The treat is a fixed portion, and the rest of the day shrinks to fit it." : "");
   }
 
   let isExample = true;
@@ -2046,7 +2067,7 @@ button.btn { border-radius: 0; }
       units, sex: radio("sex"), age: parseFloat($("age").value), heightCm, weightKg,
       activity: parseFloat(radio("activity")), goal: radio("goal"),
       diets: [...document.querySelectorAll('input[name="diet"]:checked')].map((x) => x.value),
-      avoid: tags.avoid.join(","), likes: tags.likes.join(","), meals: radio("meals"), snacks: radio("snacks"), treat: radio("treat"),
+      avoid: tags.avoid.join(","), likes: tags.likes.join(","), meals: radio("meals"), snacks: radio("snacks"), treat: radio("treat"), flav: dailyFlav,
       out: { days: [...document.querySelectorAll('input[name="out"]:checked')].map((x) => +x.value), style: radio("outStyle") },
       course: Object.fromEntries(COURSES.map((c) => [c.t, { effort: +EFFORT[+$("effort-" + c.t).value][0], variety: +VARIETY[+$("variety-" + c.t).value][0] }])),
       store: radio("store"), packs: $("packs").checked, premade: $("premade").checked, sauce: $("sauce").checked, freezer: radio("freezer"), start: startDay(),
@@ -2225,6 +2246,7 @@ button.btn { border-radius: 0; }
       if (quick.length || !fit.length) pools[type] = quick;
       else { pools[type] = [...fit].sort((a, b) => a.min - b.min).slice(0, 3); relaxed.push(type); }
     }
+    if (treat) { const f = pools[treat].filter((m) => flavorOf(m) === (s.flav || "sweet")); if (f.length) pools[treat] = f; }
     // Each style gets an equal share of the picks, so hundreds of combos don't crowd out the recipes
     const gw = {};
     for (const t of ["l", "d"]) if (pools[t]) { const n = {}; pools[t].forEach((m) => (n[m.style || "classic"] = (n[m.style || "classic"] || 0) + 1)); gw[t] = new Map(pools[t].map((m) => [m.id, 1 / n[m.style || "classic"]])); }
@@ -2313,6 +2335,45 @@ button.btn { border-radius: 0; }
     items.forEach(({ k, g }) => { for (let j = 0; j < 5; j++) n[j] += (ING[k][1 + j] * g) / 100; });
     return n;
   }
+  // Kitchen measures shown next to the grams: c = cups (tablespoons under a quarter cup), h = handfuls,
+  // n = countable pieces [grams each, one, many], of = share of a whole package [grams, name]
+  const MEASURE = {
+    c: { rchicken: 140, turkey: 225, beef: 225, eggwhite: 245, tempeh: 166, edamame: 150, yogurt: 245, cottage: 225, cheddar: 113, feta: 150,
+      parm: 100, mozz: 113, texmex: 113, ricotta: 245, milk: 245, soymilk: 245, oatmilk: 245, coco: 240, cocofull: 240, cocoyog: 245,
+      blackbeans: 170, chickpeas: 165, lentils: 200, oats: 80, brice: 195, wrice: 160, quinoa: 185, pasta: 100, chickpasta: 100, shortpasta: 100,
+      berries: 140, strawberries: 150, mango: 165, blueberries: 148, raspberries: 123, grapes: 150, pineapple: 165, broccoli: 90, cantom: 240,
+      cauli: 110, greenbeans: 110, mushroom: 70, stirfry: 100, corn: 150, peas: 140, mixveg: 135, roastveg: 130, brussels: 90, caulifl: 100,
+      squash: 140, marinara: 250, butterch: 250, icecream: 135, granola: 110, kimchi: 150, broth: 240, ctsoup: 240, lentsoup: 240, bcsoup: 240,
+      grsalad: 150, caesar: 100, quinsal: 170, penne: 200, udon: 200, gnocchi: 160, tortelloni: 120, chstrips: 140, cchicken: 140, chipchick: 140,
+      bulgogi: 150 },
+    h: { spinach: 30, greens: 30, almonds: 28, walnuts: 28, chips: 28, pretzel: 28, pitachips: 28 },
+    n: { chicken: [200, "breast", "breasts"], thigh: [100, "thigh", "thighs"], turkeyslice: [15, "slice", "slices"], steak: [100, "palm-sized piece", "palm-sized pieces"],
+      pork: [100, "palm-sized piece", "palm-sized pieces"], salmon: [150, "fillet", "fillets"], cod: [150, "fillet", "fillets"], tilapia: [120, "fillet", "fillets"],
+      pinksalmon: [115, "fillet", "fillets"], porkchop: [150, "chop", "chops"], ham: [75, "thick slice", "thick slices"], smsalmon: [20, "slice", "slices"],
+      tuna: [120, "can", "cans"], bchstrips: [35, "strip", "strips"], stuffpep: [250, "pepper", "peppers"], shrimp: [15, "large shrimp", "large shrimp"],
+      cherry: [17, "tomato", "tomatoes"], asparagus: [16, "spear", "spears"], celery: [30, "stick", "sticks"], romaine: [170, "heart", "hearts"],
+      bokchoy: [70, "head", "heads"], ravioli: [25, "ravioli", "ravioli"], wedges: [25, "wedge", "wedges"], littlepot: [30, "potato", "potatoes"],
+      riceramen: [70, "noodle cake", "noodle cakes"], spaghetti: [90, "quarter-sized bundle", "quarter-sized bundles"], darkbites: [3.5, "piece", "pieces"] },
+    of: { tofu: [454, "block"], lasagna: [1500, "tray"], pizza: [555, "pizza"], potpie: [1250, "pie"], shepherd: [1770, "tray"] },
+  };
+  const qtr = (x) => { const q = Math.round(x * 4) / 4, w = Math.floor(q); return (w ? String(w) : "") + ["", "¼", "½", "¾"][Math.round((q - w) * 4)] || "0"; };
+  function measureText(k, g) {
+    const M = MEASURE;
+    if (M.c[k]) {
+      const c = g / M.c[k];
+      if (c < 0.25 - 1e-9) return `${half(Math.max(0.5, Math.round((g / (M.c[k] / 16)) * 2) / 2))} tbsp`;
+      return `${qtr(c)} ${Math.round(c * 4) / 4 > 1 ? "cups" : "cup"}`;
+    }
+    if (M.h[k]) { const h = Math.max(0.5, Math.round((g / M.h[k]) * 2) / 2); return `${half(h)} ${h > 1 ? "handfuls" : "handful"}`; }
+    if (M.n[k]) { const [e, one, many] = M.n[k], c = Math.max(0.5, Math.round((g / e) * 2) / 2); return `${half(c)} ${c > 1 ? many : one}`; }
+    if (M.of[k]) {
+      const [whole, name] = M.of[k], f = g / whole;
+      if (f >= 0.875) return `${half(Math.round(f * 2) / 2)} ${name}${f >= 1.25 ? "s" : ""}`;
+      const F = [[1 / 8, "⅛"], [1 / 6, "⅙"], [1 / 4, "¼"], [1 / 3, "⅓"], [1 / 2, "½"], [2 / 3, "⅔"], [3 / 4, "¾"]];
+      return `${F.reduce((a, b) => (Math.abs(b[0] - f) < Math.abs(a[0] - f) ? b : a))[1]} of a ${name}`;
+    }
+    return "";
+  }
   function amountText(k, g) {
     const d = ING[k], x = d[8] || {};
     if (x.unit) { const c = g / x.each, cr = Math.round(c * 2) / 2; return `${half(c)} ${cr > 1 ? x.unit[1] : x.unit[0]} ${k === "egg" || x.full ? "" : d[0].toLowerCase().replace(/ \(.*\)/, "")}`.replace(/\s+$/, ""); }
@@ -2322,6 +2383,11 @@ button.btn { border-radius: 0; }
       s += tb < 1 ? ` (${half(Math.max(0.5, Math.round(tb * 3 * 2) / 2))} tsp)` : ` (${half(Math.round(tb * 2) / 2)} tbsp)`;
     } else if (x.each && g >= x.each * 0.4) {
       s += ` (about ${half(Math.round((g / x.each) * 2) / 2)})`;
+    } else if (x.each) {
+      s += ` (about ${[[1 / 8, "⅛"], [1 / 4, "¼"], [1 / 3, "⅓"]].reduce((a, b) => (Math.abs(b[0] - g / x.each) < Math.abs(a[0] - g / x.each) ? b : a))[1]})`;
+    } else {
+      const m = measureText(k, g);
+      if (m) s += ` (about ${m})`;
     }
     return s;
   }
@@ -2334,7 +2400,7 @@ button.btn { border-radius: 0; }
   let leftovers = null;
   const skipped = {};
 
-  function inputsKey(s, r) { return JSON.stringify([r.target, r.protein, r.carbs, r.fat, r.keto, s.diets, s.avoid, s.likes, s.meals, s.snacks, s.treat, s.out, s.start, s.course, s.store, s.packs, s.freezer, [...nostock], s.premade, s.styles, s.mix]); }
+  function inputsKey(s, r) { return JSON.stringify([r.target, r.protein, r.carbs, r.fat, r.keto, s.diets, s.avoid, s.likes, s.meals, s.snacks, s.treat, s.flav, s.out, s.start, s.course, s.store, s.packs, s.freezer, [...nostock], s.premade, s.styles, s.mix]); }
 
   function refreshMenu(s, r, force) {
     ctx = context(s, r);
@@ -2531,9 +2597,9 @@ button.btn { border-radius: 0; }
     (d.sauce ||= {})[si] = { id: d.ids[si], k: next };
     afterDayChange();
   }
-  function addTreat(di, kind) {
-    const d = week.days[di], pool = ctx.treatPools[kind];
-    if (!pool.length) { alertNote(`No ${kind === "h" ? "healthy" : "indulgent"} treats fit your diet and avoid list.`); return; }
+  function addTreat(di, kind, flav = "sweet") {
+    const d = week.days[di], pool = ctx.treatPools[kind].filter((m) => flavorOf(m) === flav);
+    if (!pool.length) { alertNote(`No ${flav} ${kind === "h" ? "healthy" : "indulgent"} treats fit your diet and avoid list.`); return; }
     const t = dayT(d), used = new Set(week.days.flatMap((x) => x.ids));
     let best = null;
     for (const m of pool) {
@@ -2716,9 +2782,13 @@ button.btn { border-radius: 0; }
       const tools = document.createElement("div");
       tools.className = "day-tools";
       tools.innerHTML = `<button type="button" class="treat-h" data-treat="h" title="Dark chocolate or fruit"><span class="emo" aria-hidden="true">🍓</span><span class="w">Good</span> <span class="w">treat</span></button>
-        <button type="button" class="treat-i" data-treat="i" title="Ice cream, cookies or chips"><span class="emo" aria-hidden="true">🍦</span><span class="w">Cheat</span> <span class="w">treat</span></button>
+        <button type="button" class="treat-i" data-treat="i" title="Ice cream or cookies"><span class="emo" aria-hidden="true">🍦</span><span class="w">Cheat</span> <span class="w">treat</span></button>
         <button type="button" data-pass title="Freeze this day as eaten, so the rest of the week balances around it"><span class="emo" aria-hidden="true">${wd.passed ? "↩️" : "✅"}</span>${wd.passed ? "Undo done" : "Day done"}${wd.passed ? "" : '<small class="cut" aria-hidden="true">Clip when eaten</small>'}</button>`;
-      tools.querySelectorAll("[data-treat]").forEach((b) => b.addEventListener("click", () => addTreat(di, b.dataset.treat)));
+      tools.querySelectorAll("[data-treat]").forEach((b) => {
+        b.title += ". Hold for sweet or salty";
+        onHold(b, () => flavMenu(b, "sweet", (f) => addTreat(di, b.dataset.treat, f)));
+        b.addEventListener("click", (e) => { if (b.dataset.held) { delete b.dataset.held; e.preventDefault(); return; } addTreat(di, b.dataset.treat); });
+      });
       tools.querySelector("[data-pass]").addEventListener("click", (e) => {
         const btn = e.currentTarget;
         const tear = !wd.passed && document.documentElement.dataset.skin === "cereal" && !matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -2756,7 +2826,8 @@ button.btn { border-radius: 0; }
     seen.add(cur.id);
     const uses = {};
     week.days.forEach((d, j) => j !== di && d.ids.forEach((id) => (uses[id] = (uses[id] || 0) + 1)));
-    const pool = ctx.pools[cur.type] || ctx.treatPools[cur.type] || [];
+    let pool = ctx.pools[cur.type] || ctx.treatPools[cur.type] || [];
+    if (cur.type === "h" || cur.type === "i") { const f = pool.filter((m) => flavorOf(m) === flavorOf(cur)); if (f.length > 1) pool = f; }
     let cands = pool.filter((m) => !seen.has(m.id) && !day.ids.some((id, j) => j !== si && id === m.id));
     if (!cands.length) { seen.clear(); seen.add(cur.id); cands = pool.filter((m) => m.id !== cur.id); }
     if (!cands.length) return;
@@ -2973,6 +3044,7 @@ button.btn { border-radius: 0; }
     v.sauce = $("sauce").checked;
     v.styles = read().styles;
     v.mix = $("mix").checked;
+    v.flav = dailyFlav;
     v.out = read().out.days;
     ["age", "heightCm", "heightFt", "heightIn", "weight", ...COURSES.flatMap((c) => ["effort-" + c.t, "variety-" + c.t])].forEach((id) => (v.fields[id] = $(id).value)); v.sliders = 2;
     v.tags = tags;
@@ -2981,6 +3053,7 @@ button.btn { border-radius: 0; }
   function restoreInputs() {
     const v = ls.get("ad-inputs");
     if (!v) return;
+    dailyFlav = v.flav === "salty" ? "salty" : "sweet";
     isExample = false;
     ["avoid", "likes"].forEach((k) => {
       const t = v.tags?.[k] || (v.fields?.[k] ? v.fields[k].split(",").map((x) => x.trim()).filter(Boolean) : []);
@@ -3054,6 +3127,40 @@ button.btn { border-radius: 0; }
     update(false);
     saveInputs();
   });
+  // Hold (or right-click) a treat button to choose sweet or salty
+  function onHold(el, fn) {
+    let t;
+    const cancel = () => clearTimeout(t);
+    el.style.webkitTouchCallout = "none";
+    el.addEventListener("pointerdown", (e) => { delete el.dataset.held; if (e.button) return; cancel(); t = setTimeout(() => { el.dataset.held = 1; navigator.vibrate?.(15); fn(); }, 450); });
+    ["pointerup", "pointerleave", "pointercancel"].forEach((ev) => el.addEventListener(ev, cancel));
+    el.addEventListener("contextmenu", (e) => { e.preventDefault(); cancel(); if (!el.dataset.held) { el.dataset.held = 1; fn(); } });
+  }
+  function flavMenu(anchor, cur, pick) {
+    document.querySelector(".flav-pop")?.remove();
+    const pop = document.createElement("div");
+    pop.className = "flav-pop"; pop.setAttribute("role", "menu");
+    pop.innerHTML = [["sweet", "🍫", "Sweet"], ["salty", "🥨", "Salty"]].map(([f, e, l]) => `<button type="button" role="menuitem" data-f="${f}"${f === cur ? ' class="on"' : ""}><span aria-hidden="true">${e}</span> ${l}</button>`).join("");
+    document.body.append(pop);
+    const r = anchor.getBoundingClientRect(), w = pop.offsetWidth, h = pop.offsetHeight;
+    pop.style.left = Math.max(8, Math.min(innerWidth - w - 8, r.left + r.width / 2 - w / 2)) + "px";
+    pop.style.top = (r.top - h - 8 >= 8 ? r.top - h - 8 : r.bottom + 8) + "px";
+    const close = () => { pop.remove(); removeEventListener("pointerdown", out, true); removeEventListener("scroll", close, true); removeEventListener("keydown", esc); };
+    const out = (e) => { if (!pop.contains(e.target)) close(); };
+    const esc = (e) => { if (e.key === "Escape") { close(); anchor.focus(); } };
+    setTimeout(() => { addEventListener("pointerdown", out, true); addEventListener("scroll", close, true); addEventListener("keydown", esc); });
+    pop.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => { close(); pick(b.dataset.f); }));
+    pop.querySelector(".on, button").focus({ preventScroll: true });
+  }
+  const syncFlav = () => document.querySelector('[aria-label="Daily treat"]').toggleAttribute("data-salty", dailyFlav === "salty");
+  ["treat-h", "treat-i"].forEach((id) => {
+    const lab = $(id).closest("label");
+    onHold(lab, () => flavMenu(lab, dailyFlav, (f) => {
+      dailyFlav = f; syncFlav();
+      $(id).checked = true; $(id).dispatchEvent(new Event("input", { bubbles: true }));
+    }));
+    lab.addEventListener("click", (e) => { if (lab.dataset.held) { delete lab.dataset.held; e.preventDefault(); } });
+  });
   $("shuffle").addEventListener("click", () => {
     seed = 1 + Math.floor(Math.random() * 1e9);
     ls.set("ad-seed", seed);
@@ -3092,7 +3199,7 @@ button.btn { border-radius: 0; }
   });
 
   ls.set("ad-seed", seed);
-  restoreInputs();
+  restoreInputs(); syncFlav();
   showStore(); showOut();
   setUnits(radio("units"), false);
   showCourses();
