@@ -105,7 +105,11 @@ fieldset { min-inline-size: 0; }
 .course select { font-size: 14px; padding: 7px 8px; }
 .sl { display: grid; gap: 2px; min-width: 0; }
 .sl input[type="range"] { width: 100%; margin: 4px 0 0; accent-color: var(--accent); cursor: pointer; }
-.ticks { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--muted); }
+.ticks { position: relative; height: 1.5em; font-size: 11.5px; color: var(--muted); }
+.ticks span { position: absolute; top: 0; left: calc(9px + var(--p) * (100% - 18px)); transform: translateX(-50%); white-space: nowrap; }
+.ticks span:first-child { left: 0; transform: none; }
+.ticks span:last-child { left: auto; right: 0; transform: none; }
+@media (max-width: 560px) { .sl:has([id^="variety-"]) .ticks span:not(:first-child):not(:last-child):not(.on) { font-size: 0; } .sl:has([id^="variety-"]) .ticks span:not(:first-child):not(:last-child):not(.on)::before { content: ""; display: block; width: 3px; height: 3px; margin-top: 6px; border-radius: 50%; background: currentColor; } }
 .ticks span.on { color: var(--ink); font-weight: 700; }
 .fold summary { cursor: pointer; font-size: 13px; font-weight: 500; color: var(--muted); padding: 2px 0; }
 .fold summary b { color: var(--ink); font-weight: 700; margin-left: 4px; }
@@ -1904,10 +1908,10 @@ button.btn { border-radius: 0; }
     { t: "s", name: "Snacks", effort: "10", variety: "3" },
   ];
   const EFFORT = [["10", "Quick (10 min or less)"], ["25", "Some cooking (25 min or less)"], ["999", "Any, including 30 to 45 min"]];
-  const VARIETY = [["1", "Same every day"], ["3", "Rotate 2 or 3 recipes"], ["7", "Different every day"]];
-  const TICKS = { effort: ["10 min", "25 min", "45 min"], variety: ["Same", "2 or 3", "Daily"] };
-  const slider = (k, c, L, def) => `<div class="sl"><input type="range" min="0" max="2" step="1" id="${k}-${c.t}" value="${L.findIndex(([v]) => v === def)}" aria-label="${c.name} ${k}">
-        <div class="ticks" aria-hidden="true">${TICKS[k].map((t) => `<span>${t}</span>`).join("")}</div></div>`;
+  const VARIETY = [["1", "Same every day"], ["2", "Rotate 2 recipes"], ["3", "Rotate 3 recipes"], ["5", "Rotate 5 recipes"], ["7", "Different every day"]];
+  const TICKS = { effort: ["10 min", "25 min", "45 min"], variety: ["Same", "2", "3", "5", "Daily"] };
+  const slider = (k, c, L, def) => `<div class="sl"><input type="range" min="0" max="${L.length - 1}" step="1" id="${k}-${c.t}" value="${L.findIndex(([v]) => v === def)}" aria-label="${c.name} ${k}">
+        <div class="ticks" aria-hidden="true">${TICKS[k].map((t, j, a) => `<span style="--p:${j / (a.length - 1)}">${t}</span>`).join("")}</div></div>`;
   const SLOT_TYPE = { Breakfast: "b", Lunch: "l", Dinner: "d", Snack: "s", Treat: "h" };
   const TREAT_COURSE = { effort: 999, variety: 7 };
   const DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
@@ -1972,7 +1976,7 @@ button.btn { border-radius: 0; }
     COURSES.forEach((c) => [["effort", EFFORT], ["variety", VARIETY]].forEach(([k, L]) => {
       const el = $(k + "-" + c.t), i = +el.value;
       el.setAttribute("aria-valuetext", L[i][1]);
-      el.style.setProperty("--fill", i * 50 + "%");
+      el.style.setProperty("--fill", (i * 100) / (L.length - 1) + "%");
       el.nextElementSibling.querySelectorAll("span").forEach((t, j) => t.classList.toggle("on", j === i));
     }));
   }
@@ -2957,7 +2961,7 @@ button.btn { border-radius: 0; }
     v.styles = read().styles;
     v.mix = $("mix").checked;
     v.out = read().out.days;
-    ["age", "heightCm", "heightFt", "heightIn", "weight", ...COURSES.flatMap((c) => ["effort-" + c.t, "variety-" + c.t])].forEach((id) => (v.fields[id] = $(id).value)); v.sliders = 1;
+    ["age", "heightCm", "heightFt", "heightIn", "weight", ...COURSES.flatMap((c) => ["effort-" + c.t, "variety-" + c.t])].forEach((id) => (v.fields[id] = $(id).value)); v.sliders = 2;
     v.tags = tags;
     ls.set("ad-inputs", v);
   }
@@ -2973,7 +2977,8 @@ button.btn { border-radius: 0; }
     Object.entries(v.fields || {}).forEach(([id, val]) => {
       if (!$(id) || val == null) return;
       const L = id.startsWith("effort-") ? EFFORT : id.startsWith("variety-") ? VARIETY : null;
-      if (L && v.sliders !== 1) { const i = L.findIndex(([x]) => x === String(val)); if (i < 0) return; val = i; }
+      if (L && !v.sliders) { const i = L.findIndex(([x]) => x === String(val)); if (i < 0) return; val = i; }
+      else if (L === VARIETY && v.sliders === 1) val = [0, 2, 4][+val] ?? 2; // 3-step variety slider saved before it had 5 steps
       $(id).value = val;
     });
     Object.entries(v.radios || {}).forEach(([n, val]) => { const el = document.querySelector(`input[name="${n}"][value="${val}"]`); if (el) el.checked = true; });
