@@ -3019,6 +3019,7 @@ button.btn { border-radius: 0; }
       week.days.forEach((d) => Object.values(d.sauce || {}).forEach((x) => x.k && bought.add(x.k)));
       afford = (k, di, take) => {
         const P = pk(k);
+        if (!P || pantry[k] > 0 || staples.has(k)) return true;
         const kk = keyOf(k, di), g = buyUnits(k, SAUCE[k].g);
         // Fresh, and frozen (the freezer was checked before sauces): only what's spare in packs already bought
         if (isFresh(k, ctx.fcap) || inFreezer(k, ctx.fcap)) { if ((spare[kk] || 0) < g) return false; if (take) spare[kk] -= g; return true; }
