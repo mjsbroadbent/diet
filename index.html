@@ -237,6 +237,8 @@ button.btn:hover { filter: brightness(1.08); }
 .gbar .note { margin-right: auto; }
 .gbar .ghost { min-height: 44px; }
 .cost .lead { grid-column: span 2; }
+.plan-in { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; justify-content: space-between; }
+.plan-in .btns button { min-height: 44px; }
 .gsec.kit .note { margin: 0 0 4px; }
 .cost .lead b { font-size: 34px; }
 .cost b small { font-size: 0.5em; font-family: var(--body); font-weight: 700; color: var(--muted); margin-left: 2px; }
@@ -1011,6 +1013,7 @@ button.btn { border-radius: 0; }
       <button type="button" class="ghost" id="copyList">Copy list</button>
       <button type="button" class="ghost" id="shareList" hidden>Share list</button>
       <button type="button" class="ghost" id="printList">Print list</button>
+      <button type="button" class="ghost" id="sharePlan">Share plan link</button>
       <button type="button" class="ghost" id="untick">Untick all</button>
     </div>
     <div class="grocery" id="grocery"></div>
@@ -3780,6 +3783,63 @@ button.btn { border-radius: 0; }
       catch (err) { if (err?.name !== "AbortError") flash(b, (await copyText(listText())) ? "Copied instead" : "Couldn't share"); }
     });
   }
+  // Share link: settings, the week (swaps, done days), pantry and store choices, packed into the link's #plan= part.
+  // Nothing goes to a server. Ticks, ratings and the look stay on each device.
+  const SHARED = ["ad-inputs", "ad-seed", "ad-week", "ad-nostock", "ad-staples", "ad-pantry", "ad-have"];
+  const SITE = "https://mjsbroadbent.github.io/diet/";
+  const b64u = (u8) => { let t = ""; u8.forEach((c) => (t += String.fromCharCode(c))); return btoa(t).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, ""); };
+  const unb64u = (t) => Uint8Array.from(atob(t.replace(/-/g, "+").replace(/_/g, "/")), (c) => c.charCodeAt(0));
+  const pipe = async (u8, stream) => new Uint8Array(await new Response(new Blob([u8]).stream().pipeThrough(stream)).arrayBuffer());
+  async function planLink() {
+    saveInputs();
+    const o = { v: 1 };
+    SHARED.forEach((k) => { const x = ls.get(k); if (x != null) o[k.slice(3)] = x; });
+    const raw = new TextEncoder().encode(JSON.stringify(o));
+    let enc;
+    try { enc = "z" + b64u(await pipe(raw, new CompressionStream("deflate-raw"))); } catch { enc = "j" + b64u(raw); }
+    // The installed site shares its own address; the preview inside Claude shares the public site
+    return (window.BBD_PWA && /^https?:$/.test(location.protocol) ? location.origin + location.pathname : SITE) + "#plan=" + enc;
+  }
+  async function readPlan(enc) {
+    const bytes = unb64u(enc.slice(1));
+    const json = enc[0] === "z" ? await pipe(bytes, new DecompressionStream("deflate-raw")) : bytes;
+    const o = JSON.parse(new TextDecoder().decode(json));
+    if (!o || o.v !== 1 || typeof o.inputs !== "object") throw new Error("not a plan");
+    return o;
+  }
+  function usePlan(o) {
+    SHARED.forEach((k) => { const x = o[k.slice(3)]; x == null ? localStorage.removeItem(k) : ls.set(k, x); });
+    ls.set("ad-checked", []); ls.set("ad-step", "week");
+    location.replace(location.pathname + location.search);
+  }
+  $("sharePlan").addEventListener("click", async (e) => {
+    const b = e.currentTarget, url = await planLink();
+    if (navigator.share) {
+      try { await navigator.share({ title: "My week on Big Box Diet", url }); return; }
+      catch (err) { if (err?.name === "AbortError") return; }
+    }
+    flash(b, (await copyText(url)) ? "Link copied" : "Couldn't copy");
+  });
+  const planHash = (location.hash.match(/^#plan=([zj][\w-]+)$/) || [])[1];
+  const firstVisit = !ls.get("ad-week") && !ls.get("ad-inputs"); // checked now, before this visit saves a week of its own
+  addEventListener("hashchange", () => { if (/^#plan=/.test(location.hash)) location.reload(); });
+  if (planHash) readPlan(planHash).then((o) => {
+    // A first visit just opens the plan; someone with their own plan saved gets asked first
+    if (firstVisit) return usePlan(o);
+    const bar = document.createElement("div");
+    bar.className = "warn plan-in";
+    bar.innerHTML = `<span>Someone shared a plan with you. Opening it replaces the settings and week saved on this device.</span>
+      <span class="btns"><button type="button" class="btn">Open shared plan</button><button type="button" class="ghost">Keep mine</button></span>`;
+    bar.querySelector(".btn").addEventListener("click", () => usePlan(o));
+    bar.querySelector(".ghost").addEventListener("click", () => bar.remove());
+    document.querySelector(".wrap").prepend(bar);
+  }).catch(() => {
+    const bar = document.createElement("div");
+    bar.className = "warn plan-in";
+    bar.textContent = "This plan link looks cut off or broken, so your own plan is shown. Ask for the link again.";
+    document.querySelector(".wrap").prepend(bar);
+  });
+
   // Print just the list: everything else on the page is hidden while the print dialog is up
   $("printList").addEventListener("click", () => {
     const root = document.documentElement;
