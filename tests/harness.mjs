@@ -14,7 +14,7 @@ const verbose = args.includes("--verbose");
 const SEEDS = +(args.find((a) => a.startsWith("--seeds="))?.split("=")[1] || 5);
 
 const base = { units: "metric", sex: "male", age: 35, heightCm: 178, weightKg: 82, activity: 1.55, goal: "lose", diets: [], avoid: "", likes: "",
-  meals: "3", snacks: "1", treat: "none", flav: "sweet", out: { days: [], style: "h" }, store: "costco", packs: true, premade: true, sauce: false,
+  meals: "3", snacks: "1", treat: "none", flav: "sweet", out: { days: [], style: "h" }, store: "costco", packs: true, premade: true, sauce: true,
   freezer: "std", start: 0, styles: ["bowl", "sand", "plate", "classic"], mix: false, cap: 300 };
 const PROFILES = [
   { name: "Default man, lose", s: {} },
