@@ -3614,23 +3614,53 @@ button.btn { border-radius: 0; }
     const FEAT_MAX = 3;
     const used = {};
     week.days.forEach((d) => Object.values(d.sauce || {}).forEach((x) => x.k && (used[x.k] = (used[x.k] || 0) + 1)));
+    // Zero waste and the cap: a sauce comes from what's already in the kitchen or on the list.
+    // Fresh ones only use what's spare in packs the week already opens; a new long-life jar is bought only while the week's food stays under the cap.
+    let afford = null;
+    if (ctx.costco) {
+      const st = weekShop(ctx, week.days), spare = {};
+      for (const kk in st.need) {
+        const k = baseK(kk), P = pk(k);
+        if (!P || !(isFresh(k, ctx.fcap) || inFreezer(k, ctx.fcap))) continue;
+        const net = st.need[kk] - ownedK(kk);
+        if (net > 1e-6) spare[kk] = Math.max(1, Math.ceil(net / P.size - 0.05)) * P.size - net;
+      }
+      let food = st.food;
+      const bought = new Set(Object.keys(st.need).map(baseK));
+      week.days.forEach((d) => Object.values(d.sauce || {}).forEach((x) => x.k && bought.add(x.k)));
+      afford = (k, di, take) => {
+        const P = pk(k);
+        if (!P || pantry[k] > 0 || staples.has(k)) return true;
+        const kk = keyOf(k, di), g = buyUnits(k, SAUCE[k].g);
+        // Fresh, and frozen (the freezer was checked before sauces): only what's spare in packs already bought
+        if (isFresh(k, ctx.fcap) || inFreezer(k, ctx.fcap)) { if ((spare[kk] || 0) < g) return false; if (take) spare[kk] -= g; return true; }
+        if (bought.has(k)) return true;
+        if (food + P.price > ctx.cap) return false;
+        if (take) { food += P.price; bought.add(k); }
+        return true;
+      };
+    }
     week.days.forEach((d, di) => {
       if (fixedDay(d)) return;
       if (!ctx.sauce && !feat.length) { delete d.sauce; return; }
       const old = d.sauce || {};
+      // A day already well over its calories (eating out, a treat at fixed portions) gets no new sauces
+      const full = ctx.sauce && dayData(d, di).tot[0] > 1.05 * dayT(d).k;
       d.sauce = {};
       d.ids.forEach((id, si) => {
         if (old[si]?.id === id && (ctx.sauce || feat.includes(old[si].k))) { d.sauce[si] = old[si]; return; }
         if (old[si]?.k) used[old[si].k]--;
         let opts = sauceOptions(MEAL[id]);
+        if (afford) opts = opts.filter((k) => afford(k, di, false));
         const today = Object.values(d.sauce).map((x) => x.k);
         const fopts = opts.filter((k) => feat.includes(k) && (used[k] || 0) < FEAT_MAX && !today.includes(k));
-        if (!ctx.sauce) opts = fopts;
+        if (!ctx.sauce || full) opts = fopts;
         if (!opts.length) return;
         const h = (k) => ((week.seed || 1) + di * 7 + si * 13 + k.length * 31) % 97;
         const k = opts.sort((a, b) => fopts.includes(b) - fopts.includes(a) || today.includes(a) - today.includes(b) || (used[a] || 0) - (used[b] || 0) || h(a) - h(b))[0];
         d.sauce[si] = { id, k };
         used[k] = (used[k] || 0) + 1;
+        afford?.(k, di, true);
       });
     });
     // New staples this week's menu shows off (in a meal or as its sauce), for "New this week" on the page
