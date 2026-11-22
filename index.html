@@ -1379,6 +1379,9 @@ button.btn { border-radius: 0; }
     walnuts:     ["Walnuts", 654, 15, 14, 65, 6.7, S.N, "treenut"],
     chia:        ["Chia seeds", 486, 17, 42, 31, 34, S.N, "", { tbsp: 12 }],
     pepitas:     ["Pumpkin seeds", 559, 30, 11, 49, 6, S.N, "", { tbsp: 9 }],
+    hemp:        ["Hemp hearts", 553, 31.6, 8.7, 48.8, 4, S.N, "", { tbsp: 10 }],
+    pecans:      ["Pecan halves", 691, 9.2, 13.9, 72, 9.6, S.N, "treenut"],
+    macadamia:   ["Macadamia nuts", 718, 7.9, 13.8, 75.8, 8.6, S.N, "treenut"],
     honey:       ["Honey", 304, 0.3, 82, 0, 0.2, S.N, "honey", { tbsp: 21 }],
     maple:       ["Maple syrup", 260, 0, 67, 0.1, 0, S.N, "", { tbsp: 20 }],
     salsa:       ["Salsa", 36, 1.5, 7, 0.2, 1.8, S.N, "", { tbsp: 16 }],
@@ -1623,6 +1626,9 @@ button.btn { border-radius: 0; }
     walnuts: ["Kirkland Signature walnuts, 1.36 kg", 1360, 15.39, "p"],
     chia: ["Kirkland Signature organic chia seeds, 1.36 kg", 1360, 12.64, "p"],
     pepitas: ["Bassé organic pumpkin seeds, 1.2 kg", 1200, 14.29, "p"],
+    hemp: ["Kirkland Signature organic hemp hearts, 907 g", 907, 17.59, "p"],
+    pecans: ["Kirkland Signature pecan halves, 908 g", 908, 24.19, "p"],
+    macadamia: ["Kirkland Signature macadamia nuts, 680 g", 680, 21.99, "p"],
     honey: ["Kirkland Signature liquid honey, 3 × 750 g", 2250, 21.99, "p"],
     maple: ["Kirkland Signature organic maple syrup, 1 L", 1320, 18.69, "p"],
     salsa: ["Pace medium salsa, 2 × 1 L", 2100, 10.99, "p"],
@@ -1783,7 +1789,7 @@ button.btn { border-radius: 0; }
     "frittata", "bwrap", "lasagna", "pizza", "yakisoba", "yakitori", "gyoza", "chstrips", "salmonburger", "meatballs", "mango",
     "pinksalmon", "haddock", "tunapoke", "wedges", "peas", "mixveg", "roastveg", "chparm", "chimi", "taquito", "mandu", "sfrice", "bchstrips", "dumpling", "impnug", "normandy"]);
   // Staples for the pantry builder: long or indefinite shelf life (pantry, sealed jars, dry goods, powders and frozen basics)
-  const STAPLE = new Set(("whey pea shake protbar rxbar nutbar beefstick coco cocofull blackbeans chickpeas lentils tuna cchicken cantom broth " +
+  const STAPLE = new Set(("hemp pecans macadamia whey pea shake protbar rxbar nutbar beefstick coco cocofull blackbeans chickpeas lentils tuna cchicken cantom broth " +
     "oats brice wrice quinoa pasta spaghetti shortpasta chickpasta riceramen ricenoodle ricecake oil pb ab almonds walnuts chia pepitas honey maple " +
     "salsa tamari soysauce pesto marinara bbq teriyaki sriracha hotsauce sweetchili dijon butterch satay oyster mayo ranch balsglaze chilicrunch " +
     "montreal montchick tacoseas garlicparm everything tajin nosalt italian smpaprika frenchonion cinnamon " +
@@ -2168,6 +2174,26 @@ button.btn { border-radius: 0; }
     ["j", "Kettle chips and ranch dip", [["chips",40],["ranch",20]], "One bowl of chips with ranch to dip, then put the bag away.", 1],
     ["j", "Pita chip nachos", [["pitachips",40],["texmex",30],["salsa",40]], "Spread pita chips on a plate, top with cheese, microwave 45 seconds and add salsa.", 3],
     ["j", "Gyoza with sweet chili", [["gyoza",120],["sweetchili",15]], "Pan-fry the gyoza from frozen and dip in sweet chili sauce.", 10],
+    // Vegan keto (Nov 22 2026): richer breakfasts, snacks, treats and mains so plant-based keto weeks reach their calories
+    ["b", "Tofu scramble with avocado and pumpkin seeds", [["tofu",200],["avocado",75],["spinach",40],["pepitas",10],["oil",5]], "Crumble the tofu into hot oil with turmeric, salt and pepper, wilt in the spinach, and top with sliced avocado and pumpkin seeds.", 10],
+    ["b", "Hemp heart chia pudding", [["chia",25],["cocofull",120],["soymilk",120],["hemp",20],["raspberries",40]], "Stir the chia into the coconut milk and soy milk and chill overnight. Top with hemp hearts and raspberries.", 5],
+    ["b", "Peanut butter protein smoothie", [["pea",30],["soymilk",300],["pb",20],["chia",10]], "Blend the protein powder, soy milk, peanut butter and chia with a handful of ice.", 3],
+    ["b", "Coconut yogurt with pecans and hemp", [["cocoyog",150],["pecans",20],["hemp",15],["raspberries",40]], "Top the yogurt with pecans, hemp hearts and raspberries.", 2],
+    ["s", "Pecans", [["pecans",30]], "A small handful.", 1],
+    ["s", "Celery and almond butter", [["celery",100],["ab",24]], "Celery sticks with almond butter to dip.", 2],
+    ["s", "Olives and almonds", [["olives",40],["almonds",20]], "A few olives and a small handful of almonds.", 1],
+    ["s", "Macadamia nuts", [["macadamia",25]], "A small handful.", 1],
+    ["s", "Hemp heart protein shake", [["pea",30],["soymilk",250],["hemp",15]], "Blend the protein powder and hemp hearts with soy milk and ice.", 2],
+    ["h", "Dark chocolate and pecans", [["darkchoc",15],["pecans",20]], "Two squares of dark chocolate with a few pecans.", 1],
+    ["h", "Raspberry coconut cream", [["chia",20],["cocofull",150],["raspberries",50]], "Stir chia into the coconut milk with a drop of vanilla, chill overnight, and top with raspberries.", 5],
+    ["j", "Chili crunch almonds", [["almonds",30],["chilicrunch",8]], "Toss the almonds in chili crunch and warm in a dry pan for 2 minutes.", 3],
+    ["j", "Everything-spiced macadamias", [["macadamia",30],["everything",3]], "Toss the macadamias with everything bagel seasoning and toast in a dry pan for 2 minutes.", 3],
+    ["d", "Coconut sriracha tofu with cauliflower rice", [["tofu",200],["cocofull",100],["sriracha",10],["soysauce",8],["greenbeans",100],["cauli",150]], "Crisp cubed tofu 6 minutes, add coconut milk, sriracha, soy sauce and green beans and simmer 6 minutes. Serve over the cauliflower rice.", 18],
+    ["d", "Sesame tofu with garlic green beans and almonds", [["tofu",200],["greenbeans",150],["almonds",15],["sesameoil",8],["soysauce",10]], "Crisp cubed tofu in sesame oil 8 minutes, add green beans and garlic for 4 minutes, then soy sauce. Top with chopped almonds.", 15],
+    ["l", "Beyond burger bowl with avocado and olives", [["beyond",113],["romaine",80],["avocado",75],["olives",30],["cucumber",60],["oil",5]], "Cook the patty 4 minutes a side, slice, and serve over romaine with avocado, olives and cucumber dressed with oil and lemon.", 10],
+    ["d", "Peanut tofu with zucchini noodles", [["tofu",200],["zucchini",250],["pb",25],["soysauce",10],["sesameoil",5]], "Crisp cubed tofu 8 minutes. Spiralise or ribbon the zucchini and toss in the pan 2 minutes with peanut butter, soy sauce and a splash of water.", 15],
+    ["l", "Roast cauliflower, tofu and olive bowl", [["tofu",180],["caulifl",200],["olives",30],["spinach",30],["oil",10]], "Roast the cauliflower and cubed tofu with oil at 220°C / 425°F for 22 minutes, then toss with spinach, olives and a squeeze of lemon.", 25],
+    ["l", "Edamame, avocado and hemp salad", [["edamame",120],["avocado",75],["greens",60],["hemp",20],["cucumber",60],["oil",8]], "Toss thawed edamame, greens and cucumber with oil and lemon, and top with avocado and hemp hearts.", 5],
   ].map(([type, name, items, how, min, max], i) => mkMeal("m" + i, type, name, items, how, min, max));
   // max: the biggest portion multiplier that still makes sense (no one drinks three shakes for breakfast)
   function mkMeal(id, type, name, items, how, min, max) {
@@ -2377,6 +2403,8 @@ button.btn { border-radius: 0; }
     zucmush: ["zucchini and mushrooms", [["zucchini",200],["mushroom",120],["oil",8]], "Sauté sliced zucchini and mushrooms with garlic for 8 minutes.", 10],
     asparavo: ["asparagus and avocado", [["asparagus",150],["avocado",60],["oil",5]], "Roast the asparagus 10 minutes and serve with sliced avocado.", 12],
     cheesybroc: ["cheesy broccoli", [["broccoli",200],["cheddar",25]], "Steam the broccoli and melt the cheddar over it.", 8],
+    avoolive: ["avocado and olive salad", [["avocado",75],["olives",30],["romaine",60],["oil",8]], "Chop romaine and toss with sliced avocado, olives, oil and lemon.", 5],
+    greenalm: ["garlic green beans and almonds", [["greenbeans",150],["almonds",20],["oil",6]], "Sauté the green beans with garlic in oil for 6 minutes and toss with chopped almonds.", 8],
   });
   Object.entries({ teriyaki: ["romaine"], bbq: ["cauli"] }).forEach(([k, bs]) => PARTS.topping[k][4].push(...bs));
   Object.assign(PARTS.topping, {
@@ -2489,7 +2517,7 @@ button.btn { border-radius: 0; }
     side: { potgb: 5, wedges: 5, rice: 4, brice: 3, sweetpot: 4, quinoa: 3, mash: 5, brussels: 4, salad: 3, mexrice: 4, naanveg: 4, cauli: 2, gnocchi: 4,
       kale: 3, greek: 4, caesar: 4, saladkit: 3, littlepot: 5, squash: 3, caulibroc: 3, bokrice: 3, noodle: 4, kimchirice: 3, cornsalad: 3, pastasalad: 3,
       zucmush: 3, asparavo: 3, cheesybroc: 4, ricepeas: 4, quinnorm: 3, roastveg: 4, ricemix: 4, gnocnorm: 4, potnorm: 4,
-      cuketom: 4, mushspin: 4, avotom: 4 },
+      cuketom: 4, mushspin: 4, avotom: 4, avoolive: 4, greenalm: 4 },
     base: { rice: 4, brice: 3, quinoa: 3, greens: 3, pasta: 5, cauli: 2, chickpea: 2, potato: 5, quinsal: 3, noodle: 4, chickpasta: 2, romaine: 3,
       pastasal: 3, kimchirice: 3, veg: 3 },
     topping: { teriyaki: 5, taco: 5, greek: 4, poke: 3, bulgogi: 4, satay: 2, butter: 5, chili: 4, pesto: 4, meatball: 5, turkeychili: 4, bbq: 5,
@@ -2505,8 +2533,8 @@ button.btn { border-radius: 0; }
       5: "7 9 23 31 32 39 41 43 49 72 73 74 75 76 77 96 99 102 103 106 113 126 130 133 134 143 145 146 147 149 163 169 170 173 211 212 216",
       4: "0 1 3 5 10 11 13 14 19 21 26 28 29 30 37 38 40 45 53 54 55 57 59 66 67 68 70 80 82 83 84 85 88 89 92 94 97 98 100 104 105 107 108 109 110 " +
         "117 118 119 120 123 124 125 128 131 132 135 136 138 139 140 141 144 148 150 151 152 153 157 159 160 161 166 168 172 174 175 176 177 178 180 " +
-        "181 183 185 188 189 193 205 206 207 208 209 210 213 214 215 217",
-      2: "2 4 12 16 17 22 34 36 42 48 52 58 60 65 91 93 116 155 184 190 192 194 195 196 198 199 200 201 202",
+        "181 183 185 188 189 193 205 206 207 208 209 210 213 214 215 217 218 220 221 222 225 227 229 230 231 233 234",
+      2: "2 4 12 16 17 22 34 36 42 48 52 58 60 65 91 93 116 155 184 190 192 194 195 196 198 199 200 201 202 236",
       1: "25 27 44",
     },
   };
@@ -3368,7 +3396,7 @@ button.btn { border-radius: 0; }
       squash: 140, marinara: 250, butterch: 250, icecream: 135, granola: 110, kimchi: 150, broth: 240, ctsoup: 240, lentsoup: 240, bcsoup: 240,
       grsalad: 150, caesar: 100, quinsal: 170, penne: 200, udon: 200, gnocchi: 160, tortelloni: 120, chstrips: 140, cchicken: 140, chipchick: 140,
       bulgogi: 150, alfredo: 250, artichoke: 170, normandy: 135 },
-    h: { spinach: 30, greens: 30, almonds: 28, walnuts: 28, chips: 28, pretzel: 28, pitachips: 28 },
+    h: { spinach: 30, greens: 30, almonds: 28, walnuts: 28, pecans: 28, macadamia: 28, chips: 28, pretzel: 28, pitachips: 28 },
     n: { chicken: [200, "breast", "breasts"], thigh: [100, "thigh", "thighs"], turkeyslice: [15, "slice", "slices"], steak: [100, "palm-sized piece", "palm-sized pieces"],
       pork: [100, "palm-sized piece", "palm-sized pieces"], salmon: [150, "fillet", "fillets"], cod: [150, "fillet", "fillets"], tilapia: [120, "fillet", "fillets"],
       pinksalmon: [115, "fillet", "fillets"], porkchop: [150, "chop", "chops"], ham: [75, "thick slice", "thick slices"], smsalmon: [20, "slice", "slices"],
@@ -3808,6 +3836,7 @@ button.btn { border-radius: 0; }
     walnuts:    { g: 15, kind: "mix", types: "bs", no: ["walnuts", "almonds"], goes: ["yogurt", "oats", "cottage", "ricotta", "banana"] },
     almonds:    { g: 15, kind: "mix", types: "bs", no: ["almonds", "walnuts"], goes: ["yogurt", "ycup", "oats", "cottage", "cocoyog"] },
     pepitas:    { g: 10, kind: "mix", types: "bs", no: ["pepitas"], goes: ["yogurt", "oats", "cottage", "cocoyog", "greens"] },
+    hemp:       { g: 10, kind: "mix", types: "bs", no: ["hemp"], goes: ["cocoyog", "yogurt", "oats", "cottage", "chia", "greens"] },
     darkbites:  { g: 7, kind: "mix", types: "bs", no: ["darkbites", "darkchoc"], goes: ["yogurt", "ycup", "oats", "cottage", "pb"] },
     cinnamon:   { g: 1, kind: "rub", types: "bs", goes: ["oats", "yogurt", "cottage", "apple", "banana", "ricotta", "bread"] },
     sesameoil:  { g: 5, kind: "top", goes: ["wrice", "brice", "stirfry", "bokchoy", "broccoli", "riceramen", "egg", "tofu", "edamame", "cucumber", "spinach"] },
@@ -3817,7 +3846,7 @@ button.btn { border-radius: 0; }
     hoisin:     { g: 20, goes: ["pork", "porkchop", "beef", "chicken", "thigh", "tofu", "wrice", "riceramen", "stirfry", "meatballs"] },
     fishsauce:  { g: 5, goes: ["wrice", "stirfry", "chicken", "thigh", "shrimp", "pork", "beef", "riceramen", "egg", "bokchoy"] },
     currypaste: { g: 15, goes: ["chicken", "thigh", "shrimp", "tofu", "wrice", "brice", "stirfry", "cauli", "sweetpot", "cod"] },
-    tahini:     { g: 15, salad: true, goes: ["chickpeas", "greens", "romaine", "quinoa", "pita", "roastveg", "cauli", "caulifl", "chicken", "salmon", "sweetpot"] },
+    tahini:     { g: 15, salad: true, goes: ["tofu", "chickpeas", "greens", "romaine", "quinoa", "pita", "roastveg", "cauli", "caulifl", "chicken", "salmon", "sweetpot"] },
     zaatar:     { g: 2, kind: "rub", salad: true, types: "blds", goes: ["chicken", "thigh", "egg", "pita", "naan", "chickpeas", "greens", "quinoa", "cucumber", "cottage", "potato"] },
     harissa:    { g: 12, goes: ["chicken", "thigh", "salmon", "egg", "chickpeas", "roastveg", "potato", "sweetpot", "beef", "sausage", "cauli"] },
     adobo:      { g: 10, goes: ["chicken", "thigh", "beef", "turkey", "pork", "sweetpot", "blackbeans", "chickpeas", "tortilla", "corntort", "egg", "potato"] },
