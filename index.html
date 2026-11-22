@@ -113,9 +113,13 @@ fieldset { min-inline-size: 0; }
 .ticks span:last-child { left: auto; right: 0; transform: none; }
 @media (max-width: 560px) { .sl:has([id^="variety-"]) .ticks span:not(:first-child):not(:last-child):not(.on) { font-size: 0; } .sl:has([id^="variety-"]) .ticks span:not(:first-child):not(:last-child):not(.on)::before { content: ""; display: block; width: 3px; height: 3px; margin-top: 6px; border-radius: 50%; background: currentColor; } }
 .ticks span.on { color: var(--ink); font-weight: 700; }
+.hh-wrap { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 14px 20px; }
+.hh-wrap > #addPerson { flex: 1 1 220px; min-height: 48px; }
+.hh-wrap > #hhRow { flex: 0 1 auto; margin: 0; }
+.hh-wrap > [hidden] { display: none; }
 .hh { display: grid; gap: 6px; justify-items: start; }
 .hh-l { font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; }
-.hh-n { font-size: 13px; color: var(--muted); }
+.hh-n { font-size: 12px; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--muted); }
 .stepper { display: grid; grid-template-columns: 48px 72px 48px; gap: 6px; align-items: stretch; }
 .stepper button { min-height: 48px; padding: 0; font-size: 22px; font-weight: 800; line-height: 1; }
 .stepper input { width: 100%; box-sizing: border-box; text-align: center; font-size: 20px; font-weight: 800; -moz-appearance: textfield; }
@@ -358,6 +362,9 @@ button.btn:hover { filter: brightness(1.08); }
 .steps button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 html[data-step="you"] [data-step]:not([data-step~="you"]), html[data-step="pantry"] [data-step]:not([data-step~="pantry"]), html[data-step="week"] [data-step]:not([data-step~="week"]), html[data-step="shop"] [data-step]:not([data-step~="shop"]) { display: none !important; }
 .step-next { display: flex; justify-content: flex-end; }
+.pantry .menu-head { align-items: flex-start; }
+.pantry-skip { flex: none; min-height: 44px; white-space: nowrap; }
+@media (max-width: 560px) { .pantry .menu-head { flex-wrap: wrap; } .pantry-skip { width: 100%; } }
 .staples { display: grid; gap: 16px; }
 .staples h3 { margin: 0 0 8px; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
 .staples .chip span { font-size: 14px; }
@@ -1078,13 +1085,14 @@ button.btn { border-radius: 0; }
         <legend>Your household</legend>
         <p class="hint" id="houseHint">Cooking for more than you? Add each person and lunches and dinners are scaled to everyone's calories. Breakfasts and snacks are planned for each person.</p>
         <div class="people" id="people"></div>
+        <div class="hh-wrap">
         <button type="button" class="ghost" id="addPerson">+ Add a profile</button>
         <div class="row" id="hhRow">
           <div class="f hh">
-            <label class="hh-l" for="hhSize">Someone like me</label>
+            <label class="hh-l" for="hhSize">Someone like me <span class="hh-n">same portions each</span></label>
             <div class="stepper"><button type="button" class="ghost" id="hhMinus" aria-label="One fewer">&minus;</button><input type="number" id="hhSize" min="1" max="8" step="1" value="1" inputmode="numeric"><button type="button" class="ghost" id="hhPlus" aria-label="One more">+</button></div>
-            <span class="hh-n">Same portions each</span>
           </div>
+        </div>
         </div>
       </fieldset>
 
@@ -1238,6 +1246,7 @@ button.btn { border-radius: 0; }
         <h2 class="sec" id="pantryTitle">Your pantry</h2>
         <p>Set up the long-life basics once: sauces, spices, grains and cans that keep for months. Anything you already have stays off the grocery list. Skip this if you'd rather start from scratch.</p>
       </div>
+      <button type="button" class="ghost pantry-skip" data-go="week">Skip to your week</button>
     </div>
     <div class="staples kit" id="kit" hidden></div>
     <div class="rocket" id="rocket" hidden>
@@ -1251,7 +1260,7 @@ button.btn { border-radius: 0; }
     <details class="have-fold" id="haveFold"><summary><h3 class="have-h" id="haveH">Already have these? Tick them</h3><span class="have-n" id="haveN"></span></summary>
     <div class="staples" id="staples"></div></details>
   </section>
-  <div class="step-next" data-step="pantry"><button type="button" class="ghost" data-go="week">Skip</button><button type="button" class="btn" data-go="week">Next: your week</button></div>
+  <div class="step-next" data-step="pantry"><button type="button" class="btn" data-go="week">Next: your week</button></div>
 
   <section class="menu" aria-labelledby="menuTitle" data-step="week">
     <div class="menu-head">
@@ -4271,7 +4280,8 @@ button.btn { border-radius: 0; }
     const show = () => $("mini").classList.toggle("show", mq.matches && past && !!$("miniTop").innerHTML);
     if ("IntersectionObserver" in window) {
       // Shown once the box art has scrolled off the top, and kept from there on down
-      new IntersectionObserver(([e]) => { past = !e.isIntersecting && e.boundingClientRect.top < 0; show(); }).observe(document.querySelector(".box-front"));
+      // (the navbar, now that the box art only shows on a first visit)
+      new IntersectionObserver(([e]) => { past = !e.isIntersecting && e.boundingClientRect.top < 0; show(); }).observe(document.querySelector(".topbar"));
     }
     mq.addEventListener?.("change", show);
   })();
