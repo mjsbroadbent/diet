@@ -2688,11 +2688,11 @@ button.btn { border-radius: 0; }
   // Fresh food that won't keep to next week (and frozen food when there's no freezer)
   const isFresh = (k, fcap) => { const P = pk(k); return !!P && (P.keep === "x" || (P.keep === "z" && fcap === 0)); };
   // A fresh pack's leftover can be eaten this week instead (extra in the meals that use it) when it's light food,
-  // at most doubles what the week already uses, and adds no more than 3% to the week's calories (5% for fruit and vegetables under 100 kcal per 100 g)
+  // at most doubles what the week already uses (2.5x for fruit and vegetables under 100 kcal per 100 g), and adds no more than 3% to the week's calories (5% for fruit and vegetables under 100 kcal per 100 g)
   // (richer food only when it's a scrap: under 1% of the week's calories)
   const stretchable = (k, over, used) => {
     const kc = (eatUnits(k, over) * ING[k][1]) / 100 / (ctx.house?.size || 1);
-    return over <= used && kc <= (ING[k][1] <= 100 ? 0.05 : 0.03) * 7 * ctx.T.k && (ING[k][1] <= 170 || kc <= 0.01 * 7 * ctx.T.k);
+    return over <= (ING[k][1] <= 100 ? 1.5 : 1) * used && kc <= (ING[k][1] <= 100 ? 0.05 : 0.03) * 7 * ctx.T.k && (ING[k][1] <= 170 || kc <= 0.01 * 7 * ctx.T.k);
   };
   const stepsOf = (m) => (m.max ? STEPS[m.type].filter((x) => x <= m.max) : STEPS[m.type]);
   // Nutrition of a meal at a portion step, after rounding to amounts you can measure (whole bottles, pieces),
@@ -2795,6 +2795,8 @@ button.btn { border-radius: 0; }
     const days = [];
     // Mix and match: variety counts the kept part (protein, bowl base or bread), and what goes with it rotates
     const akey = (m) => (ctx.mix && m.anchor ? m.anchor : m.id);
+    // Even share of the week for one option of a capped course (3 options: 3 servings at most before it starts to cost)
+    const share = new Proxy({}, { get: (_, t) => { const v = ctx.course[t]?.variety || 7; return v > 1 && v < 7 ? Math.ceil(7 / v) : 99; } });
     // Variety: how many different recipes each course may use across the week
     const perDay = {};
     slots.forEach((sl) => (perDay[SLOT_TYPE[sl]] = (perDay[SLOT_TYPE[sl]] || 0) + 1));
@@ -2822,7 +2824,7 @@ button.btn { border-radius: 0; }
       }
       let load = 0;
       if (add) for (const k in have) if (have[k] > 0 && inFreezer(k, ctx.fcap)) load += have[k];
-      return [cost, add > 0 && load + add > FZ_PLAN * ctx.fcap, rem, used];
+      return [cost, add > 0 && load + add > fzPlan(), rem, used];
     };
     // Fresh food that won't keep to next week (and frozen food when there's no freezer)
     const fresh = (k) => isFresh(k, ctx.fcap);
@@ -2842,7 +2844,7 @@ button.btn { border-radius: 0; }
         const daily = ctx.course[type].variety >= 7;
         const cum = [];
         let tot = 0;
-        avail.forEach((m) => { tot += ctx.want(m) * (liked(m) ? 3 : 1) * (ctx.gw?.[type]?.get(m.id) ?? 1) * (daily ? ((uses[m.id] || 0) >= Math.ceil(7 / avail.length) + 1 ? 0.02 : 1 / (1 + 1.5 * (uses[m.id] || 0))) : (chosen[type].has(akey(m)) ? 3 : 1) / (ctx.mix && m.anchor ? 1 + 2 * (uses[m.id] || 0) : 1)); cum.push(tot); });
+        avail.forEach((m) => { tot += ctx.want(m) * (liked(m) ? 3 : 1) * (ctx.gw?.[type]?.get(m.id) ?? 1) * (daily ? ((uses[m.id] || 0) >= Math.ceil(7 / avail.length) + 1 ? 0.02 : 1 / (1 + 1.5 * (uses[m.id] || 0))) : (chosen[type].has(akey(m)) ? 3 : 1) / (ctx.mix && m.anchor ? 1 + 2 * (uses[m.id] || 0) : 1 + 1.5 * Math.max(0, (uses[m.id] || 0) - share[type] + 1))); cum.push(tot); });
         return { avail, cum, tot, pool };
       });
       const sample = (D) => { const x = rand() * D.tot; let lo = 0, hi = D.cum.length - 1; while (lo < hi) { const mid = (lo + hi) >> 1; if (D.cum[mid] < x) lo = mid + 1; else hi = mid; } return D.avail[lo]; };
@@ -2858,7 +2860,7 @@ button.btn { border-radius: 0; }
           picked.push(m); today.add(dishOf(m));
         });
         const o = optimize(picked, T, score);
-        let s = o.s + ctx.appealScore(picked) + picked.reduce((a, m) => a + (ctx.course[m.type].variety >= 7 ? 0.05 * (uses[m.id] || 0) : ctx.mix && m.anchor ? 0.03 * (uses[m.id] || 0) : 0) - (liked(m) ? 0.01 : 0), 0);
+        let s = o.s + ctx.appealScore(picked) + picked.reduce((a, m) => a + (ctx.course[m.type].variety >= 7 ? 0.05 * (uses[m.id] || 0) : ctx.mix && m.anchor ? 0.03 * (uses[m.id] || 0) : 0.03 * Math.max(0, (uses[m.id] || 0) + 1 - share[m.type])) - (liked(m) ? 0.01 : 0), 0);
         if (ctx.costco) {
           const [c, over, rem, used] = packCost(picked, o.ms);
           if (ctx.packs) s += 0.0004 * c;
@@ -2928,18 +2930,25 @@ button.btn { border-radius: 0; }
   // Zero waste: after the week is built, swap meals until no fresh food is left over and the shop is under the cap.
   // A swap either brings in a meal that uses up a leftover, or takes out a meal that opened it. Waste outranks variety.
   const WASTE_J = 0.5;
+  const PILE = 0.25;
+
   // The menu is planned to fill at most 85% of the freezer: pack-finishing extras and household meals come later and need room
   const FZ_PLAN = 0.85;
+  // Each other person in a household keeps about 0.8 kg of their own frozen breakfasts and snacks
+  const fzPlan = () => FZ_PLAN * ctx.fcap - 800 * (ctx.house?.others.length || 0);
   function noWaste(ctx, days, rand, akey, cap) {
     const fresh = (k) => isFresh(k, ctx.fcap);
     const needs = days.map((d, di) => dayNeed(d, di));
     const varietyCost = () => {
       const n = {};
-      days.forEach((d) => d.ids.forEach((id) => { const m = MEAL[id]; (n[m.type] ||= new Set()).add(akey(m)); }));
-      return Object.entries(n).reduce((a, [t, set]) => a + 0.004 * Math.max(0, set.size - (cap[t] || Infinity)), 0);
+      const u = {};
+      days.forEach((d) => d.ids.forEach((id) => { const m = MEAL[id]; (n[m.type] ||= new Set()).add(akey(m)); u[id] = (u[id] || 0) + 1; }));
+      const v = ctx.course;
+      const pile = Object.entries(u).reduce((a, [id, c]) => { const vt = v[MEAL[id].type]?.variety || 7; return a + (vt > 1 && vt < 7 ? PILE * Math.max(0, c - Math.ceil(7 / vt) - 1) : 0); }, 0);
+      return pile + Object.entries(n).reduce((a, [t, set]) => a + 0.004 * Math.max(0, set.size - (cap[t] || Infinity)), 0);
     };
     // Freezer: kilograms over its space on the busiest day; a hard limit, so it outweighs everything else
-    const withFz = (st, nds) => ((st.fz = ctx.fcap === Infinity ? 0 : Math.max(0, freezerPeak(nds) - FZ_PLAN * ctx.fcap) / 1000), st);
+    const withFz = (st, nds) => ((st.fz = ctx.fcap === Infinity ? 0 : Math.max(0, freezerPeak(nds) - fzPlan()) / 1000), st);
     const frozen = (m) => m.items.some(([k]) => inFreezer(k, ctx.fcap));
     const J = (st, sSum, vc) => sSum + WASTE_J * st.waste + 50 * st.fz + 0.01 * Math.max(0, st.cost - ctx.cap) + (ctx.packs ? 0.0004 * st.cost : 0) + vc;
     let st = withFz(weekShop(ctx, days), needs), sSum = days.reduce((a, d) => a + d.s, 0), cur = J(st, sSum, varietyCost());
@@ -3009,7 +3018,9 @@ button.btn { border-radius: 0; }
             for (const x in was) need[x] -= was[x];
             for (const x in nd) need[x] = (need[x] || 0) + nd[x];
             const w = weekShop(ctx, null, need), v = o.s + WASTE_J * w.waste + 0.01 * Math.max(0, w.cost - ctx.cap) + (ctx.packs ? 0.0004 * w.cost : 0);
-            if (!pick || v < pick.v) pick = { ids, ms: o.ms, s: o.s, v, nd, need };
+            // Keep each day near its calories (a score of 0.05 is about 9% off), unless nothing else fits
+            const far = o.s > Math.max(d.s ?? 0, 0.05) ? 1 : 0;
+            if (!pick || far < pick.far || (far === pick.far && v < pick.v)) pick = { ids, ms: o.ms, s: o.s, v, nd, need, far };
           }
           if (pick) {
             chg.set(di, pick); dn.set(di, pick.nd); Object.assign(rn, pick.need);
@@ -3608,12 +3619,14 @@ button.btn { border-radius: 0; }
         for (let t = 0; t < 60; t++) {
           const ms = [];
           // Some tries skip a snack, for days when the shared meals already fill them up
-          const use = t % 3 === 2 ? slots.filter((x, j) => x !== "s" || j !== slots.lastIndexOf("s")) : slots;
+          // Some tries add a snack, for big appetites that portions capped at 1 1/2 can't fill
+          const use = t % 4 === 2 ? slots.filter((x, j) => x !== "s" || j !== slots.lastIndexOf("s")) : t % 4 === 3 ? [...slots, "s"] : slots;
           use.forEach((x) => { const L = F[x].length && rand() < 0.6 ? F[x] : P[x]; let m = L[Math.floor(rand() * L.length)]; if (ms.includes(m)) m = P[x][Math.floor(rand() * P[x].length)]; ms.push(m); });
           const r = fitOwn(ms, c);
           // Opening a new item costs a little; opening a new fresh one (a tub nobody else is using) costs more
           const fresh = ms.reduce((a, m) => a + m.items.filter(([k]) => !bought.has(k)).reduce((b, [k]) => b + (isFresh(k, ctx.fcap) ? 5 : 1), 0), 0);
-          const sc = r.s + 0.01 * fresh;
+          // An added snack only wins when the day really needs it
+          const sc = r.s + 0.01 * fresh + (use.length > slots.length ? 0.03 : 0);
           if (!best || sc < best.sc) best = { ids: ms.map((m) => m.id), ms: r.ms, sc };
         }
         best?.ids.forEach((id) => MEAL[id].items.forEach(([k]) => bought.add(k)));

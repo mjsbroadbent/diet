@@ -49,6 +49,11 @@ const RULES = [
     return [...out];
   } },
   { id: "dinner-type", hard: true, desc: "dinners are dinner-type meals (dinner effort above quickest)", check: (w) => w.quickDinner ? [] : w.days.flatMap((d, i) => d.meals.filter((m) => m.slot === "Dinner" && !m.out && m.dinner === false).map((m) => `day ${i + 1}: ${m.name}`)) },
+  { id: "rotation", hard: false, desc: "breakfasts, lunches and snacks with a few options rotate them: no finished meal more than an even share + 1", check: (w) => {
+    const n = {};
+    w.days.forEach((d) => d.meals.forEach((m) => { const v = w.cv[m.type]; if (!m.out && "bls".includes(m.type) && v > 1 && v < 7) { const k = m.type + ":" + m.name + (m.sauce ? " +" + m.sauce : ""); n[k] = (n[k] || 0) + 1; } }));
+    return Object.entries(n).filter(([k, c]) => c > Math.ceil(7 / w.cv[k[0]]) + 1).map(([k, c]) => `${k} x${c}`);
+  } },
   { id: "daily-repeat", hard: false, desc: "a course set to Daily repeats a finished meal (dish + sauce) at most once", check: (w) => {
     const n = {};
     w.days.forEach((d) => d.meals.forEach((m) => { if (!m.out && w.daily[m.type]) { const k = m.type + m.dish + m.sauce; n[k] = (n[k] || 0) + 1; } }));
@@ -113,7 +118,7 @@ for (const prof of PROFILES) for (let k = 0; k < SEEDS; k++) {
       own?.meals.forEach((x) => x.items.forEach(({ k: ing, g }) => { k += (B.ING[ing][1] * g) / 100; p += (B.ING[ing][2] * g) / 100; }));
       return { k, p, tk: own?.tk ?? o.T.k, ms: (d.own || []).find((y) => y.who === o.who)?.ms || [], own: own?.meals.map((x) => x.m.name) || [], bad: (own?.meals || []).filter((x) => !B.allowed(x.m, o.diets, o.avoid)).map((x) => x.m.name) };
     }) }));
-    return { hh: (ctx.house?.n || 1) + (ctx.house?.others.length || 0), others, never, T: ctx.T, days, protein, shop: B.shopStats(), fz: { peak: B.freezerPeak(), cap: ctx.fcap }, labels, daily, quickDinner: ctx.course.d.effort <= 10 };
+    return { hh: (ctx.house?.n || 1) + (ctx.house?.others.length || 0), others, never, T: ctx.T, days, protein, shop: B.shopStats(), fz: { peak: B.freezerPeak(), cap: ctx.fcap }, cv: Object.fromEntries(Object.entries(ctx.course).map(([k, c]) => [k, c.variety])), labels, daily, quickDinner: ctx.course.d.effort <= 10 };
   }, { s: { ...base, ...prof.s }, seed });
   const fails = RULES.map((rule) => ({ rule, probs: rule.check(w) })).filter((x) => x.probs.length);
   results.push({ prof: prof.name, seed, w, fails });
