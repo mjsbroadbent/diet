@@ -255,6 +255,7 @@ button.btn:hover { filter: brightness(1.08); }
 .day-tools button { display: grid; justify-items: center; gap: 2px; line-height: 1.15; }
 .day-tools .emo { font-size: 20px; line-height: 1; }
 .day-tools .cut { display: none; }
+.day-tools .w { display: inline; }
 .day-tools .treat-h { background: var(--ok-soft); color: var(--ok); }
 .day-tools .treat-i { background: var(--bad-soft); color: var(--bad); }
 @media (prefers-reduced-motion: no-preference) {
@@ -534,6 +535,44 @@ input[type="number"], input[type="text"], select { border-radius: 0; border-colo
 .how, .warn, .cost div, .left, .badge { border-radius: 0; }
 button.btn { border-radius: 0; }
 @media (prefers-reduced-motion: reduce) { .day-tools .treat-h::before, .day-tools .treat-i::before, .day-tools .treat-h::after, .day-tools .treat-i::after { transition: none; } }
+
+/* ---- Round 6: corner coupon, real stamp, comic treats, white swaps ---- */
+/* Treats: two-line labels and bigger art */
+.day-tools .w { display: block; }
+.day-tools .treat-h, .day-tools .treat-i { font-size: 13.5px; line-height: .92; padding: 0 14%; gap: 1px; }
+.day-tools .treat-h .emo, .day-tools .treat-i .emo { width: 64%; margin: -4% 0 1px; }
+/* Swap: white starburst, blue on hover */
+.swap::after { background: #FFFFFF; }
+.swap:hover { color: #FFFFFF; }
+.swap:hover::after { background: var(--blue); }
+/* Day done: the bottom-right corner of the card is the coupon, cut along a dashed line with scissors */
+.day-tools button[data-pass] { --tuck: 14px; position: relative; isolation: isolate; align-self: stretch; margin: 0 calc(var(--tuck) * -1) calc(var(--tuck) * -1) 0; padding: 10px 4px 8px 8px;
+  border: 0; border-top: 2px dashed var(--ink); border-left: 2px dashed var(--ink); border-radius: 0; box-shadow: none; background: transparent; clip-path: none; transform: none; }
+.day-tools button[data-pass]:hover { border-style: dashed; background: #FFF9EA; }
+.day-tools button[data-pass]::before { content: "\2702\FE0E"; top: -12px; left: auto; right: 10px; font: 19px/1 var(--body); background: var(--surface); padding: 0 1px; transform: scaleX(-1); transition: right .45s ease; }
+.day-tools button[data-pass]:hover::before { right: calc(100% - 24px); }
+.day-tools button[data-pass].tearing { z-index: 6; background: var(--surface); animation: tearoff .55s cubic-bezier(.45, 0, .85, .4) forwards; transform-origin: 0 0; }
+@keyframes tearoff { 0% { transform: none; } 30% { transform: rotate(-7deg) translate(-3px, -5px); } 100% { transform: translate(60px, 180px) rotate(34deg); opacity: 0; } }
+/* After it's torn: a ragged hole through the card showing the yellow board underneath, which is also the Undo button */
+.torn-hole, .day.passed .day-tools button[data-pass] { --over: 10px; filter: drop-shadow(-1.5px -1.5px 0 #FFFDF6); }
+.torn-hole { position: absolute; right: calc(var(--over) * -1); bottom: calc(var(--over) * -1); z-index: 4; pointer-events: none; }
+.torn-hole::before, .day.passed .day-tools button[data-pass]::before { content: ""; position: absolute; inset: 0; z-index: -1; display: block; transform: none; padding: 0; border: 0;
+  clip-path: polygon(6px 6px, 5% 1px, 9% 7px, 14% 2px, 19% 8px, 24% 3px, 30% 6px, 35% 1px, 41% 7px, 46% 2px, 52% 6px, 58% 0px, 63% 7px, 69% 3px, 75% 8px, 80% 2px, 86% 6px, 92% 1px, 100% 5px, 100% 100%, 5px 96%, 1px 88%, 7px 80%, 2px 71%, 8px 62%, 3px 53%, 6px 44%, 1px 35%, 7px 26%, 2px 17%, 6px 8%, 0 6px); background-color: var(--bg); background-image: radial-gradient(circle, var(--bg-dot) 1.1px, transparent 1.4px), radial-gradient(circle, var(--bg-dot) 1.1px, transparent 1.4px); background-size: 7px 7px; background-position: 0 0, 3.5px 3.5px; }
+.day.passed .day-tools button[data-pass] { z-index: 4; margin: 0 calc((var(--tuck) + var(--over)) * -1) calc((var(--tuck) + var(--over)) * -1) 0; padding: 14px calc(var(--over) + 6px) calc(var(--over) + 6px) 12px;
+  border: 0; background: transparent; color: var(--ink); font-family: var(--display); font-size: 13px; letter-spacing: 0.04em; }
+.day.passed .day-tools button[data-pass]:hover { color: var(--red); background: transparent; }
+.day.passed .day-tools button[data-pass] .emo { display: none; }
+/* A real rubber stamp: rounded double frame, uneven pressure, speckled ink */
+.day.passed::after { content: "DONE"; padding: 4px 20px 0; border: 7px double #C41E2A; border-radius: 14px; color: #C41E2A; background: none; font-size: 70px; letter-spacing: 0.08em; opacity: .86; rotate: -13deg;
+  box-shadow: 0 0 0 1px rgba(196, 30, 42, .35), inset 0 0 0 1px rgba(196, 30, 42, .35); filter: blur(.25px);
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='3' seed='7'/%3E%3CfeColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -3.4 2.55'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)'/%3E%3C/svg%3E"), linear-gradient(100deg, #000 30%, rgba(0, 0, 0, .55) 62%, #000 88%); mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='3' seed='7'/%3E%3CfeColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -3.4 2.55'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)'/%3E%3C/svg%3E"), linear-gradient(100deg, #000 30%, rgba(0, 0, 0, .55) 62%, #000 88%);
+  -webkit-mask-size: 160px 160px, 100% 100%; mask-size: 160px 160px, 100% 100%; -webkit-mask-composite: source-in; mask-composite: intersect; }
+/* Plan around big packs: a little shipping carton */
+#packs { -webkit-appearance: none; appearance: none; flex: none; width: 30px; height: 28px; margin: -3px 4px 0 0; cursor: pointer; border: 0; transform: rotate(-3deg);
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 28'%3E%3Cg stroke='%231A1714' stroke-width='1.6' stroke-linejoin='round'%3E%3Cpath d='M3 10 L18 10 L18 26 L3 26 Z' fill='%23FBF4E2'/%3E%3Cpath d='M18 10 L27 5 L27 21 L18 26 Z' fill='%23D9CCAE'/%3E%3Cpath d='M3 10 L12 5 L27 5 L18 10 Z' fill='%23EADFC3'/%3E%3Cpath d='M9 10 L18 5 M13 10 L22 5' stroke='%23D9CCAE' stroke-width='2.4'/%3E%3Cpath d='M8.5 10 V15 M13.5 10 V15' stroke='%23D9CCAE' stroke-width='0'/%3E%3C/g%3E%3C/svg%3E") center / contain no-repeat; filter: drop-shadow(1.5px 1.5px 0 var(--ink)); }
+#packs:checked { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 28'%3E%3Cg stroke='%231A1714' stroke-width='1.6' stroke-linejoin='round'%3E%3Cpath d='M3 10 L18 10 L18 26 L3 26 Z' fill='%23D3272E'/%3E%3Cpath d='M18 10 L27 5 L27 21 L18 26 Z' fill='%23A91D23'/%3E%3Cpath d='M3 10 L12 5 L27 5 L18 10 Z' fill='%23E85A5F'/%3E%3Cpath d='M9 10 L18 5 M13 10 L22 5' stroke='%23F2B91A' stroke-width='2.4'/%3E%3Cpath d='M8.5 10 V15 M13.5 10 V15' stroke='%23F2B91A' stroke-width='0'/%3E%3Cpath d='M6.5 18 l3 3 l6 -7' fill='none' stroke='%23FBF4E2' stroke-width='2.6' stroke-linecap='round'/%3E%3C/g%3E%3C/svg%3E"); }
+#packs:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; }
+@media (prefers-reduced-motion: no-preference) { #packs:checked { animation: boxpop .3s ease-out; } @keyframes boxpop { 0% { transform: rotate(-3deg) scale(.7) translateY(-3px); } 100% { transform: rotate(-3deg); } } }
 </style>
 <script>
   (function () { var k; try { k = JSON.parse(localStorage.getItem("ad-skin")); } catch (e) {} k = k === "light" || k === "dark" ? k : "cereal";
@@ -2127,8 +2166,8 @@ button.btn { border-radius: 0; }
       }
       const tools = document.createElement("div");
       tools.className = "day-tools";
-      tools.innerHTML = `<button type="button" class="treat-h" data-treat="h" title="Dark chocolate or fruit"><span class="emo" aria-hidden="true">🍓</span>Good treat</button>
-        <button type="button" class="treat-i" data-treat="i" title="Ice cream, cookies or chips"><span class="emo" aria-hidden="true">🍦</span>Cheat treat</button>
+      tools.innerHTML = `<button type="button" class="treat-h" data-treat="h" title="Dark chocolate or fruit"><span class="emo" aria-hidden="true">🍓</span><span class="w">Good</span> <span class="w">treat</span></button>
+        <button type="button" class="treat-i" data-treat="i" title="Ice cream, cookies or chips"><span class="emo" aria-hidden="true">🍦</span><span class="w">Cheat</span> <span class="w">treat</span></button>
         <button type="button" data-pass title="Freeze this day as eaten, so the rest of the week balances around it"><span class="emo" aria-hidden="true">${wd.passed ? "↩️" : "✅"}</span>${wd.passed ? "Undo done" : "Day done"}${wd.passed ? "" : '<small class="cut" aria-hidden="true">Clip when eaten</small>'}</button>`;
       tools.querySelectorAll("[data-treat]").forEach((b) => b.addEventListener("click", () => addTreat(di, b.dataset.treat)));
       tools.querySelector("[data-pass]").addEventListener("click", (e) => {
@@ -2136,6 +2175,10 @@ button.btn { border-radius: 0; }
         const tear = !wd.passed && document.documentElement.dataset.skin === "cereal" && !matchMedia("(prefers-reduced-motion: reduce)").matches;
         if (!wd.passed) stampDay = di;
         if (!tear) return togglePassed(di);
+        const day = btn.closest(".day"), dr = day.getBoundingClientRect(), br = btn.getBoundingClientRect();
+        const hole = document.createElement("i"); hole.className = "torn-hole";
+        hole.style.left = br.left - dr.left - 3 + "px"; hole.style.top = br.top - dr.top - 3 + "px";
+        day.append(hole);
         btn.classList.add("tearing");
         setTimeout(() => togglePassed(di), 420);
       });
