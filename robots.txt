@@ -1,4 +1,4 @@
+# Alpha: pages carry <meta name="robots" content="noindex">. Crawling stays allowed so search engines can
+# see that tag and so link-preview bots (iMessage, WhatsApp, Slack, X) can still fetch the share image.
 User-agent: *
 Allow: /
-
-Sitemap: https://bigboxdiet.com/sitemap.xml
