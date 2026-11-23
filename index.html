@@ -138,6 +138,15 @@ fieldset { min-inline-size: 0; }
 .stepper input::-webkit-inner-spin-button, .stepper input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 .fine { display: grid; gap: 28px; padding-top: 18px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
 .fine .ingr { display: grid; gap: 8px; max-width: 72ch; align-content: start; }
+@media (min-width: 900px) { .fine { grid-template-columns: minmax(0, 60ch) minmax(0, 1fr); align-items: start; } .fine > .sheet { grid-column: 1 / -1; } }
+.how { display: grid; gap: 12px; padding: 14px 16px 16px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink); }
+.how h2 { margin: 0; font-size: 22px; }
+.how-steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+.how-steps li { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; align-items: start; padding: 10px; border: 1px solid var(--line); border-radius: 8px; }
+.how-n { grid-row: span 2; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--accent); color: var(--on-accent); font-size: 18px; }
+.how-steps h3 { margin: 0; font-size: 16px; }
+.how-steps p { margin: 0; font-size: 14px; line-height: 1.4; color: var(--muted); }
+.how-idea { margin: 0; font-size: 14px; }
 .fine > .sheet { margin: 24px 14px; }
 .fine h2 { margin: 0; font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink); }
 .fine p { margin: 0; }
@@ -753,10 +762,11 @@ button.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--
 .sheet::after { content: ""; position: absolute; right: 40px; bottom: -19px; width: 84px; height: 9px; pointer-events: none; outline: 1px solid var(--ink);
   background: linear-gradient(90deg, var(--red) 0 14px, var(--blue) 0 28px, var(--ink) 0 42px, var(--surface) 0 56px, var(--red-deep) 0 70px, transparent 0), var(--screen); }
 .sheet > .box-front { position: relative; z-index: 1; }
-/* The same printer's marks around the navbar and the step tabs: a target at each end and crop marks at the corners */
+/* The same printer's marks around the navbar and step tabs together: a target at each end and crop marks at the corners */
 @media (min-width: 1190px) {
-  .topbar, .steps { position: relative; }
-  .topbar::before, .steps::before { content: ""; position: absolute; inset: -24px; pointer-events: none; z-index: 0;
+  .topbar { position: relative; }
+  /* the step tabs sit 32px under the navbar and are 52px tall */
+  .topbar::before { content: ""; position: absolute; inset: -24px -24px -108px; pointer-events: none; z-index: 0;
     background: var(--reg) left center / 16px 16px no-repeat, var(--reg) right center / 16px 16px no-repeat, linear-gradient(var(--ink), var(--ink)) left 0 top 24px / 17px 1.2px no-repeat, linear-gradient(var(--ink), var(--ink)) left 24px top 0 / 1.2px 17px no-repeat, linear-gradient(var(--ink), var(--ink)) right 0 top 24px / 17px 1.2px no-repeat, linear-gradient(var(--ink), var(--ink)) right 24px top 0 / 1.2px 17px no-repeat, linear-gradient(var(--ink), var(--ink)) left 0 bottom 24px / 17px 1.2px no-repeat, linear-gradient(var(--ink), var(--ink)) left 24px bottom 0 / 1.2px 17px no-repeat, linear-gradient(var(--ink), var(--ink)) right 0 bottom 24px / 17px 1.2px no-repeat, linear-gradient(var(--ink), var(--ink)) right 24px bottom 0 / 1.2px 17px no-repeat; }
   html.splash .topbar::before { content: none; }
 }
@@ -919,6 +929,17 @@ button.btn { border-radius: 0; }
 
 /* The fine print: the small type on the side panel of a box */
 .fine { border-top: 0; }
+/* Back of the box: a how-to panel printed in the box's inks */
+.how { border: 3px solid var(--ink); border-radius: 0; box-shadow: var(--shadow); background: var(--blue); color: var(--surface); padding: 16px 18px 18px; }
+.how h2 { justify-self: start; font-family: var(--display); font-weight: 400; font-size: 30px; letter-spacing: 0.03em; text-transform: uppercase; color: #F2B91A; text-shadow: var(--mx) var(--my) 0 var(--red), 3px 3px 0 var(--ink); transform: rotate(-2deg); }
+.how-steps li { border: 3px solid var(--ink); border-radius: 0; background: var(--surface); color: var(--ink); box-shadow: 4px 4px 0 var(--ink); }
+.how-steps li:nth-child(even) { transform: rotate(0.6deg); }
+.how-steps li:nth-child(odd) { transform: rotate(-0.6deg); }
+.how-n { border: 2px solid var(--ink); border-radius: 0; background: var(--bg); color: var(--ink); font-family: var(--display); font-weight: 400; font-size: 22px; transform: rotate(-6deg); }
+.how-steps h3 { font-family: var(--slant); font-style: italic; font-weight: 900; text-transform: uppercase; color: var(--red); font-size: 17px; }
+.how-steps p { color: var(--ink); }
+.how-idea { padding: 8px 12px; border: 2px dashed var(--surface); font-weight: 700; color: var(--surface); }
+.how-idea b { font-family: var(--slant); font-style: italic; font-weight: 900; text-transform: uppercase; color: #F2B91A; }
 
 /* Pantry step: shelf labels */
 .staples h3 { font-family: var(--label); color: var(--red); font-weight: 900; font-style: italic; letter-spacing: 0.03em; }
@@ -1356,6 +1377,16 @@ button.btn { border-radius: 0; }
     <p><b>Estimates, not medical advice.</b> Calorie, protein and portion numbers are estimates for healthy adults. Talk to a doctor or registered dietitian before a big change, especially if you are pregnant or nursing, under 18, or managing a health condition or an eating disorder.</p>
     <p class="contains"><b>Contains:</b> estimates and price snapshots. <b>May contain:</b> rounding. Packed for people who hate throwing food away.</p>
     </div>
+    <section class="how" aria-labelledby="howH">
+      <h2 id="howH"><span>How it works</span></h2>
+      <ol class="how-steps">
+        <li><b class="how-n">1</b><h3>Pour in your stats</h3><p>Age, height, weight, activity and goal give your daily calories and protein. Add a profile for anyone else you cook for.</p></li>
+        <li><b class="how-n">2</b><h3>Stock the pantry</h3><p>Tick the long-life staples you already have. The Pantry Explorer finds one new sauce or spice that unlocks more meals.</p></li>
+        <li><b class="how-n">3</b><h3>Get your week</h3><p>Breakfasts, lunches, dinners and snacks sized to your targets. Swap anything you don't fancy and tick each day off as you eat it.</p></li>
+        <li><b class="how-n">4</b><h3>Take the list to Costco</h3><p>Packs, prices and what it costs a day, kept under your weekly budget. Tick items off as they go in the cart.</p></li>
+      </ol>
+      <p class="how-idea"><b>The big idea:</b> buy big, waste nothing. Every fresh pack is planned so it's finished before it turns.</p>
+    </section>
   </footer>
 </div>
 
